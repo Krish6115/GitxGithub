@@ -52,7 +52,7 @@ GitxGithub/
 
 ---
 
-### 🎯 2. Scenario-Based Guide (NEW 🔥)
+### 🎯 2. Scenario-Based Guide
 📄 `git_scenarios.pdf`
 
 Learn Git like a real developer:
@@ -72,7 +72,7 @@ Learn Git like a real developer:
 
 ---
 
-### 🧠 3. Advanced Topics (NEW 🔥)
+### 🧠 3. Advanced Topics 
 📄 `git_missing_topics.pdf`
 
 Covers what most tutorials **don’t teach**:

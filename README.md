@@ -34,11 +34,83 @@ Whether you're:
 GitxGithub/
 ├── 📁 Git/
 │   ├── 📄 Git_GitHub_101.pdf          ← Basics: CLI, branching, forking, stash, rebase
-│   ├── 📄 Git_Github Notes.pdf        ← Workflow notes & command reference
-│   └── 📄 git-cheat-sheet-education.pdf ← Official GitHub cheat sheet
+│   ├── 📄 Git_Github Notes.pdf        ← Workflow notes & command reference  
+│   ├── 📄 git-cheat-sheet-education.pdf ← Official GitHub cheat sheet
+│   └── 📄 git_missing_topics(other than 101,notes,cheatsheet).pdf ←Other than the above 3 pdfs covers everything
+├── 📁 Scenario-Based_Guide/
+│   └── 📄 git_scenarios.pdf  ← Loaded with Real Word Scenarios for better understanding
 └── 📄 README.md                       ← You're here
 ```
+---
 
+## 📘 What Each Resource Covers
+
+### 🔰 1. Git & GitHub 101
+- Basics of Git CLI
+- init, clone, add, commit, push
+- Branching, merging, PRs
+
+---
+
+### 🎯 2. Scenario-Based Guide (NEW 🔥)
+📄 `git_scenarios.pdf`
+
+Learn Git like a real developer:
+
+- First-time setup  
+- Uploading code  
+- Branching & merging  
+- Fork & PR workflow  
+- Merge conflicts  
+- Undoing mistakes  
+- Team workflows  
+- Releases & tagging  
+- Advanced debugging  
+
+💡 Based on real-world developer situations  
+👉 This replaces traditional boring tutorials  
+
+---
+
+### 🧠 3. Advanced Topics (NEW 🔥)
+📄 `git_missing_topics.pdf`
+
+Covers what most tutorials **don’t teach**:
+
+- `git reflog` (recover anything)
+- `git cherry-pick`
+- `git bisect` (debug faster)
+- `git blame`
+- `git commit --amend`
+- GitHub CLI (`gh`)
+- SSH & Authentication
+- Advanced `.gitignore`
+
+---
+
+### 📄 4. GitHub Cheat Sheet
+- Quick command reference
+- Perfect for revision
+
+---
+---
+
+## 📋 10 Real-World Scenarios Covered
+
+| # | Scenario | What You'll Learn |
+|---|----------|-------------------|
+| 01 | **First-Time Setup** | git config, SSH keys, no-password auth |
+| 02 | **Upload Your First File** | clone → add → commit → push |
+| 03 | **Working with Branches** | feature branches, merge, cleanup |
+| 04 | **Contributing via Fork** | fork, upstream remote, pull requests |
+| 05 | **Handling Merge Conflicts** | conflict markers, manual resolve |
+| 06 | **Undoing Mistakes** | restore, reset, revert — matched to situation |
+| 07 | **Keeping Fork in Sync** | fetch, rebase, reset --hard upstream |
+| 08 | **Team Feature Branch Workflow** | squash commits, PR review, protect main |
+| 09 | **Tagging & Releasing Versions** | annotated tags, GitHub Releases, semver |
+| 10 | **Cherry-pick & Bisect** | apply one commit anywhere, binary-search bugs |
+
+---
 ---
 
 ## 🚀 Quick Start — The Everyday Loop
@@ -58,64 +130,11 @@ git add path/to/YourFile.java
 git commit -m "Add InsertLinkedList.java to LinkedList folder"
 git push origin main
 ```
-
 > 🔥 **If push is rejected** (someone else pushed first):
 > ```bash
 > git pull origin main --rebase
 > git push origin main
 > ```
-
----
-
-## 📋 10 Real-World Scenarios Covered
-
-| # | Scenario | What You'll Learn |
-|---|----------|-------------------|
-| 01 | **First-Time Setup** | git config, SSH keys, no-password auth |
-| 02 | **Upload Your First File** | clone → add → commit → push |
-| 03 | **Working with Branches** | feature branches, merge, cleanup |
-| 04 | **Contributing via Fork** | fork, upstream remote, pull requests |
-| 05 | **Handling Merge Conflicts** | conflict markers, manual resolve |
-| 06 | **Undoing Mistakes** | restore, reset, revert — matched to situation |
-| 07 | **Keeping Fork in Sync** | fetch, rebase, reset --hard upstream |
-| 08 | **Team Feature Branch Workflow** | squash commits, PR review, protect main |
-| 09 | **Tagging & Releasing Versions** | annotated tags, GitHub Releases, semver |
-| 10 | **Cherry-pick & Bisect** | apply one commit anywhere, binary-search bugs |
-
----
-
-## 📘 What the PDFs Cover
-
-<table>
-<tr>
-<td width="50%">
-
-### 🔰 Git & GitHub 101
-- Basic CLI commands (`ls`, `mkdir`, `cd`)
-- `git init`, `git clone`, `git status`
-- Staging, committing, pushing
-- Branching, checkout, merge
-- Forking, upstream, pull requests
-- Stash, rebase, squash commits
-- Merge conflict resolution
-
-</td>
-<td width="50%">
-
-### 🎓 GitHub Education Cheat Sheet
-- Setup & init
-- Stage & snapshot
-- Branch & merge
-- Inspect & compare
-- Tracking path changes
-- Ignoring patterns
-- Rewriting history
-- Temporary commits (stash)
-
-</td>
-</tr>
-</table>
-
 ---
 
 ## 🧠 The Commands You Actually Need to Know
@@ -189,7 +208,7 @@ If this helped you, consider:
 
 ## 📬 Connect
 
-Made by **[Krish6115](https://github.com/Krish6115)** — CS undergraduate, backend developer, competitive programmer.
+Made by **[Krish6115](https://github.com/Krish6115)** — CS undergraduate, Full-Stack developer, competitive programmer & AI/ML Enthusiast.
 
 Feel free to open an [issue](https://github.com/Krish6115/GitxGithub/issues) if something's unclear or missing.
 

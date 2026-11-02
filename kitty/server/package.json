@@ -14,7 +14,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "smoke": "tsx scripts/smoke.ts",
     "live-tour": "tsx scripts/live-tour.ts",
-    "live-tutor": "tsx scripts/live-tutor.ts"
+    "live-tutor": "tsx scripts/live-tutor.ts",
+    "live-explain": "tsx scripts/live-explain.ts"
   },
   "dependencies": {
     "@hono/node-server": "2.1.5",

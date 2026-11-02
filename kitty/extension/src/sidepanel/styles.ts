@@ -1,6 +1,6 @@
 // Side panel styles (light/dark via prefers-color-scheme).
 export const css = `
-  :root { color-scheme: light dark; --fg: #1f2328; --muted: #57606a; --bg: #fff; --panel: #f6f8fa; --accent: #f0a04b; --line: #d0d7de; --warn: #9a6700; --err: #cf222e; }
+  :root { color-scheme: light dark; --fg: #1f2328; --muted: #57606a; --bg: #fff; --panel: #f6f8fa; --accent: #238636; --accent-hover: #2ea043; --line: #d0d7de; --warn: #9a6700; --err: #cf222e; }
   @media (prefers-color-scheme: dark) { :root { --fg: #e6edf3; --muted: #9da7b3; --bg: #0d1117; --panel: #161b22; --line: #30363d; --warn: #d29922; --err: #f85149; } }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
@@ -11,21 +11,22 @@ export const css = `
   .tabs button { all: unset; cursor: pointer; padding: 6px 10px; border-bottom: 2px solid transparent; color: var(--muted); }
   .tabs button.active { color: var(--fg); border-bottom-color: var(--accent); font-weight: 600; }
   .tabs button:focus-visible { outline: 2px solid var(--accent); }
-  button:not(.tabs button):not(.copy):not(.steps button) { font: inherit; cursor: pointer; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--accent); color: #1f2328; }
-  button.ghost { background: transparent !important; color: var(--fg) !important; }
+  button:not(.tabs button):not(.copy):not(.steps button) { font: inherit; cursor: pointer; padding: 4px 12px; border-radius: 6px; border: 1px solid rgb(31 35 40 / 0.15); background: var(--accent); color: #fff; font-weight: 600; }
+  button:not(.tabs button):not(.copy):not(.steps button):not(.ghost):hover:not(:disabled) { background: var(--accent-hover); }
+  button.ghost { background: transparent !important; color: var(--fg) !important; border-color: var(--line) !important; font-weight: 400 !important; }
   button:disabled { opacity: 0.5; cursor: default; }
   .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
-  .badge { background: #fff1db; color: #7a4b00; border: 1px solid var(--accent); border-radius: 8px; padding: 4px 8px; font-size: 12px; }
+  .badge { background: #dafbe1; color: #1a7f37; border: 1px solid var(--accent); border-radius: 8px; padding: 4px 8px; font-size: 12px; }
   .stack { display: flex; flex-wrap: wrap; gap: 4px; } .stack span { border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; font-size: 12px; }
   .steps { padding-left: 20px; margin: 0; } .steps li { margin: 4px 0; }
   .steps button { all: unset; cursor: pointer; display: flex; flex-direction: column; padding: 4px 6px; border-radius: 6px; width: 100%; }
-  .steps button:hover, .steps li.current button { background: rgb(240 160 75 / 0.18); }
+  .steps button:hover, .steps li.current button { background: rgb(46 160 67 / 0.15); }
   .steps code { font-size: 12px; color: var(--muted); word-break: break-all; }
   .pre { white-space: pre-wrap; }
   .chat { display: flex; flex-direction: column; flex: 1; gap: 8px; }
   .messages { flex: 1; display: flex; flex-direction: column; gap: 10px; }
   .msg { padding: 8px 10px; border-radius: 10px; max-width: 100%; overflow-wrap: anywhere; }
-  .msg.user { align-self: flex-end; background: rgb(240 160 75 / 0.22); white-space: pre-wrap; max-width: 90%; }
+  .msg.user { align-self: flex-end; background: rgb(46 160 67 / 0.18); white-space: pre-wrap; max-width: 90%; }
   .msg.kitty { background: var(--panel); border: 1px solid var(--line); }
   .md p, .md ul, .md ol { margin: 0 0 8px; } .md ul, .md ol { padding-left: 20px; }
   .md code { font: 12px ui-monospace, SFMono-Regular, Consolas, monospace; background: rgb(127 127 127 / 0.15); padding: 1px 4px; border-radius: 4px; }

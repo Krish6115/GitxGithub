@@ -19,7 +19,7 @@
   transition: transform 0.2s ease;
 }
 .cat:hover { transform: translateY(-2px); }
-.cat:focus-visible { outline: 2px solid #f0a04b; outline-offset: 4px; border-radius: 6px; }
+.cat:focus-visible { outline: 2px solid #2ea043; outline-offset: 4px; border-radius: 6px; }
 .sprite { display: block; background-repeat: no-repeat; }
 .cat { touch-action: none; cursor: grab; }
 /* held by the scruff: swings from the top, stretches a little and wiggles */
@@ -48,7 +48,7 @@
 .bubble .why { color: #57606a; }
 .bubble .hint { margin: 8px 0 0; font-size: 12px; color: #57606a; }
 .bubble .meta { font-size: 12px; color: #57606a; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.badge { background: #fff1db; color: #7a4b00; border: 1px solid #f0a04b; border-radius: 999px; padding: 0 8px; font-size: 11px; }
+.badge { background: #dafbe1; color: #1a7f37; border: 1px solid #2ea043; border-radius: 999px; padding: 0 8px; font-size: 11px; }
 .thinking::after { content: ""; animation: dots 1.2s steps(4) infinite; }
 @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
 .row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
@@ -57,27 +57,31 @@ button:not(.cat) {
   cursor: pointer;
   padding: 4px 12px;
   border-radius: 6px;
-  border: 1px solid #2b2133;
-  background: #f0a04b;
-  color: #1f2328;
+  border: 1px solid rgb(31 35 40 / 0.15);
+  background: #238636;
+  color: #fff;
+  font-weight: 600;
 }
+button:not(.cat):hover:not(:disabled) { background: #2ea043; }
 button:not(.cat):disabled { opacity: 0.45; cursor: default; }
-button.ghost { background: transparent; }
+button.ghost { background: transparent; color: #1f2328; border-color: #d0d7de; font-weight: 400; }
+button.ghost:hover:not(:disabled) { background: rgb(175 184 193 / 0.2); }
 .highlight {
   position: fixed;
   z-index: 2147483646;
   pointer-events: none;
-  border: 3px solid #f0a04b;
+  border: 3px solid #2ea043;
   border-radius: 8px;
-  box-shadow: 0 0 0 4px rgb(240 160 75 / 0.25);
+  box-shadow: 0 0 0 4px rgb(46 160 67 / 0.25);
   transition: top 0.15s, left 0.15s, width 0.15s, height 0.15s;
 }
 /* dark theme follows GitHub's own setting (set on the host by theme.ts), not just the OS */
 :host([data-theme="dark"]) .kitty { color: #e6edf3; }
-:host([data-theme="dark"]) .bubble { background: #22272e; border-color: #f0a04b; }
+:host([data-theme="dark"]) .bubble { background: #161b22; border-color: #2ea043; }
 :host([data-theme="dark"]) .bubble .why, :host([data-theme="dark"]) .bubble .meta, :host([data-theme="dark"]) .bubble .hint { color: #9da7b3; }
-:host([data-theme="dark"]) .badge { background: #3d2a0f; color: #f6c27f; }
-:host([data-theme="dark"]) button.ghost { color: #e6edf3; border-color: #9da7b3; }
+:host([data-theme="dark"]) .badge { background: #0f2a17; color: #3fb950; }
+:host([data-theme="dark"]) button.ghost { color: #e6edf3; border-color: #3d444d; }
+:host([data-theme="dark"]) button.ghost:hover:not(:disabled) { background: rgb(101 108 118 / 0.2); }
 @media (prefers-reduced-motion: reduce) {
   .thinking::after, .mode-held .pose .sprite, .mode-landed .pose { animation: none; }
   .kitty, .highlight { transition: none; }
@@ -90,9 +94,9 @@ button.ghost { background: transparent; }
   font: 600 12px/1 system-ui, -apple-system, "Segoe UI", sans-serif !important;
   padding: 7px 12px !important;
   border-radius: 999px !important;
-  border: 2px solid #2b2133 !important;
-  background: #f0a04b !important;
-  color: #1f2328 !important;
+  border: 1px solid rgb(31 35 40 / 0.15) !important;
+  background: #238636 !important;
+  color: #fff !important;
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.2);
 }
 .bubble.explain {

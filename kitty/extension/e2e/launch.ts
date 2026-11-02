@@ -34,7 +34,8 @@ export interface Launched {
   extId: string;
 }
 
-export async function launch(viewport = { width: 1280, height: 860 }): Promise<Launched> {
+/** `onboarded` (default true) skips the first-run welcome so suites start in the normal UI. */
+export async function launch(viewport = { width: 1280, height: 860 }, onboarded = true): Promise<Launched> {
   if (!existsSync(join(EXT_DIST, 'manifest.json'))) throw new Error('Build the extension first: npm run build -w extension');
   mkdirSync(OUT_DIR, { recursive: true });
   const ctx = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), 'kitty-e2e-')), {
@@ -44,7 +45,13 @@ export async function launch(viewport = { width: 1280, height: 860 }): Promise<L
     viewport,
   });
   const sw = ctx.serviceWorkers()[0] ?? (await ctx.waitForEvent('serviceworker'));
-  return { ctx, sw, extId: new URL(sw.url()).host };
+  const extId = new URL(sw.url()).host;
+  if (onboarded) {
+    await sw.evaluate(async () => chrome.storage.local.set({ 'kitty:onboarded': true }));
+    await new Promise((r) => setTimeout(r, 500));
+    for (const p of ctx.pages()) if (p.url().includes('?welcome')) await p.close(); // the install-time welcome tab
+  }
+  return { ctx, sw, extId };
 }
 
 export const log = (...a: unknown[]): void => console.log(...a);

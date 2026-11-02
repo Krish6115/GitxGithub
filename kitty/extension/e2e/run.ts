@@ -1,8 +1,9 @@
 // E2E runner. Needs: a built extension (npm run build -w extension) and the Kitty server on localhost:8787.
-// Usage: npm run e2e -w extension -- <cat|tour|chat|explain|all> [--repo owner/name] [--question "..."]
+// Usage: npm run e2e -w extension -- <cat|onboarding|tour|chat|explain|all> [--repo owner/name] [--question "..."] [--server URL]
 import { catE2E } from './cat.e2e.js';
 import { chatE2E } from './chat.e2e.js';
 import { explainE2E } from './explain.e2e.js';
+import { onboardingE2E } from './onboarding.e2e.js';
 import { tourE2E } from './tour.e2e.js';
 
 const args = process.argv.slice(2);
@@ -14,6 +15,7 @@ const which = args.find((a) => !a.startsWith('--') && !args[args.indexOf(a) - 1]
 
 const suites: Record<string, () => Promise<void>> = {
   cat: () => catE2E(),
+  onboarding: () => onboardingE2E(opt('server')),
   tour: () => tourE2E(opt('repo')),
   chat: () => chatE2E(opt('question')),
   explain: () => explainE2E(),

@@ -33,7 +33,8 @@ export function mapError(e: unknown): KittyError {
     if (e.status === 429) return new KittyError('rate_limited', 'BharatCode rate limit reached. Please wait a moment.');
     if (e.status === 401 || e.status === 403) return new KittyError('auth_failed', 'The BharatCode API key was rejected.');
     if (e instanceof APIConnectionError) return new KittyError('upstream_unavailable', 'Could not reach BharatCode.', { retryable: true, cause: e });
-    return new KittyError('upstream_error', `BharatCode returned HTTP ${e.status ?? 'error'}.`, { cause: e });
+    const why = e.message.replace(/\s+/g, ' ').slice(0, 200);
+    return new KittyError('upstream_error', `BharatCode error${e.status ? ` (HTTP ${e.status})` : ''}: ${why}`, { cause: e });
   }
   return toKittyError(e);
 }

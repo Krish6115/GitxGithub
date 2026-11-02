@@ -8,6 +8,9 @@ export const EnvSchema = z.object({
   BHARATCODE_API_KEY: z.string().optional(),
   GITHUB_TOKEN: z.string().optional(),
   RATE_LIMIT_PER_MIN: z.coerce.number().int().positive().default(20),
+  LLM_TIMEOUT_MS: z.coerce.number().int().positive().default(60_000),
+  TOUR_CACHE_TTL_MIN: z.coerce.number().int().positive().default(360),
+  TOUR_MAX_STEPS: z.coerce.number().int().min(4).max(15).default(10),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

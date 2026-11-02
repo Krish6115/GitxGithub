@@ -11,8 +11,8 @@ export default defineManifest({
   background: { service_worker: 'src/background/index.ts', type: 'module' },
   side_panel: { default_path: 'src/sidepanel/index.html' },
   permissions: ['sidePanel', 'storage', 'contextMenus'],
-  // the Kitty server (local dev); add the deployed server URL here when it exists
-  host_permissions: ['http://localhost:8787/*'],
+  // the hosted Kitty server and a local dev server
+  host_permissions: ['https://kitty-server.vercel.app/*', 'http://localhost:8787/*'],
   content_scripts: [
     { matches: ['https://github.com/*'], js: ['src/content/index.tsx'], run_at: 'document_idle' },
   ],

@@ -77,7 +77,7 @@ npm run dev -w server                # http://localhost:8787 — uses a mock mod
 npm run build -w extension           # then load kitty/extension/dist as an unpacked extension
 ```
 
-The server deploys to Vercel as-is (`kitty/server` as the root directory). Point the extension at it in **Settings**.
+The release build talks to the hosted server at `https://kitty-server.vercel.app`. To host your own on Vercel: root directory `kitty/server`, framework Hono, install command `cd .. && npm ci -w server --include-workspace-root`, and set `LLM_PROVIDER=bharatcode` plus `BHARATCODE_API_KEY`. Then point the extension at it in **Settings**, or build the zip with `VITE_KITTY_SERVER_URL=<your url> npm run package -w extension`.
 
 ### How it works
 

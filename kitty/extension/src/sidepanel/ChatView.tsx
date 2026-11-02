@@ -4,6 +4,20 @@ import { ApiError, postStream } from '../shared/api';
 import { CHAT_KEY, sourceLabel, toHistory, trimChat, type ChatMessage, type ChatSource } from '../shared/chat';
 import { CHAT_DRAFT_KEY, errorText } from '../shared/messages';
 import { Markdown } from '../shared/Markdown';
+import { pageLabel, READ_PAGE_KEY, type PageContext, type PageContextRequest } from '../shared/page-context';
+
+/** Ask the content script in the active tab what's on screen (null when it isn't a GitHub page). */
+async function activePageContext(): Promise<PageContext | null> {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    if (tab?.id === undefined) return null;
+    const msg: PageContextRequest = { type: 'get-page-context' };
+    const ctx = (await chrome.tabs.sendMessage(tab.id, msg)) as PageContext | undefined;
+    return ctx?.url ? ctx : null;
+  } catch {
+    return null; // no Kitty content script there (not github.com, or the tab is still loading)
+  }
+}
 
 type Assistant = Extract<ChatMessage, { role: 'assistant' }>;
 
@@ -12,6 +26,8 @@ export function ChatView() {
   const [input, setInput] = useState('');
   const abortRef = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
+  const [readPage, setReadPage] = useState(true);
+  const [page, setPage] = useState<PageContext | null>(null);
   const busy = messages.at(-1)?.role === 'assistant' && (messages.at(-1) as Assistant).status === 'streaming';
 
   useEffect(() => {
@@ -30,6 +46,26 @@ export function ChatView() {
     chrome.storage.onChanged.addListener(onChange);
     return () => chrome.storage.onChanged.removeListener(onChange);
   }, []);
+  // Keep "what Kitty can see" in sync with the active tab.
+  useEffect(() => {
+    void chrome.storage.local.get(READ_PAGE_KEY).then((r) => setReadPage(r[READ_PAGE_KEY] !== false));
+    const refresh = (): void => void activePageContext().then(setPage);
+    const onUpdated = (_id: number, info: { status?: string }): void => { if (info.status === 'complete') refresh(); };
+    refresh();
+    chrome.tabs.onActivated.addListener(refresh);
+    chrome.tabs.onUpdated.addListener(onUpdated);
+    window.addEventListener('focus', refresh);
+    return () => {
+      chrome.tabs.onActivated.removeListener(refresh);
+      chrome.tabs.onUpdated.removeListener(onUpdated);
+      window.removeEventListener('focus', refresh);
+    };
+  }, []);
+  const toggleReadPage = (on: boolean): void => {
+    setReadPage(on);
+    void chrome.storage.local.set({ [READ_PAGE_KEY]: on });
+  };
+
   useEffect(() => {
     if (!busy) void chrome.storage.session.set({ [CHAT_KEY]: trimChat(messages) });
     endRef.current?.scrollIntoView({ block: 'end' });
@@ -49,8 +85,11 @@ export function ChatView() {
     setMessages((ms) => trimChat([...ms, { role: 'user', content: q }, { role: 'assistant', content: '', sources: [], status: 'streaming' }]));
     const abort = new AbortController();
     abortRef.current = abort;
+    const ctx = readPage ? await activePageContext() : null;
+    if (ctx) setPage(ctx);
+    const pageBody = ctx ? { page: { url: ctx.url, title: ctx.title, pageType: ctx.pageType, selection: ctx.selection, text: ctx.text, truncated: ctx.truncated } } : {};
     try {
-      await postStream('/tutor', { question: q, history }, (event, data) => {
+      await postStream('/tutor', { question: q, history, ...pageBody }, (event, data) => {
         const d = data as Record<string, unknown>;
         if (event === 'sources') updateLast((m) => ({ ...m, sources: d.sources as ChatSource[] }));
         else if (event === 'delta') updateLast((m) => ({ ...m, content: m.content + String(d.text ?? '') }));
@@ -69,8 +108,8 @@ export function ChatView() {
       <div class="messages" aria-live="polite">
         {messages.length === 0 && (
           <div class="muted">
-            <p>Ask me anything about Git or GitHub. I answer from Kitty's learning material and cite my sources.</p>
-            {['How do I undo my last commit?', 'How do I sync my fork with upstream?', "What's the difference between merge and rebase?"].map((s) => (
+            <p>Ask me anything about Git or GitHub, or about the page you're looking at. I answer from Kitty's learning material and cite my sources.</p>
+            {[...(page && readPage ? ['Explain this page', 'What should I look at first here?'] : []), 'How do I undo my last commit?', 'How do I sync my fork with upstream?', "What's the difference between merge and rebase?"].map((s) => (
               <button key={s} class="chip" onClick={() => void send(s)}>{s}</button>
             ))}
           </div>
@@ -98,12 +137,20 @@ export function ChatView() {
         )}
         <div ref={endRef} />
       </div>
+      <label class="page-bar" title="Kitty reads the GitHub page in your current tab (text only) when you ask a question.">
+        <input type="checkbox" checked={readPage} onChange={(e) => toggleReadPage((e.target as HTMLInputElement).checked)} />
+        {readPage
+          ? page
+            ? <span>👀 Kitty can see <strong>{pageLabel(page)}</strong></span>
+            : <span class="muted">👀 Open a GitHub page and Kitty can see it</span>
+          : <span class="muted">Kitty can't see this page</span>}
+      </label>
       <form class="composer" onSubmit={(e) => { e.preventDefault(); void send(input); }}>
         <textarea
           value={input}
           maxLength={2000}
           rows={2}
-          placeholder="Ask a Git question…"
+          placeholder={page && readPage ? "Ask about this page or any Git question…" : "Ask a Git question…"}
           aria-label="Your question"
           onInput={(e) => setInput((e.target as HTMLTextAreaElement).value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(input); } }}

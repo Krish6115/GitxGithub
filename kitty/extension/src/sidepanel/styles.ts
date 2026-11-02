@@ -42,6 +42,8 @@ export const css = `
   .thinking::after { content: ""; animation: dots 1.2s steps(4) infinite; }
   @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
   .chip { display: block; margin: 6px 0; background: transparent !important; color: var(--fg) !important; text-align: left; }
+  .page-bar { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 6px 2px; border-top: 1px solid var(--line); cursor: pointer; }
+  .page-bar strong { word-break: break-all; }
   .composer { position: sticky; bottom: 0; background: var(--bg); padding-top: 6px; border-top: 1px solid var(--line); }
   .composer textarea, .settings input { width: 100%; font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
   .composer textarea { resize: vertical; }

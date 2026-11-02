@@ -2,6 +2,7 @@ import { render } from 'preact';
 import { ExplainUI } from './ExplainUI';
 import { KittyApp } from './KittyApp';
 import { syncTheme } from './theme';
+import { readPageContext, type PageContextRequest } from '../shared/page-context';
 import css from './cat.css?inline';
 
 const HOST_ID = 'kitty-root';
@@ -28,3 +29,9 @@ function mount(): void {
 }
 
 mount();
+
+// The side panel chat asks for the page the user is looking at.
+chrome.runtime.onMessage.addListener((msg: PageContextRequest, _sender, sendResponse) => {
+  if (msg?.type !== 'get-page-context') return;
+  sendResponse(readPageContext());
+});

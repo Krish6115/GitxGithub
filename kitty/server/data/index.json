@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "Git/Git_GitHub_101.pdf",
+      "bytes": 69886
+    },
+    {
+      "path": "Git/Git_Github Notes.pdf",
+      "bytes": 574711
+    },
+    {
+      "path": "Git/git-cheat-sheet-education.pdf",
+      "bytes": 100194
+    },
+    {
+      "path": "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+      "bytes": 64711
+    },
+    {
+      "path": "Scenario-Based_Guide/git_scenarios.pdf",
+      "bytes": 70271
+    }
+  ],
+  "chunks": []
+}

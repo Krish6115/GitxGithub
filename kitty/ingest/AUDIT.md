@@ -117,7 +117,11 @@ These corrections will be written into the gap-fill references and the tutor's s
   if Kitty is ever commercial), GitHub Docs are CC BY 4.0, git docs are GPLv2. Every reference file will carry its own
   license header, and `SOURCES.md` will state that `references/` is **not** covered by the repo's MIT license.
 
-## 7. Planned gap-fill material (awaiting approval — nothing downloaded yet)
+## 7. Gap-fill material
+
+**Status (2026-11-02): done.** All 24 files plus `Git/references/SOURCES.md` were generated from 56 source pages
+(progit2 `a013e32`, github/docs `b8fe410`, git/git `ebdc087`). Total is about 74k words, above the estimate below,
+because whole sections were kept instead of being cut mid-section. The largest file is about 5k words. All source URLs were checked.
 
 **How:** fetch the sources as raw files from their own repos rather than scraping HTML:
 `progit/progit2` (AsciiDoc), `github/docs` (Markdown + Liquid), `git/git` `Documentation/` (AsciiDoc).

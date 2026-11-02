@@ -23,6 +23,15 @@ export async function catE2E(): Promise<void> {
   await page.goto('https://github.com/git/git', { waitUntil: 'domcontentloaded' });
   await check('repo page');
   await page.screenshot({ path: join(OUT_DIR, 'cat.png') });
+  // theme follows GitHub's setting: OS dark -> dark; GitHub forced light -> light
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.waitForTimeout(200);
+  const themeAuto = await page.evaluate(() => document.getElementById('kitty-root')?.dataset.theme);
+  await page.evaluate(() => document.documentElement.setAttribute('data-color-mode', 'light'));
+  await page.waitForTimeout(200);
+  const themeForced = await page.evaluate(() => document.getElementById('kitty-root')?.dataset.theme);
+  if (themeAuto !== 'dark' || themeForced !== 'light') throw new Error(`theme sync: auto+dark OS -> ${themeAuto}, GitHub light -> ${themeForced}`);
+  log(`theme: OS dark -> ${themeAuto}; GitHub set to light -> ${themeForced}`);
   await page.click('a[href="/git/git/pulls"]');
   await page.waitForURL('**/pulls');
   await check('after in-page navigation to /pulls');

@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { serve } from '@hono/node-server';
-import { createApp } from './app.js';
+import { createApp } from './create-app.js';
 import { loadEnv } from './env.js';
 
 // Local Node server (npm run dev / npm start). Vercel uses src/index.ts instead.

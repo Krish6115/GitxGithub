@@ -14,3 +14,6 @@ coverage/
 desktop.ini
 Thumbs.db
 .DS_Store
+
+# Kitty ingest download cache
+kitty/ingest/.cache/

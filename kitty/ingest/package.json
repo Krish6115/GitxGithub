@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "ingest": "tsx src/index.ts",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "refs:fetch": "tsx scripts/references/fetch.ts",
+    "refs:build": "tsx scripts/references/build.ts"
   }
 }

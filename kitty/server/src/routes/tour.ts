@@ -30,6 +30,7 @@ export function tourRoute(env: Env, limiter: RateLimiter, deps: RouteDeps = {}):
           {
             owner: body.data.owner,
             repo: body.data.repo,
+            issue: body.data.issue,
             signal: c.req.raw.signal,
             onProgress: (stage, message) => void sendEvent(stream, 'progress', { stage, message }),
           },

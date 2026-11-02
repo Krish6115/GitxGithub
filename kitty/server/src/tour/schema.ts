@@ -36,6 +36,9 @@ export interface TourMeta {
   contextTokens: number;
   /** Ranked files GitHub would not serve (rate limits, errors); the tour was built without them. */
   unreadableFiles: number;
+  defaultBranch: string;
+  /** Set for "Help me fix this issue" walkthroughs. */
+  issue?: { number: number; title: string; url: string; labels: string[] };
 }
 
 export interface TourResult {
@@ -46,7 +49,13 @@ export interface TourResult {
 export const TourRequestSchema = z.object({
   owner: z.string().regex(/^[A-Za-z0-9_.-]{1,100}$/),
   repo: z.string().regex(/^[A-Za-z0-9_.-]{1,100}$/),
+  /** Build a walkthrough of the files relevant to this issue instead of a general tour. */
+  issue: z.number().int().positive().max(100_000_000).optional(),
 });
 
 export const MIN_VALID_STEPS = 5;
 export const MIN_REQUESTED_STEPS = 6;
+/** Issue walkthroughs are shorter: only the files that matter for the fix. */
+export const ISSUE_MIN_VALID_STEPS = 3;
+export const ISSUE_MIN_REQUESTED_STEPS = 3;
+export const ISSUE_MAX_STEPS = 7;

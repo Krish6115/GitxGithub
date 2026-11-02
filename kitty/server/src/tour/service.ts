@@ -1,13 +1,13 @@
 // Repo tour pipeline: GitHub -> rank -> context -> model (streamed) -> validate/repair -> cache.
 import type { GitHubClient } from '../github/client.js';
 import { buildTourContext } from '../github/context.js';
-import { findDoc, rankFiles, topLevelLayout } from '../github/rank.js';
+import { findDoc, issueHints, rankFiles, topLevelLayout } from '../github/rank.js';
 import type { LruCache } from '../lib/lru.js';
 import { KittyError } from '../llm/errors.js';
 import type { ChatMessage, ChatResult, Provider } from '../llm/types.js';
 import { validateTour } from './parse.js';
-import { repairMessages, tourMessages } from './prompt.js';
-import { MIN_REQUESTED_STEPS, MIN_VALID_STEPS, type TourResult } from './schema.js';
+import { repairMessages, tourMessages, type TourMode } from './prompt.js';
+import { ISSUE_MAX_STEPS, ISSUE_MIN_REQUESTED_STEPS, ISSUE_MIN_VALID_STEPS, MIN_REQUESTED_STEPS, MIN_VALID_STEPS, type TourResult } from './schema.js';
 
 export type TourStage = 'fetching' | 'ranking' | 'thinking' | 'writing' | 'repairing';
 export type OnProgress = (stage: TourStage, message: string) => void;
@@ -22,6 +22,8 @@ export interface TourServiceDeps {
 export interface TourRequest {
   owner: string;
   repo: string;
+  /** Walk through the files relevant to this issue instead of a general tour. */
+  issue?: number | undefined;
   signal?: AbortSignal;
   onProgress?: OnProgress;
 }
@@ -65,20 +67,24 @@ async function streamToResult(provider: Provider, messages: ChatMessage[], signa
 }
 
 export async function getTour(deps: TourServiceDeps, req: TourRequest): Promise<TourResult> {
-  const { github, provider, cache, maxSteps } = deps;
+  const { github, provider, cache } = deps;
   const { owner, repo, signal } = req;
   const progress: OnProgress = req.onProgress ?? (() => {});
+  const mode: TourMode = req.issue ? 'issue' : 'repo';
+  const maxSteps = mode === 'issue' ? Math.min(deps.maxSteps, ISSUE_MAX_STEPS) : deps.maxSteps;
 
-  progress('fetching', `Fetching ${owner}/${repo} from GitHub…`);
+  progress('fetching', req.issue ? `Reading issue #${req.issue} and ${owner}/${repo}…` : `Fetching ${owner}/${repo} from GitHub…`);
   const info = await github.getRepo(owner, repo);
+  const issue = req.issue ? await github.getIssue(owner, repo, req.issue) : undefined;
+  if (issue?.pull_request !== undefined) throw new KittyError('bad_request', `#${issue.number} is a pull request, not an issue. Use "Check my PR" there instead.`);
   const sha = await github.getHeadSha(owner, repo, info.default_branch);
-  const key = `${owner}/${repo}@${sha}`.toLowerCase();
+  const key = `${owner}/${repo}@${sha}${issue ? `#${issue.number}` : ''}`.toLowerCase();
   const hit = info.private ? undefined : cache.get(key); // never share private-repo tours between users
   if (hit) return { ...hit, meta: { ...hit.meta, cached: true } };
 
   const tree = await github.getTree(owner, repo, sha);
-  progress('ranking', tree.truncated ? 'Large repo: ranking key files from a partial file list…' : 'Picking the key files…');
-  const ranked = rankFiles(tree.tree, 25);
+  progress('ranking', issue ? 'Finding the files this issue touches…' : tree.truncated ? 'Large repo: ranking key files from a partial file list…' : 'Picking the key files…');
+  const ranked = rankFiles(tree.tree, 25, issue ? issueHints(issue.title, issue.body ?? '') : undefined);
   const readmePath = findDoc(tree.tree, 'readme');
   const contributingPath = findDoc(tree.tree, 'contributing');
   const [readme, contributing, ...bodies] = await mapLimit(
@@ -101,6 +107,7 @@ export async function getTour(deps: TourServiceDeps, req: TourRequest): Promise<
     readme: readmePath && readme ? { path: readmePath, text: readme } : undefined,
     contributing: contributingPath && contributing ? { path: contributingPath, text: contributing } : undefined,
     files,
+    issue: issue ? { number: issue.number, title: issue.title, body: issue.body ?? '', labels: issue.labels } : undefined,
   });
 
   progress('thinking', 'Kitty is thinking…');
@@ -108,17 +115,17 @@ export async function getTour(deps: TourServiceDeps, req: TourRequest): Promise<
   const onFirst = (): void => progress('writing', 'Kitty is writing the tour…');
   const onRetry = (): void => progress('thinking', 'The model connection dropped; retrying once…');
   // small repos may not have enough candidate files for the usual minimums
-  const minValid = Math.min(MIN_VALID_STEPS, ctx.includedPaths.length);
-  const minSteps = Math.min(MIN_REQUESTED_STEPS, ctx.includedPaths.length);
+  const minValid = Math.min(mode === 'issue' ? ISSUE_MIN_VALID_STEPS : MIN_VALID_STEPS, ctx.includedPaths.length);
+  const minSteps = Math.min(mode === 'issue' ? ISSUE_MIN_REQUESTED_STEPS : MIN_REQUESTED_STEPS, ctx.includedPaths.length);
   if (minValid === 0) throw new KittyError('invalid_model_output', 'This repository has no readable files to build a tour from.');
-  let result = await streamToResult(provider, tourMessages(ctx.text, ctx.nonce, maxSteps, minSteps), signal, onFirst, onRetry);
+  let result = await streamToResult(provider, tourMessages(ctx.text, ctx.nonce, maxSteps, minSteps, mode), signal, onFirst, onRetry);
   let usage = result.usage;
   let checked = validateTour(result.text, repoPaths, maxSteps, minValid);
   let repaired = false;
   if (!checked.ok) {
     progress('repairing', 'Tidying up the tour…');
     repaired = true;
-    result = await streamToResult(provider, repairMessages(result.text, checked.error, ctx.includedPaths, ctx.nonce, maxSteps, minSteps), signal, () => {}, onRetry);
+    result = await streamToResult(provider, repairMessages(result.text, checked.error, ctx.includedPaths, ctx.nonce, maxSteps, minSteps, mode), signal, () => {}, onRetry);
     usage = usage && result.usage
       ? { promptTokens: usage.promptTokens + result.usage.promptTokens, completionTokens: usage.completionTokens + result.usage.completionTokens, totalTokens: usage.totalTokens + result.usage.totalTokens }
       : usage ?? result.usage;
@@ -138,6 +145,8 @@ export async function getTour(deps: TourServiceDeps, req: TourRequest): Promise<
       usage,
       contextTokens: ctx.approxTokens,
       unreadableFiles,
+      defaultBranch: info.default_branch,
+      ...(issue ? { issue: { number: issue.number, title: issue.title, url: issue.html_url, labels: issue.labels } } : {}),
     },
   };
   if (!info.private) cache.set(key, out);

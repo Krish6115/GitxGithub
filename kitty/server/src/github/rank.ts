@@ -67,8 +67,11 @@ const CAPS: Record<string, number> = { ci: 2, test: 2, 'docs folder': 2, 'entry 
  * Top `limit` files, deterministic (score desc, then path), with diversity caps:
  * at most 3 files per directory (4 under source roots) and small caps for CI / tests / docs-folder files.
  */
-export function rankFiles(tree: TreeEntry[], limit = 25): RankedFile[] {
-  const scored = tree.map(scoreFile).filter((f): f is RankedFile => f !== null);
+export function rankFiles(tree: TreeEntry[], limit = 25, issue?: IssueHints): RankedFile[] {
+  const scored = tree
+    .map(scoreFile)
+    .filter((f): f is RankedFile => f !== null)
+    .map((f) => (issue ? boostForIssue(f, issue) : f));
   scored.sort((a, b) => b.score - a.score || (a.path < b.path ? -1 : 1));
   const perDir = new Map<string, number>();
   const perKind = new Map<string, number>();
@@ -85,6 +88,54 @@ export function rankFiles(tree: TreeEntry[], limit = 25): RankedFile[] {
     if (out.length >= limit) break;
   }
   return out;
+}
+
+/** What an issue mentions (words, identifiers, file names), used to pull matching files up the ranking. */
+export interface IssueHints {
+  keywords: Set<string>;
+  text: string;
+}
+
+const STOP = new Set(
+  ('this that with from have when what which there their they then than them were will would should could about after before ' +
+    'into only also just like make made does doesn using used user users more some other error errors issue issues file files ' +
+    'line lines code work works working expected actual behavior behaviour version versions steps step reproduce repro please ' +
+    'thanks thank sure need needs want wants able because while where here same each every').split(' '),
+);
+
+/** Split "src/userProfile_api.ts" into ["src", "user", "profile", "api"] (words of 3+ letters). */
+const pathWords = (p: string): string[] =>
+  p
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w.length >= 3);
+
+export function issueHints(title: string, body: string): IssueHints {
+  const text = `${title}\n${body.slice(0, 6000)}`;
+  const counts = new Map<string, number>();
+  for (const w of pathWords(text)) if (w.length >= 4 && !STOP.has(w) && !/^\d+$/.test(w)) counts.set(w, (counts.get(w) ?? 0) + 1);
+  // title words count extra: they usually name the thing that is broken
+  for (const w of pathWords(title)) if (counts.has(w)) counts.set(w, (counts.get(w) ?? 0) + 2);
+  const keywords = new Set([...counts].sort((a, b) => b[1] - a[1]).slice(0, 25).map(([w]) => w));
+  return { keywords, text: text.toLowerCase() };
+}
+
+/** +3 per issue keyword in the file's path (max +12); +15 when the issue names the file itself. */
+export function boostForIssue(f: RankedFile, hints: IssueHints): RankedFile {
+  const name = (f.path.split('/').at(-1) ?? '').toLowerCase();
+  const matches = new Set(pathWords(f.path).filter((w) => hints.keywords.has(w)));
+  let score = f.score;
+  const reasons = [...f.reasons];
+  if (matches.size > 0) {
+    score += Math.min(12, matches.size * 3);
+    reasons.push(`issue mentions ${[...matches].slice(0, 3).join(', ')}`);
+  }
+  if (name.length >= 5 && hints.text.includes(name)) {
+    score += 15;
+    reasons.push('named in the issue');
+  }
+  return { ...f, score: Math.round(score * 10) / 10, reasons };
 }
 
 /** Locate README / CONTRIBUTING at the root (or .github/, docs/). */

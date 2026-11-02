@@ -17,6 +17,8 @@ export interface TourContextInput {
   readme?: { path: string; text: string } | undefined;
   contributing?: { path: string; text: string } | undefined;
   files: { file: RankedFile; text: string }[];
+  /** "Help me fix this issue": the issue the developer wants to fix. */
+  issue?: { number: number; title: string; body: string; labels: string[] } | undefined;
 }
 
 export interface TourContext {
@@ -49,6 +51,12 @@ export function buildTourContext(input: TourContextInput, budgetTokens = CONTEXT
     `Primary language: ${input.info.language ?? 'unknown'} | Stars: ${input.info.stargazers_count} | Files: ${input.fileCount}${input.partial ? ' (file list truncated by GitHub: large repo, partial view)' : ''}`,
   ];
   const parts: string[] = [meta.join('\n')];
+  if (input.issue) {
+    const i = input.issue;
+    const labels = i.labels.length ? `\nLabels: ${i.labels.join(', ')}` : '';
+    const body = `Title: ${i.title}${labels}\n\n${excerpt(i.body || '(no description)', 120, 6000)}`;
+    parts.push(`## The issue to fix (#${i.number})\n${untrusted(`issue-${i.number}`, body, nonce)}`);
+  }
   if (input.info.description) parts.push(`## Description\n${untrusted('description', input.info.description, nonce)}`);
   parts.push(`## Top-level layout\n${untrusted('layout', input.layout.join('\n'), nonce)}`);
   if (input.readme) parts.push(`## README (${input.readme.path}, excerpt)\n${untrusted(input.readme.path, excerpt(input.readme.text, 300, 12_000), nonce)}`);

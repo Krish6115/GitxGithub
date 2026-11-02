@@ -4,11 +4,22 @@ Builds Kitty's knowledge index from the repository's learning material.
 
 | Command (run in `kitty/`) | What it does |
 |---|---|
-| `npm run ingest` | Reads the learning sources and writes `kitty/server/data/index.json` (committed). |
+| `npm run ingest` | Reads the learning sources and writes `kitty/server/data/index.json` (committed). Re-run after changing any source, the chunker or `server/src/rag/tokenize.ts`. |
+| `npm run eval -w ingest` | Retrieval eval: hit@6 and MRR over `eval/questions.json` (fails below 85%). Add `-- --verbose` to see every result, or `-- --no-synonyms` for an ablation. |
 | `npm run refs:fetch -w ingest` | Downloads the pinned upstream files for the knowledge references into `kitty/ingest/.cache/` (gitignored). |
 | `npm run refs:build -w ingest` | Regenerates `Git/references/*.md`, `Scenario-Based_Guide/references/*.md` and `Git/references/SOURCES.md` from that cache. |
 
 `AUDIT.md` records which topics the PDFs cover and why the references exist.
+
+## What gets indexed
+
+- **PDFs:** every PDF in `Git/` and `Scenario-Based_Guide/`. Text comes from `unpdf`, and headings are inferred from font size.
+  A PDF with no text layer uses `transcripts/<same name>.md` instead, and its chunks still cite the PDF.
+- **References:** every `.md` under a `references/` folder, except `SOURCES.md`. Each excerpt's `> Source:` line sets the chunk's URL and license.
+- **Chunks:** split by heading, about 400–600 tokens (estimated at ~4 characters per token), with ~60 tokens of overlap when a long
+  section is split. Code fences are never broken. Each chunk is `{id, text, title, headingPath, sourceFile, sourceUrl, license}`.
+- **Search:** MiniSearch BM25 with field boosts (title 3, headings 2, text 1). The tokenizer, synonyms and index schema live in
+  `kitty/server/src/rag/` and are shared with the retriever, so indexing and querying always match.
 
 ## Regenerating the knowledge references
 

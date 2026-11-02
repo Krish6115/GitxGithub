@@ -21,7 +21,7 @@ A Chrome extension that lives on github.com:
 - 💬 **Ask Kitty:** a side-panel tutor with scenario-first answers that cite their sources.
 - 🔍 **Explain this:** select a command, diff or PR text and get a short explanation with a risk label.
 
-**Install:** download `kitty-extension-v0.2.0.zip` from the [latest release](https://github.com/Krish6115/GitKitty/releases/latest), unzip it, open `chrome://extensions`, turn on **Developer mode**, then **Load unpacked**.
+**Install:** download `kitty-extension-v0.3.0.zip` from the [latest release](https://github.com/Krish6115/GitKitty/releases/latest), unzip it, open `chrome://extensions`, turn on **Developer mode**, then **Load unpacked**.
 
 ➡️ How it works, running your own server, and costs: **[kitty/README.md](kitty/README.md)**
 

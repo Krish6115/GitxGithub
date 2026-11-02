@@ -17,3 +17,6 @@ Thumbs.db
 
 # Kitty ingest download cache
 kitty/ingest/.cache/
+
+# Extension e2e screenshots
+kitty/extension/e2e/out/

@@ -1,0 +1,23 @@
+# Extension end-to-end checks
+
+Real-browser checks that load `kitty/extension/dist` unpacked into a throwaway Chromium profile and drive github.com.
+They are not part of `npm test`: they need a browser, network access and the Kitty server.
+
+```bash
+cd kitty
+npm run build -w extension
+npm run dev -w server            # in another terminal (mock model by default; LLM_PROVIDER=bharatcode for the real one)
+npm run e2e -w extension -- all  # or: cat | tour | chat | explain
+```
+
+| Suite | What it checks |
+|---|---|
+| `cat` | The cat renders on github.com and survives GitHub's in-page navigation. |
+| `tour` | Start a tour from the cat menu; Next/Next/Back across file pages; browser back button; leave and resume. Option: `--repo owner/name`. |
+| `chat` | Cat menu "Ask Kitty" opens the side panel chat tab; a question streams an answer with citations. Option: `--question "..."`. |
+| `explain` | Selecting a git command shows the pill; the explanation streams; "Ask a follow-up"; the right-click path (simulated: Chrome's native menu can't be automated); Esc closes. |
+
+**Browser:** branded Chrome no longer loads unpacked extensions from the command line, so a Playwright Chromium is used.
+Install one with `npx playwright install chromium`, or point `KITTY_E2E_CHROME` at a Chromium executable.
+
+Screenshots are written to `e2e/out/` (gitignored).

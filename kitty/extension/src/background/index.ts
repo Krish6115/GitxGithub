@@ -5,8 +5,10 @@ import { getSettings } from '../shared/settings';
 import { readSse } from '../shared/sse';
 import { startState, TOUR_STATE_KEY, type TourResult } from '../shared/tour';
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
   void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+  // first install: open the welcome screen (the side panel page) in a tab
+  if (details.reason === 'install') void chrome.tabs.create({ url: chrome.runtime.getURL('src/sidepanel/index.html?welcome') });
 });
 // Content scripts need to read/write the running tour (storage.session is extension-only by default).
 void chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });

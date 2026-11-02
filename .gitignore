@@ -20,3 +20,6 @@ kitty/ingest/.cache/
 
 # Extension e2e screenshots
 kitty/extension/e2e/out/
+
+# Extension release zips
+kitty/extension/*.zip

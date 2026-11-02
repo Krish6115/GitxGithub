@@ -13,6 +13,7 @@ npm run e2e -w extension -- all  # or: cat | tour | chat | explain
 | Suite | What it checks |
 |---|---|
 | `cat` | The cat renders on github.com and survives GitHub's in-page navigation. |
+| `onboarding` | The welcome tab opens on install; Test connection reaches the server; finishing shows the normal tabs. Option: `--server URL`. |
 | `tour` | Start a tour from the cat menu; Next/Next/Back across file pages; browser back button; leave and resume. Option: `--repo owner/name`. |
 | `chat` | Cat menu "Ask Kitty" opens the side panel chat tab; a question streams an answer with citations. Option: `--question "..."`. |
 | `explain` | Selecting a git command shows the pill; the explanation streams; "Ask a follow-up"; the right-click path (simulated: Chrome's native menu can't be automated); Esc closes. |

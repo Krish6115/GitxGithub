@@ -10,7 +10,16 @@ export async function tourE2E(repo = 'Krish6115/GitxGithub'): Promise<void> {
     const meta = await page.locator('#kitty-root [data-kitty="step"] .meta').innerText();
     const highlighted = await page.locator('#kitty-root [data-kitty="highlight"]').count();
     const file = decodeURIComponent(new URL(page.url()).pathname.split('/').slice(5).join('/'));
-    return `${meta.replace(/\n/g, ' ')} | file: ${file} | highlight: ${highlighted ? 'yes' : 'no'}`;
+    await page.waitForTimeout(1700); // let the cat finish walking
+    const beside = await page.evaluate(() => {
+      const root = document.getElementById('kitty-root')?.shadowRoot;
+      const cat = root?.querySelector('.cat')?.getBoundingClientRect();
+      const hl = root?.querySelector('[data-kitty="highlight"]')?.getBoundingClientRect();
+      if (!cat || !hl) return 'n/a';
+      const near = cat.left >= hl.right - 24 && cat.left - hl.right < 120 && cat.bottom > hl.top - 40 && cat.top < hl.bottom + 40;
+      return near ? 'yes' : `no (cat at ${Math.round(cat.left)},${Math.round(cat.top)}; header right edge ${Math.round(hl.right)})`;
+    });
+    return `${meta.replace(/\n/g, ' ')} | file: ${file} | highlight: ${highlighted ? 'yes' : 'no'} | cat beside header: ${beside}`;
   };
   const click = async (label: string): Promise<void> => {
     await page.locator('#kitty-root [data-kitty="step"] button', { hasText: label }).click();

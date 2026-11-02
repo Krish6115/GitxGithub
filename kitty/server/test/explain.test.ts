@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createApp } from '../src/app.js';
+import { createApp } from '../src/create-app.js';
 import { loadEnv } from '../src/env.js';
 import { classifySelection, commandRisk } from '../src/explain/classify.js';
 import { explainMessages } from '../src/explain/prompt.js';
@@ -36,8 +36,8 @@ describe('commandRisk', () => {
     ['git reset --soft HEAD~1', 'rewrites_history'],
     ['git reset --hard HEAD~3', 'can_lose_work'],
     ['git clean -fd', 'can_lose_work'],
-    ['git checkout -- src/app.js', 'can_lose_work'],
-    ['git restore src/app.js', 'can_lose_work'],
+    ['git checkout -- src/create-app.js', 'can_lose_work'],
+    ['git restore src/create-app.js', 'can_lose_work'],
     ['git branch -D feature', 'can_lose_work'],
     ['git stash drop', 'can_lose_work'],
     ['git push origin --delete old-branch', 'can_lose_work'],

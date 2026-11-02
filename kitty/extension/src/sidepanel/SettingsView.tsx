@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { DEFAULT_SERVER_URL } from '../shared/config';
 import { getSettings, saveSettings, type Settings } from '../shared/settings';
+import { ServerCheckButton } from './ServerCheck';
 
 type TextKey = 'serverUrl' | 'kittyKey' | 'githubToken';
 
@@ -28,6 +29,7 @@ export function SettingsView() {
       }}
     >
       <label>Kitty server URL<input type="url" required {...field('serverUrl')} /></label>
+      <ServerCheckButton url={s.serverUrl} />
       <label>
         BharatCode API key <span class="muted small">(optional: use your own key)</span>
         <input type="password" autocomplete="off" placeholder="Uses the server's key when empty" {...field('kittyKey')} />

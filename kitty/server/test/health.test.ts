@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createApp } from '../src/app.js';
+import { createApp } from '../src/create-app.js';
 import { loadEnv } from '../src/env.js';
 import { VERSION } from '../src/version.js';
 

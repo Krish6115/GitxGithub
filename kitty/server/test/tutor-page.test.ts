@@ -33,3 +33,26 @@ describe('tutor page context', () => {
     expect(without).not.toContain('PAGE:');
   });
 });
+
+describe('tutor tour context', () => {
+  const tour = {
+    repo: 'cli/cli',
+    summary: 'GitHub CLI',
+    stepNumber: 4,
+    totalSteps: 10,
+    step: { path: 'pkg/cmd/login.go', title: 'Login command', what: 'Implements login.', why_it_matters: 'Central flow.' },
+  };
+
+  it('accepts an optional tour step in the request', () => {
+    expect(TutorRequestSchema.parse({ question: 'why?', tour }).tour?.stepNumber).toBe(4);
+    expect(() => TutorRequestSchema.parse({ question: 'why?', tour: { ...tour, stepNumber: 0 } })).toThrow();
+  });
+
+  it('puts the step in an untrusted TOUR block', () => {
+    const msg = tutorMessages('why does this step matter?', [], [], true, undefined, 'n0nce', tour).at(-1)!.content;
+    expect(msg).toContain('TOUR:');
+    expect(msg).toContain('<<<UNTRUSTED_REPO_CONTENT n0nce tour-step>>>');
+    expect(msg).toContain('Current step: 4 of 10');
+    expect(msg).toContain('pkg/cmd/login.go');
+  });
+});

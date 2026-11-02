@@ -18,10 +18,26 @@ export const PageContextSchema = z.object({
 });
 export type PageContext = z.infer<typeof PageContextSchema>;
 
+/** The repo tour the user is on, and the step they're asking about (model-written from repo content; untrusted). */
+export const TourContextSchema = z.object({
+  repo: z.string().max(200),
+  summary: z.string().max(2000).default(''),
+  stepNumber: z.number().int().min(1).max(50),
+  totalSteps: z.number().int().min(1).max(50),
+  step: z.object({
+    path: z.string().max(500),
+    title: z.string().max(300),
+    what: z.string().max(2000),
+    why_it_matters: z.string().max(2000),
+  }),
+});
+export type TourContext = z.infer<typeof TourContextSchema>;
+
 export const TutorRequestSchema = z.object({
   question: z.string().trim().min(1).max(2000),
   history: z.array(TutorTurnSchema).max(40).default([]),
   page: PageContextSchema.optional(),
+  tour: TourContextSchema.optional(),
 });
 export type TutorRequest = z.infer<typeof TutorRequestSchema>;
 

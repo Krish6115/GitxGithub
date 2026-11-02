@@ -35,3 +35,7 @@ export function errorText(code: string, fallback: string): string {
       return fallback || 'Something went wrong.';
   }
 }
+
+/** chrome.storage.session key for the side panel's active tab ("tour" | "chat" | "settings"). */
+export const SIDEPANEL_TAB_KEY = 'kitty:sidepanel-tab';
+export type OpenChatMessage = { type: 'open-chat' };

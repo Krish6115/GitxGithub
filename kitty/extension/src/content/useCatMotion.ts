@@ -1,20 +1,20 @@
 // Drives Kitty's position and animation frames: walks to a target, thinks while loading, sleeps when idle.
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { frameFor, homePosition, movedEnough, SLEEP_AFTER_MS, TICK_MS, viewport, walkDuration, type CatMode, type Point } from './cat-motion';
-import type { FrameName } from './sprite-frames';
+import { frameFor, homePosition, movedEnough, SLEEP_AFTER_MS, TICK_MS, viewport, walkDuration, WAVE_TICKS, type CatMode, type Point } from './cat-motion';
+import type { Frame } from './sprite-sheet';
 
 const reducedMotion = (): boolean => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
 export interface CatMotion {
   pos: Point;
-  frame: FrameName;
+  frame: Frame;
   flip: boolean;
   mode: CatMode;
   /** CSS transition duration for the current move (ms). */
   moveMs: number;
 }
 
-/** `target` null = go home (bottom-right). `thinking` shows the thinking bob. */
+/** `target` null = go home (bottom-right). `thinking` plays the think loop; the cat waves hello on arrival and when thinking ends. */
 export function useCatMotion(target: Point | null, thinking: boolean): CatMotion {
   const [vp, setVp] = useState(viewport);
   const [pos, setPos] = useState<Point>(() => homePosition(viewport()));
@@ -24,6 +24,13 @@ export function useCatMotion(target: Point | null, thinking: boolean): CatMotion
   const [tick, setTick] = useState(0);
   const [asleep, setAsleep] = useState(false);
   const lastActivity = useRef(Date.now());
+  const [waveUntil, setWaveUntil] = useState(() => Date.now() + WAVE_TICKS * TICK_MS);
+  const wasThinking = useRef(thinking);
+
+  useEffect(() => {
+    if (wasThinking.current && !thinking) setWaveUntil(Date.now() + WAVE_TICKS * TICK_MS);
+    wasThinking.current = thinking;
+  }, [thinking]);
 
   useEffect(() => {
     const onResize = (): void => setVp(viewport());
@@ -60,6 +67,7 @@ export function useCatMotion(target: Point | null, thinking: boolean): CatMotion
   }, []);
 
   const walking = Date.now() < walkingUntil;
-  const mode: CatMode = walking ? 'walk' : thinking ? 'think' : asleep && !target ? 'sleep' : 'idle';
+  const waving = Date.now() < waveUntil;
+  const mode: CatMode = walking ? 'walk' : thinking ? 'think' : waving ? 'wave' : asleep && !target ? 'sleep' : 'idle';
   return { pos, frame: frameFor(mode, tick), flip: walking ? flip : false, mode, moveMs };
 }

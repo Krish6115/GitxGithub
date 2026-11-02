@@ -20,12 +20,9 @@
 }
 .cat:hover { transform: translateY(-2px); }
 .cat:focus-visible { outline: 2px solid #f0a04b; outline-offset: 4px; border-radius: 6px; }
-.cat svg { display: block; }
-.mode-think .cat { animation: bob 0.9s ease-in-out infinite; }
-.mode-walk .cat svg { animation: step 0.3s steps(2) infinite; }
-@keyframes step { 50% { transform: translateY(-1px); } }
-.mode-sleep .cat { opacity: 0.9; }
-@keyframes bob { 50% { transform: translateY(-6px); } }
+.sprite { display: block; background-repeat: no-repeat; }
+/* the cat is dark: a soft light rim keeps it visible on GitHub's dark theme */
+:host([data-theme="dark"]) .sprite { filter: drop-shadow(0 0 1px rgba(230, 237, 243, 0.55)); }
 
 .bubble {
   box-sizing: border-box;
@@ -72,7 +69,7 @@ button.ghost { background: transparent; }
 :host([data-theme="dark"]) .badge { background: #3d2a0f; color: #f6c27f; }
 :host([data-theme="dark"]) button.ghost { color: #e6edf3; border-color: #9da7b3; }
 @media (prefers-reduced-motion: reduce) {
-  .mode-think .cat, .mode-walk .cat svg, .thinking::after { animation: none; }
+  .thinking::after { animation: none; }
   .kitty, .highlight { transition: none; }
 }
 

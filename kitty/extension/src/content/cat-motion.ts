@@ -1,24 +1,29 @@
 // Pure animation logic for Kitty: which frame to show, where to walk, how long walking takes.
-import type { FrameName } from './sprite-frames';
 import type { Box } from './highlight';
+import { ANIMATIONS, type AnimationName, type Frame } from './sprite-sheet';
 
-export type CatMode = 'idle' | 'walk' | 'think' | 'sleep';
+export type CatMode = 'idle' | 'walk' | 'think' | 'sleep' | 'wave';
 
-export const CAT_SIZE = 64;
+export const CAT_SIZE = 96;
 export const HOME_MARGIN = 24;
 export const SLEEP_AFTER_MS = 120_000;
 export const TICK_MS = 150;
 
-const WALK: FrameName[] = ['walkA', 'walkB', 'walkC', 'walkB'];
+/** Ticks each frame stays on screen, per animation (walk and wave are fast, sleep is slow). */
+const HOLD: Record<AnimationName, number> = { walk: 1, wave: 2, blink: 1, idle: 3, think: 2, sleep: 4 };
+
+const loop = (anim: AnimationName, tick: number): Frame => ({ anim, index: Math.floor(tick / HOLD[anim]) % ANIMATIONS[anim].frames });
+
+/** Ticks a full wave plays for (two waves of the paw). */
+export const WAVE_TICKS = ANIMATIONS.wave.frames * HOLD.wave * 2;
 
 /** Frame for a mode at a given animation tick (one tick = TICK_MS). */
-export function frameFor(mode: CatMode, tick: number): FrameName {
-  if (mode === 'sleep') return 'sleep';
-  if (mode === 'walk') return WALK[tick % WALK.length] ?? 'walkA';
-  const t = tick % 40; // ~6s idle loop: blink at the start, tail flick in the middle
-  if (t === 0 || t === 1) return 'blink';
-  if (t >= 20 && t <= 22) return 'tail';
-  return 'idle';
+export function frameFor(mode: CatMode, tick: number): Frame {
+  if (mode !== 'idle') return loop(mode, tick);
+  // ~7s idle loop: breathe and wave the tail, with a quick blink every loop
+  const t = tick % 48;
+  if (t < ANIMATIONS.blink.frames) return { anim: 'blink', index: t };
+  return loop('idle', tick);
 }
 
 export interface Point {
@@ -33,7 +38,7 @@ export interface Viewport {
 /** Viewport size without scrollbars (what `position: fixed` offsets are measured against). */
 export const viewport = (): Viewport => ({ width: document.documentElement.clientWidth, height: document.documentElement.clientHeight });
 
-/** Resting spot in the bottom-right corner (top-left of the 64px cat). */
+/** Resting spot in the bottom-right corner (top-left of the cat). */
 export const homePosition = (vp: Viewport): Point => ({
   x: vp.width - CAT_SIZE - HOME_MARGIN,
   y: vp.height - CAT_SIZE - HOME_MARGIN,

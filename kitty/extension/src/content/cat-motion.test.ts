@@ -1,32 +1,31 @@
 import { describe, expect, it } from 'vitest';
-import { besideBox, CAT_SIZE, frameFor, homePosition, movedEnough, walkDuration } from './cat-motion';
-import { FRAMES, PALETTE } from './sprite-frames';
+import { besideBox, CAT_SIZE, frameFor, homePosition, movedEnough, walkDuration, WAVE_TICKS } from './cat-motion';
+import { ANIMATIONS, SHEET_COLS } from './sprite-sheet';
 
-describe('sprite frames', () => {
-  it('are all 16x16 and use only palette characters', () => {
-    for (const [name, rows] of Object.entries(FRAMES)) {
-      expect(rows, name).toHaveLength(16);
-      for (const row of rows) {
-        expect(row, name).toHaveLength(16);
-        for (const ch of row) expect(ch === '.' || ch in PALETTE, `${name}: ${ch}`).toBe(true);
-      }
-    }
-  });
-
-  it('walk frames actually differ (legs move)', () => {
-    expect(FRAMES.walkA.join()).not.toBe(FRAMES.walkB.join());
-    expect(FRAMES.walkB.join()).not.toBe(FRAMES.walkC.join());
+describe('sprite sheet', () => {
+  it('fits every animation in the 8-column sheet', () => {
+    for (const [name, a] of Object.entries(ANIMATIONS)) expect(a.frames, name).toBeLessThanOrEqual(SHEET_COLS);
+    expect(new Set(Object.values(ANIMATIONS).map((a) => a.row)).size).toBe(Object.keys(ANIMATIONS).length);
   });
 });
 
 describe('frameFor', () => {
-  it('cycles walk frames, blinks and flicks the tail when idle, and sleeps', () => {
-    expect([0, 1, 2, 3, 4].map((t) => frameFor('walk', t))).toEqual(['walkA', 'walkB', 'walkC', 'walkB', 'walkA']);
-    expect(frameFor('idle', 0)).toBe('blink');
-    expect(frameFor('idle', 21)).toBe('tail');
-    expect(frameFor('idle', 30)).toBe('idle');
-    expect(frameFor('think', 30)).toBe('idle');
-    expect(frameFor('sleep', 7)).toBe('sleep');
+  it('loops each animation through all of its frames', () => {
+    expect([0, 1, 2, 7, 8].map((t) => frameFor('walk', t).index)).toEqual([0, 1, 2, 7, 0]);
+    expect(frameFor('sleep', 4)).toEqual({ anim: 'sleep', index: 1 });
+    expect(frameFor('think', 13)).toEqual({ anim: 'think', index: 0 });
+    expect([0, 2, 4, 6].map((t) => frameFor('wave', t).index)).toEqual([0, 1, 2, 3]);
+  });
+
+  it('blinks at the start of each idle loop, then breathes', () => {
+    expect([0, 1, 2].map((t) => frameFor('idle', t))).toEqual([0, 1, 2].map((index) => ({ anim: 'blink', index })));
+    expect(frameFor('idle', 3).anim).toBe('idle');
+    expect(frameFor('idle', 48).anim).toBe('blink');
+    for (let t = 0; t < 200; t++) expect(frameFor('idle', t).index).toBeLessThan(ANIMATIONS[frameFor('idle', t).anim].frames);
+  });
+
+  it('waves twice', () => {
+    expect(WAVE_TICKS).toBe(16);
   });
 });
 
@@ -38,7 +37,7 @@ describe('positions', () => {
   });
 
   it('stands beside the highlighted header, inside the viewport', () => {
-    expect(besideBox({ top: 180, left: 330, width: 260, height: 40 }, vp)).toEqual({ x: 602, y: 168 });
+    expect(besideBox({ top: 180, left: 330, width: 260, height: 40 }, vp)).toEqual({ x: 602, y: 200 - CAT_SIZE / 2 });
     expect(besideBox({ top: 180, left: 900, width: 400, height: 40 }, vp).x).toBe(1280 - CAT_SIZE - 8);
     expect(besideBox({ top: -200, left: 10, width: 100, height: 40 }, vp).y).toBe(8);
   });

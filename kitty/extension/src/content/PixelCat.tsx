@@ -1,26 +1,23 @@
-// Renders one sprite frame as crisp SVG pixels.
-import { useMemo } from 'preact/hooks';
-import { FRAMES, PALETTE, type FrameName } from './sprite-frames';
+// Renders one frame of Kitty's sprite sheet.
+import { ANIMATIONS, CELL, SHEET_COLS, SHEET_ROWS, SHEET_URL, type Frame } from './sprite-sheet';
 
-export function PixelCat({ frame, flip = false, size = 64 }: { frame: FrameName; flip?: boolean; size?: number }) {
-  const rects = useMemo(
-    () =>
-      FRAMES[frame].flatMap((row, y) =>
-        [...row].flatMap((ch, x) => (PALETTE[ch] ? [<rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={PALETTE[ch]} />] : [])),
-      ),
-    [frame],
-  );
+export function PixelCat({ frame, flip = false, size = CELL }: { frame: Frame; flip?: boolean; size?: number }) {
+  const scale = size / CELL;
+  const { row } = ANIMATIONS[frame.anim];
   return (
-    <svg
-      viewBox="0 0 16 16"
-      width={size}
-      height={size}
-      shape-rendering="crispEdges"
+    <div
+      class="sprite"
       role="img"
       aria-label="Kitty the cat"
-      style={flip ? { transform: 'scaleX(-1)' } : undefined}
-    >
-      {rects}
-    </svg>
+      data-frame={`${frame.anim}-${frame.index}`}
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        backgroundImage: `url(${SHEET_URL})`,
+        backgroundSize: `${SHEET_COLS * size}px ${SHEET_ROWS * size}px`,
+        backgroundPosition: `-${frame.index * CELL * scale}px -${row * CELL * scale}px`,
+        transform: flip ? 'scaleX(-1)' : undefined,
+      }}
+    />
   );
 }

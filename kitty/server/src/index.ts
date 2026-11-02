@@ -4,8 +4,8 @@ import { serve } from '@hono/node-server';
 import { createApp } from './app.js';
 import { loadEnv } from './env.js';
 
-// Local dev: read kitty/.env if present. In production, env comes from the host.
-const dotEnvPath = fileURLToPath(new URL('../../.env', import.meta.url));
+// Local dev: read kitty/server/.env if present. In production, env comes from the host.
+const dotEnvPath = fileURLToPath(new URL('../.env', import.meta.url));
 if (existsSync(dotEnvPath)) process.loadEnvFile(dotEnvPath);
 
 const env = loadEnv();

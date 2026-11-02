@@ -74,3 +74,45 @@ button.ghost { background: transparent; }
   .is-thinking .cat, .thinking::after { animation: none; }
   .kitty, .highlight { transition: none; }
 }
+
+/* "Explain this" */
+.ask-pill {
+  position: fixed;
+  z-index: 2147483647;
+  font: 600 12px/1 system-ui, -apple-system, "Segoe UI", sans-serif !important;
+  padding: 7px 12px !important;
+  border-radius: 999px !important;
+  border: 2px solid #2b2133 !important;
+  background: #f0a04b !important;
+  color: #1f2328 !important;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.2);
+}
+.bubble.explain {
+  position: fixed;
+  z-index: 2147483647;
+  width: min(380px, calc(100vw - 16px));
+  max-width: none;
+  font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #1f2328;
+}
+.explain-body { max-height: 260px; overflow-y: auto; }
+.explain-body .md p, .explain-body .md ul, .explain-body .md ol { margin: 0 0 6px; }
+.explain-body .md ul, .explain-body .md ol { padding-left: 18px; }
+.explain-body .md code { font: 12px ui-monospace, SFMono-Regular, Consolas, monospace; background: rgb(127 127 127 / 0.15); padding: 1px 4px; border-radius: 4px; }
+.explain-body .code { position: relative; margin: 0 0 6px; }
+.explain-body .code pre { margin: 0; padding: 24px 8px 8px; overflow-x: auto; background: rgb(127 127 127 / 0.08); border-radius: 6px; }
+.explain-body .code pre code { background: none; padding: 0; }
+.explain-body .copy { position: absolute; top: 3px; right: 3px; padding: 1px 6px !important; font-size: 11px !important; background: transparent !important; }
+.explain-body .cite { font-size: 10px; vertical-align: super; color: #b4690e; text-decoration: none; }
+.risk { border-radius: 999px; padding: 0 8px; font-weight: 600; border: 1px solid; }
+.risk-safe { color: #1a7f37; border-color: #1a7f37; background: #dafbe1; }
+.risk-rewrite { color: #9a6700; border-color: #d4a72c; background: #fff8c5; }
+.risk-danger { color: #cf222e; border-color: #cf222e; background: #ffebe9; }
+.warn { color: #9a6700; font-size: 12px; }
+.error { color: #cf222e; }
+.srcs { font-size: 12px; color: #57606a; } .srcs a { margin-right: 6px; color: #b4690e; }
+@media (prefers-color-scheme: dark) {
+  .bubble.explain { color: #e6edf3; }
+  .risk-safe { color: #3fb950; background: #0f2a17; } .risk-rewrite { color: #d29922; background: #2b2111; } .risk-danger { color: #f85149; background: #2d1214; }
+  .srcs { color: #9da7b3; }
+}

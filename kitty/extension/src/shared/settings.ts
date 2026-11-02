@@ -7,6 +7,8 @@ export interface Settings {
   kittyKey?: string;
   /** Optional GitHub token for higher API limits, sent as X-Kitty-GitHub-Token. */
   githubToken?: string;
+  /** Show the floating "Ask Kitty" button when text is selected on GitHub (default on). */
+  explainPill?: boolean;
 }
 
 const KEY = 'kitty:settings';

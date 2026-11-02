@@ -1,4 +1,5 @@
 import { render } from 'preact';
+import { ExplainUI } from './ExplainUI';
 import { KittyApp } from './KittyApp';
 import css from './cat.css?inline';
 
@@ -15,7 +16,13 @@ function mount(): void {
   shadow.append(style, container);
   // Attach to <html>, not <body>: GitHub's Turbo navigation swaps <body>.
   document.documentElement.append(host);
-  render(<KittyApp spriteUrl={chrome.runtime.getURL('sprites/kitty.svg')} />, container);
+  render(
+    <>
+      <KittyApp spriteUrl={chrome.runtime.getURL('sprites/kitty.svg')} />
+      <ExplainUI hostId={HOST_ID} />
+    </>,
+    container,
+  );
 }
 
 mount();

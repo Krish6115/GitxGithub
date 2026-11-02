@@ -45,5 +45,6 @@ export const css = `
   .composer textarea { resize: vertical; }
   .settings { display: flex; flex-direction: column; gap: 10px; } .settings label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; }
   .settings label span { font-weight: 400; }
+  .settings label.check { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; } .settings label.check input { width: auto; }
   @media (prefers-reduced-motion: reduce) { .thinking::after { animation: none; } }
 `;

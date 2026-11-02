@@ -30,7 +30,7 @@ export const css = `
   .md p, .md ul, .md ol { margin: 0 0 8px; } .md ul, .md ol { padding-left: 20px; }
   .md code { font: 12px ui-monospace, SFMono-Regular, Consolas, monospace; background: rgb(127 127 127 / 0.15); padding: 1px 4px; border-radius: 4px; }
   .code { position: relative; margin: 0 0 8px; }
-  .code pre { margin: 0; padding: 10px; overflow-x: auto; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; }
+  .code pre { margin: 0; padding: 26px 10px 10px; overflow-x: auto; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; }
   .code pre code { background: none; padding: 0; }
   .copy { position: absolute; top: 4px; right: 4px; font: 11px system-ui; cursor: pointer; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); color: var(--fg); padding: 1px 6px; }
   .cite { font-size: 11px; vertical-align: super; text-decoration: none; color: var(--accent); }

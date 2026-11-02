@@ -60,3 +60,13 @@ export function listSources(repoRoot: string, dirs: string[] = SOURCE_DIRS, tran
   }
   return found.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 }
+
+export const CORRECTIONS_PATH = 'kitty/ingest/corrections.md';
+export const CORRECTIONS_LICENSE = 'Kitty project (corrections; links official docs)';
+
+/** Kitty's own corrections file (AUDIT.md §5), indexed alongside the learning sources. */
+export function correctionsSource(repoRoot: string): SourceFile | null {
+  const full = join(repoRoot, CORRECTIONS_PATH);
+  if (!existsSync(full)) return null;
+  return { path: CORRECTIONS_PATH, kind: 'md', bytes: statSync(full).size, url: blobUrl(CORRECTIONS_PATH), license: CORRECTIONS_LICENSE };
+}

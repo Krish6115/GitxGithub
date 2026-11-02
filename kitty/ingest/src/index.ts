@@ -4,13 +4,14 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildIndex } from './build-index.js';
 import { estimateTokens } from './chunk.js';
-import { listSources } from './sources.js';
+import { correctionsSource, listSources } from './sources.js';
 
 const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const transcriptDir = fileURLToPath(new URL('../transcripts/', import.meta.url));
 const outFile = join(repoRoot, 'kitty', 'server', 'data', 'index.json');
 
-const sources = listSources(repoRoot, undefined, transcriptDir);
+const corrections = correctionsSource(repoRoot);
+const sources = [...listSources(repoRoot, undefined, transcriptDir), ...(corrections ? [corrections] : [])];
 const { file, report } = await buildIndex(repoRoot, sources);
 
 for (const r of report) console.log(`  ${String(r.chunks).padStart(3)} chunks  ${r.via.padEnd(10)}  ${r.path}`);

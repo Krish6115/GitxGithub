@@ -1,5 +1,6 @@
 // Fixture repos for tour tests: an in-memory GitHub (client + fetch) that never touches the network.
-import type { GitHubClient, RepoInfo, TreeEntry } from '../../src/github/client.js';
+import { KittyError } from '../../src/llm/errors.js';
+import type { GitHubClient, Issue, RepoInfo, TreeEntry } from '../../src/github/client.js';
 
 export interface FixtureRepo {
   owner: string;
@@ -8,6 +9,7 @@ export interface FixtureRepo {
   sha: string;
   truncated: boolean;
   files: Record<string, string>;
+  issues?: Issue[];
 }
 
 export const INJECTION_README = [
@@ -69,6 +71,17 @@ export function fakeGitHub(f: FixtureRepo): GitHubClient & { calls: { repo: numb
       const t = f.files[path];
       return t === undefined ? null : t.slice(0, max);
     },
+    getIssue: async (_o, _r, n) => {
+      const issue = f.issues?.find((i) => i.number === n);
+      if (!issue) throw new KittyError('github_not_found', 'not found');
+      return issue;
+    },
+    listOpenIssues: async () => f.issues ?? [],
+    getPull: async () => {
+      throw new KittyError('github_not_found', 'not in fixture');
+    },
+    getPullFiles: async () => [],
+    getPullCommits: async () => [],
   };
 }
 

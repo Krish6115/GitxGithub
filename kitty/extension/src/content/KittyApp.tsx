@@ -25,6 +25,7 @@ function useHighlight(active: boolean, href: string): Box | null {
 export function KittyApp({ spriteUrl }: { spriteUrl: string }) {
   const t = useTour();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [chatHint, setChatHint] = useState(false);
   const step = t.tour && t.onTourRepo ? t.tour.steps[t.tour.currentIndex] : undefined;
   const showStep = Boolean(step && t.atCurrentStep);
   const box = useHighlight(showStep, t.href);
@@ -71,18 +72,32 @@ export function KittyApp({ spriteUrl }: { spriteUrl: string }) {
       </div>
     );
   } else if (menuOpen) {
+    const askKitty = (
+      <button
+        class={t.repo ? 'ghost' : ''}
+        data-kitty="ask"
+        onClick={() => {
+          void chrome.runtime.sendMessage({ type: 'open-chat' }).then((r: { ok?: boolean } | undefined) => {
+            if (r?.ok) setMenuOpen(false);
+            else setChatHint(true);
+          });
+        }}
+      >
+        Ask Kitty a Git question
+      </button>
+    );
     bubble = (
       <div class="bubble menu">
         {t.repo ? (
-          <>
-            <p>Hi! Want a guided walkthrough of <strong>{t.repo.owner}/{t.repo.repo}</strong>?</p>
-            <div class="row">
-              <button data-kitty="start-tour" onClick={() => { setMenuOpen(false); t.start(); }}>Tour this repo</button>
-            </div>
-          </>
+          <p>Hi! Want a guided walkthrough of <strong>{t.repo.owner}/{t.repo.repo}</strong>?</p>
         ) : (
-          <p>Open a repository page and click me for a tour.</p>
+          <p>Hi! Open a repository page for a tour, or ask me anything about Git.</p>
         )}
+        <div class="row">
+          {t.repo && <button data-kitty="start-tour" onClick={() => { setMenuOpen(false); t.start(); }}>Tour this repo</button>}
+          {askKitty}
+        </div>
+        {chatHint && <p class="hint">Click the Kitty icon in the toolbar to open the chat.</p>}
       </div>
     );
   }

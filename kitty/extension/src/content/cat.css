@@ -37,6 +37,7 @@
 .bubble p { margin: 0 0 6px; }
 .bubble h3 { margin: 2px 0 6px; font-size: 15px; }
 .bubble .why { color: #57606a; }
+.bubble .hint { margin: 8px 0 0; font-size: 12px; color: #57606a; }
 .bubble .meta { font-size: 12px; color: #57606a; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .badge { background: #fff1db; color: #7a4b00; border: 1px solid #f0a04b; border-radius: 999px; padding: 0 8px; font-size: 11px; }
 .thinking::after { content: ""; animation: dots 1.2s steps(4) infinite; }

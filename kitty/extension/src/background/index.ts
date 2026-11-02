@@ -1,5 +1,5 @@
 // Service worker: the only part of Kitty that talks to the Kitty server (keys never reach page context).
-import { TOUR_PORT, type TourPortEvent, type TourPortRequest } from '../shared/messages';
+import { SIDEPANEL_TAB_KEY, TOUR_PORT, type OpenChatMessage, type TourPortEvent, type TourPortRequest } from '../shared/messages';
 import { getSettings } from '../shared/settings';
 import { readSse } from '../shared/sse';
 import { startState, TOUR_STATE_KEY, type TourResult } from '../shared/tour';
@@ -64,4 +64,16 @@ chrome.runtime.onConnect.addListener((port) => {
     };
     void runTour(msg, send, abort.signal);
   });
+});
+
+// The cat's "Ask Kitty" item: open the side panel on the chat tab. Chrome only allows this right after a user
+// gesture; if it refuses, the content script tells the user to click the toolbar icon instead.
+chrome.runtime.onMessage.addListener((msg: OpenChatMessage, sender, sendResponse) => {
+  if (msg?.type !== 'open-chat' || sender.tab?.id === undefined) return false;
+  void chrome.storage.session.set({ [SIDEPANEL_TAB_KEY]: 'chat' });
+  chrome.sidePanel
+    .open({ tabId: sender.tab.id })
+    .then(() => sendResponse({ ok: true }))
+    .catch(() => sendResponse({ ok: false }));
+  return true; // async response
 });

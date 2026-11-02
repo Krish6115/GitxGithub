@@ -1,0 +1,25 @@
+:host { all: initial; }
+.kitty {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 2147483647;
+  font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  user-select: none;
+}
+.kitty img { display: block; image-rendering: pixelated; cursor: pointer; }
+.bubble {
+  position: absolute;
+  right: 8px;
+  bottom: 72px;
+  white-space: nowrap;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #fff;
+  color: #1f2328;
+  border: 2px solid #2b2133;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
+}
+@media (prefers-color-scheme: dark) {
+  .bubble { background: #22272e; color: #e6edf3; border-color: #f0a04b; }
+}

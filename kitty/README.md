@@ -7,6 +7,9 @@ Kitty is a pixel cat that lives on **github.com** (Chrome extension) and turns G
 | 🗺️ **Tour this repo** | Click the cat on any repository. Kitty picks the key files and walks you through them one by one, with a short "what it is / why it matters" for each. Understand a codebase *before* you hand it to an AI. |
 | 💬 **Ask Kitty** | Side-panel chat. Answers are scenario-first (Situation → Commands → Why → How to undo) and cite their sources. |
 | 🔍 **Explain this** | Select a command, diff, PR text or code (or right-click it) for a short explanation. Commands get a risk label: *Safe*, *Rewrites history* or *Can lose work*. |
+| 🌱 **Find a good first issue** | On a repo page: open, unassigned issues ranked for newcomers (beginner labels, quiet threads, recent activity). No AI tokens. |
+| 🛠️ **Help me fix this issue** | On an issue page (or from the list above): Kitty walks you through the files most likely involved, explains what to look for in each, and gives you a fix plan plus exact git commands for your fork, a branch named after the issue, and the link that opens the PR form. |
+| ✈️ **Check my PR** | On a pull request: a pre-flight check for what maintainers send PRs back for (conflicts, out-of-date branch, empty or unfilled description, no linked issue, no tests, merge or WIP commits, and Conventional Commits or DCO sign-off when CONTRIBUTING asks), with a fix command for each. Rule-based, no AI tokens. |
 
 ## Install
 

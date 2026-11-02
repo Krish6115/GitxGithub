@@ -20,6 +20,9 @@ A Chrome extension that lives on github.com:
 - 🗺️ **Tour this repo:** a guided walk through the key files of any repository.
 - 💬 **Ask Kitty:** a side-panel tutor with scenario-first answers that cite their sources.
 - 🔍 **Explain this:** select a command, diff or PR text and get a short explanation with a risk label.
+- 🌱 **Find a good first issue:** Kitty ranks a repo's open, unassigned issues for newcomers.
+- 🛠️ **Help me fix this issue:** a walkthrough of the files that matter for one issue, plus the exact git commands for your fork and branch.
+- ✈️ **Check my PR:** a pre-flight check for what maintainers usually send back, with a fix command for each problem.
 
 **Install:** download `kitty-extension-v0.4.0.zip` from the [latest release](https://github.com/Krish6115/GitKitty/releases/latest), unzip it, open `chrome://extensions`, turn on **Developer mode**, then **Load unpacked**.
 

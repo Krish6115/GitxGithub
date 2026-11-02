@@ -1,5 +1,6 @@
 // Loads and validates the prebuilt knowledge index (server/data/index.json).
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import MiniSearch, { type AsPlainObject } from 'minisearch';
 import { IndexFileSchema, miniSearchOptions, type Chunk, type IndexedDoc, type IndexFile } from './search-config.js';
@@ -9,7 +10,12 @@ export interface LoadedIndex {
   search: MiniSearch<IndexedDoc>;
 }
 
-export const DEFAULT_INDEX_PATH = fileURLToPath(new URL('../../data/index.json', import.meta.url));
+/** server/data/index.json next to the source; on Vercel the bundled function may run from the project root instead. */
+export const DEFAULT_INDEX_PATH = ((): string => {
+  const beside = fileURLToPath(new URL('../../data/index.json', import.meta.url));
+  const fromCwd = join(process.cwd(), 'data', 'index.json');
+  return process.env.KITTY_INDEX_PATH ?? (existsSync(beside) || !existsSync(fromCwd) ? beside : fromCwd);
+})();
 
 /** Validate a parsed index file and rebuild the MiniSearch instance from it. */
 export function fromIndexFile(raw: unknown): LoadedIndex {

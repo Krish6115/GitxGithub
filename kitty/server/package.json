@@ -6,11 +6,11 @@
   "engines": {
     "node": ">=20"
   },
-  "main": "dist/index.js",
+  "main": "dist/local.js",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch src/local.ts",
     "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/index.js",
+    "start": "node dist/local.js",
     "typecheck": "tsc -p tsconfig.json",
     "smoke": "tsx scripts/smoke.ts",
     "live-tour": "tsx scripts/live-tour.ts",

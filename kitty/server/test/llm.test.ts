@@ -153,3 +153,11 @@ describe('mock provider and selection', () => {
     await expect(fetch('https://example.com')).rejects.toThrow(/disabled in tests/);
   });
 });
+
+describe('mock provider path parsing', () => {
+  it('keeps file paths that contain spaces', async () => {
+    const content = 'Repository: a/b\n### File: README.md  (why picked: docs)\n### File: Git/Git_Github Notes.pdf  (why picked: document)';
+    const r = await createMockProvider().chat({ kind: 'tour', messages: [{ role: 'user', content }] });
+    expect(JSON.parse(r.text).steps.map((s: { path: string }) => s.path)).toEqual(['README.md', 'Git/Git_Github Notes.pdf']);
+  });
+});

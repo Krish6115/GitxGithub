@@ -6,7 +6,8 @@ const estimate = (s: string): number => Math.ceil(s.length / 4);
 /** Builds a schema-valid tour from the context the tour service sends (repo name + "### File:" sections). */
 function mockTour(prompt: string): string {
   const repo = prompt.match(/^Repository: (.+)$/m)?.[1]?.trim() ?? 'this repository';
-  const paths = [...prompt.matchAll(/^### File: (\S+)/gm)].map((m) => m[1] ?? '').filter(Boolean);
+  // headings look like "### File: <path>  (why picked: …)"; paths may contain spaces
+  const paths = [...prompt.matchAll(/^### File: (.+?)(?: {2}\(why picked:.*\))?$/gm)].map((m) => m[1]?.trim() ?? '').filter(Boolean);
   const manifests = paths.filter((p) => /(^|\/)(package\.json|pyproject\.toml|go\.mod|Cargo\.toml|pom\.xml|Gemfile)$/.test(p));
   const steps = paths.slice(0, 8).map((path) => ({
     path,

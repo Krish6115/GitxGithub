@@ -46,3 +46,9 @@ describe('placement', () => {
     expect(bubblePosition(null, vp).left).toBeGreaterThan(0);
   });
 });
+
+describe('placement for long selections', () => {
+  it('keeps the pill on screen when the selection rect is far below the viewport', () => {
+    expect(pillPosition({ top: 4300, left: 400, right: 600, bottom: 4320 }, { width: 1280, height: 800 }).top).toBe(766);
+  });
+});

@@ -11,6 +11,8 @@ const RISK: Record<string, { label: string; cls: string }> = {
   can_lose_work: { label: 'Can lose work', cls: 'risk-danger' },
 };
 const KIND: Record<string, string> = { command: 'Command', diff: 'Diff', prose: 'Text', code: 'Code' };
+// Preact 11 does not add "px" to numeric style values, so positions are passed as strings.
+const px = (p: { top: number; left: number }) => ({ top: `${Math.round(p.top)}px`, left: `${Math.round(p.left)}px` });
 
 export function ExplainUI({ hostId }: { hostId: string }) {
   const { offer, current, explain, close } = useExplain(hostId);
@@ -30,7 +32,7 @@ export function ExplainUI({ hostId }: { hostId: string }) {
         <button
           class="ask-pill"
           data-kitty="ask-pill"
-          style={pillPosition(offer.rect, vp)}
+          style={px(pillPosition(offer.rect, vp))}
           onMouseDown={(e) => e.preventDefault()} // keep the page selection
           onClick={() => explain(offer.text, offer.rect)}
         >
@@ -38,7 +40,7 @@ export function ExplainUI({ hostId }: { hostId: string }) {
         </button>
       )}
       {current && (
-        <div class="bubble explain" data-kitty="explain" role="dialog" aria-label="Kitty explains" style={bubblePosition(current.rect, vp)}>
+        <div class="bubble explain" data-kitty="explain" role="dialog" aria-label="Kitty explains" style={px(bubblePosition(current.rect, vp))}>
           <div class="meta">
             {current.kind && <span>{KIND[current.kind]}</span>}
             {current.risk && <span class={`risk ${RISK[current.risk]?.cls ?? ''}`} data-kitty="risk">{RISK[current.risk]?.label}</span>}

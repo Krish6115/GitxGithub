@@ -22,6 +22,13 @@ export interface Explanation {
 
 const toRect = (r: DOMRect): Rect => ({ top: r.top, left: r.left, right: r.right, bottom: r.bottom });
 
+/** The last line of the selection that is on screen (long selections run past the viewport). */
+function visibleEnd(range: Range): Rect {
+  const rects = [...range.getClientRects()].filter((r) => r.width > 0 && r.bottom > 0 && r.top < window.innerHeight);
+  const last = rects[rects.length - 1];
+  return toRect(last ?? range.getBoundingClientRect());
+}
+
 export function useExplain(hostId: string) {
   const [offer, setOffer] = useState<{ text: string; rect: Rect } | null>(null);
   const [current, setCurrent] = useState<Explanation | null>(null);
@@ -47,18 +54,20 @@ export function useExplain(hostId: string) {
         const text = sel?.toString() ?? '';
         const inKitty = Boolean(sel?.anchorNode && document.getElementById(hostId)?.contains(sel.anchorNode));
         if (!sel || sel.rangeCount === 0 || !shouldOffer(text, isEditable(sel.anchorNode), inKitty)) return setOffer(null);
-        const rects = sel.getRangeAt(0).getClientRects();
-        const last = rects[rects.length - 1] ?? sel.getRangeAt(0).getBoundingClientRect();
-        setOffer({ text: text.trim(), rect: toRect(last) });
+        setOffer({ text: text.trim(), rect: visibleEnd(sel.getRangeAt(0)) });
       }, 180);
     };
-    const hide = (): void => setOffer(null);
+    // On scroll, hide immediately and re-place the pill once scrolling settles (it follows the selection).
+    const onScroll = (): void => {
+      setOffer(null);
+      check();
+    };
     document.addEventListener('selectionchange', check);
-    window.addEventListener('scroll', hide, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       clearTimeout(timer);
       document.removeEventListener('selectionchange', check);
-      window.removeEventListener('scroll', hide);
+      window.removeEventListener('scroll', onScroll);
     };
   }, [hostId]);
 

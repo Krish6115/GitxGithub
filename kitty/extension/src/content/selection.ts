@@ -24,7 +24,8 @@ export function shouldOffer(text: string, inEditable: boolean, inKitty: boolean)
 /** Pill goes just below the end of the selection, clamped inside the viewport (flips above when there is no room). */
 export function pillPosition(rect: Rect, vp: Viewport, size = { w: 110, h: 30 }): { top: number; left: number } {
   const below = rect.bottom + 6;
-  const top = below + size.h > vp.height - 4 ? Math.max(4, rect.top - size.h - 6) : below;
+  const raw = below + size.h > vp.height - 4 ? rect.top - size.h - 6 : below;
+  const top = Math.min(Math.max(4, raw), vp.height - size.h - 4); // always on screen
   const left = Math.min(Math.max(4, rect.right - size.w), vp.width - size.w - 4);
   return { top, left };
 }

@@ -1,10 +1,12 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { Env } from './env.js';
+import { createRateLimiter } from './lib/rate-limit.js';
 import { healthRoute } from './routes/health.js';
-import { tourRoute, type TourRouteDeps } from './routes/tour.js';
+import { tourRoute } from './routes/tour.js';
+import { tutorRoute, type TutorRouteDeps } from './routes/tutor.js';
 
-export type AppDeps = TourRouteDeps;
+export type AppDeps = TutorRouteDeps;
 
 export function createApp(env: Env, deps: AppDeps = {}): Hono {
   const app = new Hono();
@@ -17,7 +19,10 @@ export function createApp(env: Env, deps: AppDeps = {}): Hono {
       allowMethods: ['GET', 'POST', 'OPTIONS'],
     }),
   );
+  // one per-IP budget shared by all model-backed routes
+  const limiter = createRateLimiter(env.RATE_LIMIT_PER_MIN);
   app.route('/', healthRoute(env));
-  app.route('/', tourRoute(env, deps));
+  app.route('/', tourRoute(env, limiter, deps));
+  app.route('/', tutorRoute(env, limiter, deps));
   return app;
 }

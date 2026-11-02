@@ -25,11 +25,30 @@ function mockTour(prompt: string): string {
   });
 }
 
+/** Scenario-format answer citing the first sources in the prompt (tests and offline UI work). */
+function mockTutor(prompt: string): string {
+  const titles = [...prompt.matchAll(/^\[(\d+)\] (.+)$/gm)].slice(0, 2).map((m) => ({ n: m[1] ?? '1', title: m[2] ?? '' }));
+  if (titles.length === 0 || prompt.includes('NOTE: no closely relevant sources')) {
+    return "I'm not sure, and my sources don't cover this. See the official docs: https://git-scm.com/docs (mock answer).";
+  }
+  const cite = titles.map((t) => `[${t.n}]`).join('');
+  return [
+    `**Situation:** You asked a Git question; Kitty found ${titles.map((t) => `"${t.title}"`).join(' and ')} ${cite}.`,
+    '',
+    '**Commands:**',
+    '```bash',
+    'git status   # see where you are',
+    '```',
+    '',
+    `**Why:** This is a mock answer, so no model was called. The real answer would explain the commands from the sources ${cite}.`,
+  ].join('\n');
+}
+
 function answer(req: ChatRequest): string {
   const lastUser = [...req.messages].reverse().find((m) => m.role === 'user')?.content ?? '';
   if (req.kind === 'tour') return mockTour(lastUser);
   if (req.kind === 'explain') return 'Mock explanation: Kitty would explain the selected text here.';
-  return 'Mock answer: Kitty would answer your Git question here, citing the retrieved sources.';
+  return mockTutor(lastUser);
 }
 
 export function createMockProvider(): Provider {

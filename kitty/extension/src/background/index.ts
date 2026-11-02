@@ -1,3 +1,67 @@
+// Service worker: the only part of Kitty that talks to the Kitty server (keys never reach page context).
+import { TOUR_PORT, type TourPortEvent, type TourPortRequest } from '../shared/messages';
+import { getSettings } from '../shared/settings';
+import { readSse } from '../shared/sse';
+import { startState, TOUR_STATE_KEY, type TourResult } from '../shared/tour';
+
 chrome.runtime.onInstalled.addListener(() => {
   void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+});
+// Content scripts need to read/write the running tour (storage.session is extension-only by default).
+void chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });
+
+async function runTour(req: TourPortRequest, send: (e: TourPortEvent) => void, signal: AbortSignal): Promise<void> {
+  const settings = await getSettings();
+  let res: Response;
+  try {
+    res = await fetch(`${settings.serverUrl.replace(/\/+$/, '')}/tour`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(settings.kittyKey ? { 'X-Kitty-Key': settings.kittyKey } : {}),
+        ...(settings.githubToken ? { 'X-Kitty-GitHub-Token': settings.githubToken } : {}),
+      },
+      body: JSON.stringify({ owner: req.owner, repo: req.repo }),
+      signal,
+    });
+  } catch {
+    return send({ type: 'error', code: 'network', message: 'Could not reach the Kitty server.' });
+  }
+  if (!res.ok || !res.body) {
+    const err = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
+    return send({ type: 'error', code: err.code ?? 'upstream_error', message: err.message ?? `Server returned HTTP ${res.status}.` });
+  }
+  for await (const ev of readSse(res.body)) {
+    if (ev.event === 'progress') {
+      const p = JSON.parse(ev.data) as { stage: string; message: string };
+      send({ type: 'progress', stage: p.stage, message: p.message });
+    } else if (ev.event === 'ping') {
+      send({ type: 'progress', stage: 'ping', message: '' }); // keeps the worker and the port alive
+    } else if (ev.event === 'result') {
+      const result = JSON.parse(ev.data) as TourResult;
+      await chrome.storage.session.set({ [TOUR_STATE_KEY]: startState(result) });
+      return send({ type: 'done' });
+    } else if (ev.event === 'error') {
+      const e = JSON.parse(ev.data) as { code: string; message: string };
+      return send({ type: 'error', code: e.code, message: e.message });
+    }
+  }
+  send({ type: 'error', code: 'upstream_error', message: 'The server closed the connection early.' });
+}
+
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name !== TOUR_PORT) return;
+  const abort = new AbortController();
+  port.onDisconnect.addListener(() => abort.abort());
+  port.onMessage.addListener((msg: TourPortRequest) => {
+    if (msg.type !== 'start') return;
+    const send = (e: TourPortEvent): void => {
+      try {
+        port.postMessage(e);
+      } catch {
+        abort.abort(); // tab closed or navigated away
+      }
+    };
+    void runTour(msg, send, abort.signal);
+  });
 });

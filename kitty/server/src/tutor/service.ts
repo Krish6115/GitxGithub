@@ -1,5 +1,5 @@
 // Tutor pipeline: retrieve -> prompt -> streamed answer -> flag check.
-import { KittyError } from '../llm/errors.js';
+import { streamWithEarlyRetry } from '../llm/early-retry.js';
 import type { Provider, Usage } from '../llm/types.js';
 import type { RetrievedChunk } from '../rag/retrieve.js';
 import { isShortQuestion, searchText, trimHistory, type TutorRequest } from './history.js';
@@ -44,21 +44,12 @@ export async function* streamTutor(deps: TutorDeps, req: TutorRequest, signal?: 
     ...(signal ? { signal } : {}),
   };
   let answer = '';
-  for (let attempt = 0; ; attempt++) {
-    try {
-      for await (const ev of deps.provider.stream(request)) {
-        if (ev.type === 'delta') {
-          answer += ev.text;
-          yield ev;
-        } else {
-          yield { type: 'done', usage: ev.result.usage, truncated: ev.result.truncated, unverifiedFlags: unverifiedFlags(answer, chunks.map((c) => c.text)) };
-        }
-      }
-      return;
-    } catch (e) {
-      // Upstream stalls/drops happen occasionally (seen live). Retry once, but only if the user has seen no answer text yet.
-      const transient = e instanceof KittyError && ['timeout', 'upstream_error', 'upstream_unavailable'].includes(e.code);
-      if (attempt > 0 || answer !== '' || !transient || signal?.aborted) throw e;
+  for await (const ev of streamWithEarlyRetry(deps.provider, request)) {
+    if (ev.type === 'delta') {
+      answer += ev.text;
+      yield ev;
+    } else {
+      yield { type: 'done', usage: ev.result.usage, truncated: ev.result.truncated, unverifiedFlags: unverifiedFlags(answer, chunks.map((c) => c.text)) };
     }
   }
 }

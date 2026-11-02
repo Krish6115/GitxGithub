@@ -2,7 +2,7 @@
 import type { ChatMessage } from '../llm/types.js';
 import { MIN_REQUESTED_STEPS } from './schema.js';
 
-export function tourSystemPrompt(nonce: string, maxSteps: number): string {
+export function tourSystemPrompt(nonce: string, maxSteps: number, minSteps = MIN_REQUESTED_STEPS): string {
   return [
     'You are Kitty, a friendly guide who walks developers through a GitHub repository before they start working on it.',
     '',
@@ -14,7 +14,7 @@ export function tourSystemPrompt(nonce: string, maxSteps: number): string {
     'OUTPUT RULES:',
     '- Reply with exactly one JSON object and nothing else: no Markdown fences, no comments, no text before or after.',
     '- Shape: {"summary": string, "stack": string[], "steps": [{"path": string, "title": string, "what": string, "why_it_matters": string}], "how_to_run": string, "how_to_contribute": string, "good_first_issue_tips": string[]}',
-    `- "steps": ${MIN_REQUESTED_STEPS} to ${maxSteps} items, ordered so a newcomer can read them in sequence (overview, entry point, core modules, then config, tests and CI).`,
+    `- "steps": ${minSteps} to ${maxSteps} items, each a different file, ordered so a newcomer can read them in sequence (overview, entry point, core modules, then config, tests and CI).`,
     '- Every step "path" MUST be copied exactly from one of the "### File:" headings. Never invent paths.',
     '- "what": 1-3 sentences on what the file does. "why_it_matters": 1-2 sentences on why a newcomer should read it.',
     '- "how_to_run": give exact commands only if they appear in the README, CONTRIBUTING or manifests (e.g. package.json scripts). Otherwise write "Not stated in the repo." Never invent commands, flags or files.',
@@ -23,17 +23,17 @@ export function tourSystemPrompt(nonce: string, maxSteps: number): string {
   ].join('\n');
 }
 
-export function tourMessages(contextText: string, nonce: string, maxSteps: number): ChatMessage[] {
+export function tourMessages(contextText: string, nonce: string, maxSteps: number, minSteps = MIN_REQUESTED_STEPS): ChatMessage[] {
   return [
-    { role: 'system', content: tourSystemPrompt(nonce, maxSteps) },
+    { role: 'system', content: tourSystemPrompt(nonce, maxSteps, minSteps) },
     { role: 'user', content: `${contextText}\n\nProduce the tour JSON object now.` },
   ];
 }
 
 /** Repair turn: previous output + the validation error + allowed paths (the full context is not resent). */
-export function repairMessages(previous: string, error: string, allowedPaths: string[], nonce: string, maxSteps: number): ChatMessage[] {
+export function repairMessages(previous: string, error: string, allowedPaths: string[], nonce: string, maxSteps: number, minSteps = MIN_REQUESTED_STEPS): ChatMessage[] {
   return [
-    { role: 'system', content: tourSystemPrompt(nonce, maxSteps) },
+    { role: 'system', content: tourSystemPrompt(nonce, maxSteps, minSteps) },
     {
       role: 'user',
       content: [

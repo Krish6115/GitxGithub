@@ -34,6 +34,8 @@ export interface TourMeta {
   droppedSteps: string[];
   usage: { promptTokens: number; completionTokens: number; totalTokens: number } | null;
   contextTokens: number;
+  /** Ranked files GitHub would not serve (rate limits, errors); the tour was built without them. */
+  unreadableFiles: number;
 }
 
 export interface TourResult {

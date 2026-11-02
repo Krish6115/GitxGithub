@@ -7,7 +7,7 @@ import { KittyError } from '../llm/errors.js';
 import type { ChatMessage, ChatResult, Provider } from '../llm/types.js';
 import { validateTour } from './parse.js';
 import { repairMessages, tourMessages } from './prompt.js';
-import type { TourResult } from './schema.js';
+import { MIN_REQUESTED_STEPS, MIN_VALID_STEPS, type TourResult } from './schema.js';
 
 export type TourStage = 'fetching' | 'ranking' | 'thinking' | 'writing' | 'repairing';
 export type OnProgress = (stage: TourStage, message: string) => void;
@@ -41,7 +41,7 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
 }
 
 /** Tours always stream so first-token / idle timeouts apply; the first content chunk switches the UI to "writing". */
-async function streamToResult(provider: Provider, messages: ChatMessage[], signal: AbortSignal | undefined, onFirst: () => void): Promise<ChatResult> {
+async function streamOnce(provider: Provider, messages: ChatMessage[], signal: AbortSignal | undefined, onFirst: () => void): Promise<ChatResult> {
   let first = true;
   for await (const ev of provider.stream({ kind: 'tour', messages, ...(signal ? { signal } : {}) })) {
     if (ev.type === 'delta' && first) {
@@ -51,6 +51,17 @@ async function streamToResult(provider: Provider, messages: ChatMessage[], signa
     if (ev.type === 'done') return ev.result;
   }
   throw new KittyError('upstream_error', 'The model stream ended without a result.');
+}
+
+/** One extra attempt when the provider drops the stream (seen live at ~60s); auth, quota and timeouts are not retried. */
+async function streamToResult(provider: Provider, messages: ChatMessage[], signal: AbortSignal | undefined, onFirst: () => void, onRetry: () => void): Promise<ChatResult> {
+  try {
+    return await streamOnce(provider, messages, signal, onFirst);
+  } catch (e) {
+    if (!(e instanceof KittyError) || !['upstream_error', 'upstream_unavailable'].includes(e.code) || signal?.aborted) throw e;
+    onRetry();
+    return streamOnce(provider, messages, signal, onFirst);
+  }
 }
 
 export async function getTour(deps: TourServiceDeps, req: TourRequest): Promise<TourResult> {
@@ -73,9 +84,15 @@ export async function getTour(deps: TourServiceDeps, req: TourRequest): Promise<
   const [readme, contributing, ...bodies] = await mapLimit(
     [readmePath, contributingPath, ...ranked.map((f) => f.path)],
     6,
-    async (p) => (p ? github.getText(owner, repo, sha, p, p === readmePath ? 16_000 : 8_000) : null),
+    async (p) => (p && !/.pdf$/i.test(p) ? github.getText(owner, repo, sha, p, p === readmePath ? 16_000 : 8_000) : null),
   );
-  const files = ranked.flatMap((file, i) => (bodies[i] ? [{ file, text: bodies[i] as string }] : []));
+  // documents (PDFs) have no readable text here but are still valid tour stops
+  const files = ranked.flatMap((file, i) => {
+    const body = bodies[i];
+    if (body) return [{ file, text: body }];
+    return file.reasons.includes('document') ? [{ file, text: '(binary document: contents not shown)' }] : [];
+  });
+  const unreadableFiles = ranked.length - files.length;
   const ctx = buildTourContext({
     owner, repo, info, sha,
     fileCount: tree.tree.filter((e) => e.type === 'blob').length,
@@ -89,18 +106,23 @@ export async function getTour(deps: TourServiceDeps, req: TourRequest): Promise<
   progress('thinking', 'Kitty is thinking…');
   const repoPaths = new Set(tree.tree.map((e) => e.path));
   const onFirst = (): void => progress('writing', 'Kitty is writing the tour…');
-  let result = await streamToResult(provider, tourMessages(ctx.text, ctx.nonce, maxSteps), signal, onFirst);
+  const onRetry = (): void => progress('thinking', 'The model connection dropped; retrying once…');
+  // small repos may not have enough candidate files for the usual minimums
+  const minValid = Math.min(MIN_VALID_STEPS, ctx.includedPaths.length);
+  const minSteps = Math.min(MIN_REQUESTED_STEPS, ctx.includedPaths.length);
+  if (minValid === 0) throw new KittyError('invalid_model_output', 'This repository has no readable files to build a tour from.');
+  let result = await streamToResult(provider, tourMessages(ctx.text, ctx.nonce, maxSteps, minSteps), signal, onFirst, onRetry);
   let usage = result.usage;
-  let checked = validateTour(result.text, repoPaths, maxSteps);
+  let checked = validateTour(result.text, repoPaths, maxSteps, minValid);
   let repaired = false;
   if (!checked.ok) {
     progress('repairing', 'Tidying up the tour…');
     repaired = true;
-    result = await streamToResult(provider, repairMessages(result.text, checked.error, ctx.includedPaths, ctx.nonce, maxSteps), signal, () => {});
+    result = await streamToResult(provider, repairMessages(result.text, checked.error, ctx.includedPaths, ctx.nonce, maxSteps, minSteps), signal, () => {}, onRetry);
     usage = usage && result.usage
       ? { promptTokens: usage.promptTokens + result.usage.promptTokens, completionTokens: usage.completionTokens + result.usage.completionTokens, totalTokens: usage.totalTokens + result.usage.totalTokens }
       : usage ?? result.usage;
-    checked = validateTour(result.text, repoPaths, maxSteps);
+    checked = validateTour(result.text, repoPaths, maxSteps, minValid);
   }
   if (!checked.ok) throw new KittyError('invalid_model_output', `Kitty could not build a valid tour: ${checked.error}`);
 
@@ -115,6 +137,7 @@ export async function getTour(deps: TourServiceDeps, req: TourRequest): Promise<
       droppedSteps: checked.dropped,
       usage,
       contextTokens: ctx.approxTokens,
+      unreadableFiles,
     },
   };
   if (!info.private) cache.set(key, out);

@@ -147,3 +147,31 @@ describe('LRU cache', () => {
 });
 
 vi.setConfig({ testTimeout: 10_000 });
+
+describe('small repos and dropped streams (from live checks)', () => {
+  it('accepts fewer steps when the repo has fewer candidate files', async () => {
+    const f = fixtureRepo({ files: { 'README.md': '# Notes', 'Git/a.pdf': '%PDF', 'Git/b.pdf': '%PDF' } });
+    const provider = scripted([tourJson(['README.md', 'Git/a.pdf', 'Git/b.pdf'])]);
+    const r = await getTour({ github: fakeGitHub(f), provider, cache: newCache(), maxSteps: 10 }, { owner: 'acme', repo: 'notes' });
+    expect(r.tour.steps.map((s) => s.path)).toEqual(['README.md', 'Git/a.pdf', 'Git/b.pdf']);
+    expect(provider.requests[0]?.messages[0]?.content).toContain('"steps": 3 to 10 items');
+    expect(provider.requests[0]?.messages[1]?.content).toContain('(binary document: contents not shown)');
+  });
+
+  it('retries the model call once when the provider drops the stream', async () => {
+    const { KittyError } = await import('../src/llm/errors.js');
+    let n = 0;
+    const flaky: Provider = {
+      name: 'bharatcode',
+      chat: async () => { throw new Error('unused'); },
+      async *stream(): AsyncGenerator<StreamEvent> {
+        if (n++ === 0) throw new KittyError('upstream_error', 'stream dropped');
+        yield { type: 'done', result: { text: tourJson(GOOD), finishReason: 'stop', truncated: false, usage: null, model: 'x' } };
+      },
+    };
+    const stages: string[] = [];
+    const r = await getTour({ github: fakeGitHub(fixtureRepo()), provider: flaky, cache: newCache(), maxSteps: 10 }, { owner: 'acme', repo: 'todo-api', onProgress: (s, m) => stages.push(`${s}:${m}`) });
+    expect(r.tour.steps).toHaveLength(6);
+    expect(stages.some((s) => s.includes('retrying once'))).toBe(true);
+  });
+});

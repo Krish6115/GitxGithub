@@ -31,9 +31,9 @@ const normalisePath = (p: string): string => p.trim().replace(/^\.?\//, '').repl
 
 /**
  * Validate against the schema, drop steps whose path is not in the repo (or repeats), cap at `maxSteps`.
- * Fails if fewer than MIN_VALID_STEPS remain.
+ * Fails if fewer than `minValid` (default MIN_VALID_STEPS) remain.
  */
-export function validateTour(text: string, repoPaths: Set<string>, maxSteps: number): TourValidation {
+export function validateTour(text: string, repoPaths: Set<string>, maxSteps: number, minValid = MIN_VALID_STEPS): TourValidation {
   let raw: unknown;
   try {
     raw = extractJsonObject(text);
@@ -55,8 +55,8 @@ export function validateTour(text: string, repoPaths: Set<string>, maxSteps: num
     step.path = path;
     return true;
   });
-  if (steps.length < MIN_VALID_STEPS) {
-    return { ok: false, error: `only ${steps.length} steps use real file paths (need at least ${MIN_VALID_STEPS}); invalid: ${dropped.join(', ') || 'none'}` };
+  if (steps.length < minValid) {
+    return { ok: false, error: `only ${steps.length} steps use real file paths (need at least ${minValid}); invalid: ${dropped.join(', ') || 'none'}` };
   }
   return { ok: true, tour: { ...parsed.data, steps: steps.slice(0, maxSteps) }, dropped };
 }

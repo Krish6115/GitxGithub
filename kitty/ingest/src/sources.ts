@@ -2,7 +2,7 @@
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { basename, join, relative, sep } from 'node:path';
 
-export const REPO_BLOB = 'https://github.com/Krish6115/GitxGithub/blob/main/';
+export const REPO_BLOB = 'https://github.com/Krish6115/GitKitty/blob/main/';
 export const SOURCE_DIRS = ['Git', 'Scenario-Based_Guide'];
 export const AUTHOR_LICENSE = 'Repository author';
 

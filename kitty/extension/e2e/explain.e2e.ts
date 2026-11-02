@@ -12,7 +12,7 @@ const explanationDone = (page: Page) =>
 export async function explainE2E(): Promise<void> {
   const { ctx, sw } = await launch();
   const page = await ctx.newPage();
-  await page.goto('https://github.com/Krish6115/GitxGithub', { waitUntil: 'load' });
+  await page.goto('https://github.com/Krish6115/GitKitty', { waitUntil: 'load' });
   await page.waitForTimeout(1500);
 
   const pre = page.locator('article.markdown-body pre', { hasText: 'git checkout -b' }).first();

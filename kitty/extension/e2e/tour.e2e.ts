@@ -2,7 +2,7 @@
 import { join } from 'node:path';
 import { launch, log, OUT_DIR } from './launch.js';
 
-export async function tourE2E(repo = 'Krish6115/GitxGithub'): Promise<void> {
+export async function tourE2E(repo = 'Krish6115/GitKitty'): Promise<void> {
   const { ctx } = await launch();
   const page = await ctx.newPage();
   const stepInfo = async (): Promise<string> => {

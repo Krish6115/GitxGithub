@@ -21,9 +21,9 @@ describe('repoFromUrl', () => {
 describe('pathFromUrl / stepUrl', () => {
   it('round-trips paths with spaces and parentheses at the tour commit', () => {
     const path = 'Git/git_missing_topics(other than 101,notes,cheatsheet).pdf';
-    const url = stepUrl({ owner: 'Krish6115', repo: 'GitxGithub' }, SHA, path);
-    expect(url).toBe(`https://github.com/Krish6115/GitxGithub/blob/${SHA}/Git/git_missing_topics(other%20than%20101%2Cnotes%2Ccheatsheet).pdf`);
-    expect(pathFromUrl(url, { owner: 'Krish6115', repo: 'GitxGithub' }, SHA)).toBe(path);
+    const url = stepUrl({ owner: 'Krish6115', repo: 'GitKitty' }, SHA, path);
+    expect(url).toBe(`https://github.com/Krish6115/GitKitty/blob/${SHA}/Git/git_missing_topics(other%20than%20101%2Cnotes%2Ccheatsheet).pdf`);
+    expect(pathFromUrl(url, { owner: 'Krish6115', repo: 'GitKitty' }, SHA)).toBe(path);
   });
 
   it('only matches file pages at the tour commit (or its short sha)', () => {

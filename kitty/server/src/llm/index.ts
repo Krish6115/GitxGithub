@@ -1,7 +1,7 @@
 // Picks the provider for a request and wraps it with usage logging.
 import type { Env } from '../env.js';
 import { consoleUsageLogger, usageEntry, type UsageLogger } from '../lib/usage-log.js';
-import { createBharatCodeProvider } from './bharatcode.js';
+import { createBharatCodeProvider } from './BharatCodeProvider.js';
 import { KittyError } from './errors.js';
 import { createMockProvider } from './mock.js';
 import type { Provider, StreamEvent } from './types.js';
@@ -22,7 +22,8 @@ export function selectProvider(env: Env, userKey: string | undefined, deps: Prov
       baseUrl: env.BHARATCODE_BASE_URL,
       model: env.BHARATCODE_MODEL,
       apiKey,
-      timeoutMs: env.LLM_TIMEOUT_MS,
+      firstTokenMs: env.LLM_FIRST_TOKEN_MS,
+      idleMs: env.LLM_IDLE_MS,
       ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
     });
   let provider: Provider;

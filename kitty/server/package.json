@@ -17,6 +17,7 @@
     "@hono/node-server": "2.1.5",
     "hono": "4.13.16",
     "minisearch": "7.2.0",
+    "openai": "7.39.0",
     "zod": "4.6.7"
   }
 }

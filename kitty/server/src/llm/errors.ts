@@ -10,6 +10,7 @@ export type KittyErrorCode =
   | 'upstream_error'
   | 'timeout'
   | 'invalid_model_output'
+  | 'reasoning_budget_exhausted'
   | 'github_not_found'
   | 'github_rate_limited';
 
@@ -23,6 +24,7 @@ const STATUS: Record<KittyErrorCode, number> = {
   upstream_error: 502,
   timeout: 504,
   invalid_model_output: 502,
+  reasoning_budget_exhausted: 502,
   github_not_found: 404,
   github_rate_limited: 429,
 };

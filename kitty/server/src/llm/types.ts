@@ -13,8 +13,9 @@ export interface ChatRequest {
   /** Which feature is calling (used for logging and by the mock provider). */
   kind: TaskKind;
   messages: ChatMessage[];
-  /** Output cap. On BharatCode this includes reasoning tokens. */
-  maxTokens: number;
+  /** Output cap override; defaults to CALL_BUDGETS[kind]. Includes reasoning tokens on BharatCode. */
+  maxTokens?: number;
+  /** Override; defaults to CALL_BUDGETS[kind]. */
   reasoningEffort?: ReasoningEffort;
   temperature?: number;
   signal?: AbortSignal;

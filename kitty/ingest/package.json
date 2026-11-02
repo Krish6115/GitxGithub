@@ -8,5 +8,11 @@
     "typecheck": "tsc -p tsconfig.json",
     "refs:fetch": "tsx scripts/references/fetch.ts",
     "refs:build": "tsx scripts/references/build.ts"
+  },
+  "dependencies": {
+    "minisearch": "7.2.0"
+  },
+  "devDependencies": {
+    "unpdf": "1.9.1"
   }
 }

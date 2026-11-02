@@ -1,6 +1,6 @@
 // Renders parsed Markdown as Preact elements (text is always escaped by Preact; links are http(s) only).
 import { useState } from 'preact/hooks';
-import type { ChatSource } from '../shared/chat';
+import type { ChatSource } from './chat';
 import { parseMarkdown, type Inline } from './markdown-parse';
 
 function CodeBlock({ code, lang }: { code: string; lang: string }) {

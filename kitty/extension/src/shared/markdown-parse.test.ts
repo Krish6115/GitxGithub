@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toHistory, trimChat, type ChatMessage } from '../shared/chat';
+import { toHistory, trimChat, type ChatMessage } from './chat';
 import { parseInline, parseMarkdown } from './markdown-parse';
 
 describe('parseMarkdown', () => {

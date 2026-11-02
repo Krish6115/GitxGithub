@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { ApiError, postStream } from '../shared/api';
 import { CHAT_KEY, sourceLabel, toHistory, trimChat, type ChatMessage, type ChatSource } from '../shared/chat';
 import { errorText } from '../shared/messages';
-import { Markdown } from './Markdown';
+import { Markdown } from '../shared/Markdown';
 
 type Assistant = Extract<ChatMessage, { role: 'assistant' }>;
 

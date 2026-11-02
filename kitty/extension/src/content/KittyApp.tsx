@@ -5,6 +5,10 @@ import { boxOf, findFileHeader, type Box } from './highlight';
 import { PixelCat } from './PixelCat';
 import { useCatMotion } from './useCatMotion';
 import { useTour } from './useTour';
+import { IssuesView, PreflightView } from './ContributeViews';
+import { useApi } from './useApi';
+import { issueNumberFromUrl, pullNumberFromUrl } from '../shared/github-page';
+import type { BeginnerIssues, PreflightResult } from '../shared/contribute';
 import { CHAT_FOCUS_KEY, type ChatFocus } from '../shared/tour';
 
 /** Re-find the file header after navigation (GitHub renders file views asynchronously) and track scroll/resize. */
@@ -30,6 +34,20 @@ export function KittyApp() {
   const t = useTour();
   const [menuOpen, setMenuOpen] = useState(false);
   const [chatHint, setChatHint] = useState(false);
+  // contributor helpers: good first issues (repo pages) and PR pre-flight (PR pages)
+  const [panel, setPanel] = useState<'none' | 'issues' | 'preflight'>('none');
+  const [lastIssue, setLastIssue] = useState<number | undefined>(undefined);
+  const issuesApi = useApi<BeginnerIssues>('/issues');
+  const preflightApi = useApi<PreflightResult>('/preflight');
+  const issueNo = issueNumberFromUrl(t.href);
+  const prNo = pullNumberFromUrl(t.href);
+  useEffect(() => setPanel((p) => (p === 'preflight' ? 'none' : p)), [prNo]);
+  const startTour = (issue?: number): void => {
+    setMenuOpen(false);
+    setPanel('none');
+    setLastIssue(issue);
+    t.start(issue);
+  };
   const step = t.tour && t.onTourRepo ? t.tour.steps[t.tour.currentIndex] : undefined;
   const showStep = Boolean(step && t.atCurrentStep);
   const box = useHighlight(showStep, t.href);
@@ -59,7 +77,7 @@ export function KittyApp() {
       <div class="bubble" role="alert">
         <p>{t.phase.message}</p>
         <div class="row">
-          {t.repo && <button onClick={() => t.start()}>Try again</button>}
+          {t.repo && <button onClick={() => startTour(lastIssue)}>Try again</button>}
           <button class="ghost" onClick={() => t.setPhase({ kind: 'idle' })}>Close</button>
         </div>
       </div>
@@ -70,6 +88,7 @@ export function KittyApp() {
     bubble = showStep ? (
       <div class="bubble tour" data-kitty="step">
         <div class="meta">
+          {t.tour.result.meta.issue && <span class="badge" title={t.tour.result.meta.issue.title}>Issue #{t.tour.result.meta.issue.number}</span>}
           Step {n + 1} of {total}
           {t.tour.partial && <span class="badge" title="GitHub returned only part of this repository's file list">Large repo · partial tour</span>}
         </div>
@@ -82,6 +101,12 @@ export function KittyApp() {
           <button class="ghost" data-kitty="ask-step" title="Ask Kitty about this step in the side panel" onClick={() => askAboutStep(n)}>Ask</button>
           <button class="ghost" onClick={() => void t.exit()}>Exit</button>
         </div>
+        {t.tour.result.meta.issue && n === total - 1 && (
+          <p class="hint">
+            Ready to fix it? Your exact git commands are in the side panel.{' '}
+            <a href="#" data-kitty="show-commands" onClick={(e) => { e.preventDefault(); askAboutStep(n); }}>Show them</a>
+          </p>
+        )}
         {chatHint && <p class="hint">Click the Kitty icon in the toolbar to open the chat.</p>}
       </div>
     ) : (
@@ -93,6 +118,10 @@ export function KittyApp() {
         </div>
       </div>
     );
+  } else if (panel === 'issues' && t.repo) {
+    bubble = <IssuesView state={issuesApi.state} repo={`${t.repo.owner}/${t.repo.repo}`} onFix={(n) => startTour(n)} onClose={() => setPanel('none')} />;
+  } else if (panel === 'preflight') {
+    bubble = <PreflightView state={preflightApi.state} onClose={() => setPanel('none')} onHint={() => setChatHint(true)} />;
   } else if (menuOpen) {
     const askKitty = (
       <button
@@ -110,13 +139,43 @@ export function KittyApp() {
     );
     bubble = (
       <div class="bubble menu">
-        {t.repo ? (
+        {t.repo && issueNo ? (
+          <p>Hi! Want help fixing <strong>issue #{issueNo}</strong>? I'll walk you through the files to change and give you the exact git commands.</p>
+        ) : t.repo && prNo ? (
+          <p>Hi! Want me to check <strong>PR #{prNo}</strong> for what maintainers usually send back?</p>
+        ) : t.repo ? (
           <p>Hi! Want a guided walkthrough of <strong>{t.repo.owner}/{t.repo.repo}</strong>?</p>
         ) : (
           <p>Hi! Open a repository page for a tour, or ask me anything about Git.</p>
         )}
         <div class="row">
-          {t.repo && <button data-kitty="start-tour" onClick={() => { setMenuOpen(false); t.start(); }}>Tour this repo</button>}
+          {t.repo && issueNo && <button data-kitty="fix-this-issue" onClick={() => startTour(issueNo)}>Help me fix this issue</button>}
+          {t.repo && prNo && (
+            <button
+              data-kitty="preflight"
+              onClick={() => {
+                setMenuOpen(false);
+                setPanel('preflight');
+                if (t.repo) preflightApi.run({ owner: t.repo.owner, repo: t.repo.repo, pr: prNo });
+              }}
+            >
+              Check my PR
+            </button>
+          )}
+          {t.repo && <button class={issueNo || prNo ? 'ghost' : ''} data-kitty="start-tour" onClick={() => startTour()}>Tour this repo</button>}
+          {t.repo && !issueNo && !prNo && (
+            <button
+              class="ghost"
+              data-kitty="find-issues"
+              onClick={() => {
+                setMenuOpen(false);
+                setPanel('issues');
+                if (t.repo) issuesApi.run({ owner: t.repo.owner, repo: t.repo.repo });
+              }}
+            >
+              Find a good first issue
+            </button>
+          )}
           {askKitty}
         </div>
         {chatHint && <p class="hint">Click the Kitty icon in the toolbar to open the chat.</p>}

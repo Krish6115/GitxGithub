@@ -27,6 +27,7 @@ export const css = `
   .tour-panel { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; margin-bottom: 10px; background: var(--panel); }
   .tour-panel > summary { cursor: pointer; font-size: 13px; }
   .tour-panel[open] { max-height: 45vh; overflow-y: auto; }
+  .fix-plan { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 6px; } .fix-plan h4 { margin: 8px 0 4px; }
   .tour-panel details { margin-top: 6px; } .tour-panel details summary { cursor: pointer; color: var(--muted); font-size: 13px; }
   .focus-chip { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 8px; margin: 0 0 6px; border: 1px solid var(--accent-hover); border-radius: 999px; background: rgb(46 160 67 / 0.12); }
   .focus-chip span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

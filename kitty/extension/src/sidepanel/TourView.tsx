@@ -1,6 +1,8 @@
 // The running repo tour, shown at the top of the chat: summary, stack, clickable steps (open or ask about each),
 // how to run / contribute, tips.
+import { contributionPlan } from '../shared/contribute';
 import { stepUrl } from '../shared/github-page';
+import { Markdown } from '../shared/Markdown';
 import { TOUR_STATE_KEY, withIndex, type TourState } from '../shared/tour';
 
 export async function openStep(state: TourState, i: number): Promise<void> {
@@ -14,11 +16,30 @@ export async function openStep(state: TourState, i: number): Promise<void> {
 export function TourPanel({ state, onAsk }: { state: TourState; onAsk: (index: number) => void }) {
   const { tour, meta } = state.result;
   const n = state.currentIndex;
+  const issue = meta.issue;
+  const plan = issue ? contributionPlan({ owner: meta.owner, repo: meta.repo, defaultBranch: meta.defaultBranch ?? 'main', issue, login: state.login }) : null;
   return (
-    <details class="tour-panel" data-kitty="tour-panel">
+    <details class="tour-panel" data-kitty="tour-panel" open={issue ? true : undefined}>
       <summary>
-        🗺️ Tour of <strong>{meta.owner}/{meta.repo}</strong> · step {n + 1} of {state.steps.length}
+        {issue ? (
+          <>🛠️ Fixing <strong>#{issue.number}</strong> in {meta.owner}/{meta.repo} · step {n + 1} of {state.steps.length}</>
+        ) : (
+          <>🗺️ Tour of <strong>{meta.owner}/{meta.repo}</strong> · step {n + 1} of {state.steps.length}</>
+        )}
       </summary>
+      {issue && plan && (
+        <section class="fix-plan" data-kitty="fix-plan">
+          <p><a href={issue.url} target="_blank" rel="noopener noreferrer"><strong>#{issue.number} {issue.title}</strong></a></p>
+          <h4>Your git commands</h4>
+          <Markdown text={['```bash', plan.commands, '```'].join('\n')} sources={[]} />
+          <p class="small">
+            Then <a href={plan.prUrl} target="_blank" rel="noopener noreferrer">open the pull request</a> and run Kitty's pre-flight check on it.
+            {!state.login && ' Replace YOUR-USERNAME with your GitHub username (sign in on github.com and Kitty fills it in).'}
+          </p>
+          <h4>The plan</h4>
+          <p class="pre">{tour.how_to_contribute}</p>
+        </section>
+      )}
       {meta.partial && <p class="badge">Large repo: partial tour (GitHub returned only part of the file list).</p>}
       <p>{tour.summary}</p>
       {tour.stack.length > 0 && <p class="stack">{tour.stack.map((s) => <span key={s}>{s}</span>)}</p>}
@@ -38,8 +59,8 @@ export function TourPanel({ state, onAsk }: { state: TourState; onAsk: (index: n
         <p class="pre">{tour.how_to_run}</p>
       </details>
       <details>
-        <summary>How to contribute</summary>
-        <p class="pre">{tour.how_to_contribute}</p>
+        <summary>{issue ? 'Tips for this issue' : 'How to contribute'}</summary>
+        {!issue && <p class="pre">{tour.how_to_contribute}</p>}
         {tour.good_first_issue_tips.length > 0 && <ul>{tour.good_first_issue_tips.map((t) => <li key={t}>{t}</li>)}</ul>}
       </details>
       <p class="muted small">Commit {meta.sha.slice(0, 7)} · {meta.provider}{meta.cached ? ' · cached' : ''}</p>

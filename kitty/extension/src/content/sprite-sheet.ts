@@ -1,8 +1,8 @@
-// Kitty's sprite sheet (assets/kitty-sprites.png): 96x96 cells, one row per animation, frames left to right.
+// Kitty's sprite sheet (assets/kitty-sprites.png): 192x192 cells (drawn at 96 CSS px, so it stays sharp on HiDPI screens), one row per animation, frames left to right.
 import sheetUrl from './assets/kitty-sprites.png?inline';
 
 export const SHEET_URL: string = sheetUrl;
-export const CELL = 96;
+export const CELL = 192;
 export const SHEET_COLS = 8;
 
 export const ANIMATIONS = {

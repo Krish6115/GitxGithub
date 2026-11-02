@@ -7,7 +7,7 @@ import { findChromium } from '../e2e/launch.js';
 
 const sheet = readFileSync(fileURLToPath(new URL('../src/content/assets/kitty-sprites.png', import.meta.url))).toString('base64');
 const outDir = fileURLToPath(new URL('../public/icons/', import.meta.url));
-const CELL = 96;
+const CELL = 192;
 const IDLE_ROW = 1;
 
 const browser = await chromium.launch({ executablePath: findChromium() });

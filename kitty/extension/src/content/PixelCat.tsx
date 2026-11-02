@@ -1,7 +1,7 @@
 // Renders one frame of Kitty's sprite sheet.
 import { ANIMATIONS, CELL, SHEET_COLS, SHEET_ROWS, SHEET_URL, type Frame } from './sprite-sheet';
 
-export function PixelCat({ frame, flip = false, size = CELL }: { frame: Frame; flip?: boolean; size?: number }) {
+export function PixelCat({ frame, flip = false, size = 96 }: { frame: Frame; flip?: boolean; size?: number }) {
   const scale = size / CELL;
   const { row } = ANIMATIONS[frame.anim];
   return (

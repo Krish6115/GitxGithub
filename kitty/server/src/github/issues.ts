@@ -22,7 +22,7 @@ export interface BeginnerIssues {
 const GOOD_FIRST = /good[\s_-]*first|first[\s_-]*timers?|beginner|newcomer|starter|\beasy\b|e-easy|low[\s_-]*hanging|difficulty[:\s_-]*(low|easy)/i;
 const HELP = /help[\s_-]*wanted|contributions?[\s_-]*welcome|up[\s_-]*for[\s_-]*grabs|hacktoberfest|pr[\s_-]*welcome/i;
 const DOCS = /\bdocs?\b|documentation|typo/i;
-const AVOID = /\bhard\b|complex|breaking|security|needs[\s_-]*(design|discussion|triage|decision|info)|blocked|wontfix|won't[\s_-]*fix|duplicate|invalid|question|discussion|on[\s_-]*hold|stale|in[\s_-]*progress|assigned/i;
+const AVOID = /\bhard\b|\btriage\b|unconfirmed|complex|breaking|security|needs[\s_-]*(design|discussion|triage|decision|info)|blocked|wontfix|won't[\s_-]*fix|duplicate|invalid|question|discussion|on[\s_-]*hold|stale|in[\s_-]*progress|assigned/i;
 const DAY = 86_400_000;
 
 export function scoreIssue(issue: Issue, now: number): BeginnerIssue | null {

@@ -38,6 +38,7 @@ describe('good first issues', () => {
         issue({ number: 5, labels: ['good first issue'], pull_request: {} }),
         issue({ number: 6, labels: ['good first issue', 'needs discussion'] }),
         issue({ number: 7, labels: ['Good First Issue', 'documentation'], updated_at: '2024-01-01T00:00:00Z' }),
+        issue({ number: 8, labels: ['good first issue', 'triage'] }),
       ],
       NOW,
     );

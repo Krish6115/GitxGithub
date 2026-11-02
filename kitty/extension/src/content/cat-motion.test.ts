@@ -43,9 +43,9 @@ describe('positions', () => {
   });
 
   it('walks at a sane speed and ignores tiny moves', () => {
-    expect(walkDuration({ x: 0, y: 0 }, { x: 10, y: 0 })).toBe(400);
-    expect(walkDuration({ x: 0, y: 0 }, { x: 320, y: 0 })).toBe(2000);
-    expect(walkDuration({ x: 0, y: 0 }, { x: 5000, y: 0 })).toBe(3000);
+    expect(walkDuration({ x: 0, y: 0 }, { x: 10, y: 0 })).toBe(300);
+    expect(walkDuration({ x: 0, y: 0 }, { x: 320, y: 0 })).toBe(1000);
+    expect(walkDuration({ x: 0, y: 0 }, { x: 5000, y: 0 })).toBe(1800);
     expect(movedEnough({ x: 0, y: 0 }, { x: 10, y: 10 })).toBe(false);
     expect(movedEnough({ x: 0, y: 0 }, { x: 30, y: 0 })).toBe(true);
   });

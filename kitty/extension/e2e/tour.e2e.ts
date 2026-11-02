@@ -10,7 +10,7 @@ export async function tourE2E(repo = 'Krish6115/GitKitty'): Promise<void> {
     const meta = await page.locator('#kitty-root [data-kitty="step"] .meta').innerText();
     const highlighted = await page.locator('#kitty-root [data-kitty="highlight"]').count();
     const file = decodeURIComponent(new URL(page.url()).pathname.split('/').slice(5).join('/'));
-    await page.waitForTimeout(3200); // let the cat finish walking
+    await page.waitForTimeout(2000); // let the cat finish walking
     const beside = await page.evaluate(() => {
       const root = document.getElementById('kitty-root')?.shadowRoot;
       const cat = root?.querySelector('.cat')?.getBoundingClientRect();

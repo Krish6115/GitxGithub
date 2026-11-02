@@ -80,10 +80,10 @@ export function besideBox(box: Box, vp: Viewport): Point {
   return { x: Math.max(8, x), y };
 }
 
-/** Walking time for a move: ~160 px/s so the steps match the ground covered (no sliding), between 0.4 s and 3 s. */
+/** Walking time for a move: a brisk ~320 px/s, between 0.3 s and 1.8 s. */
 export function walkDuration(from: Point, to: Point): number {
   const d = Math.hypot(to.x - from.x, to.y - from.y);
-  return Math.round(Math.min(3000, Math.max(400, d / 0.16)));
+  return Math.round(Math.min(1800, Math.max(300, d / 0.32)));
 }
 
 /** Only re-target when the destination moved noticeably (avoids jitter while the page scrolls). */

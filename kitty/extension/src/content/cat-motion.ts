@@ -7,10 +7,10 @@ export type CatMode = 'idle' | 'walk' | 'think' | 'sleep' | 'wave';
 export const CAT_SIZE = 96;
 export const HOME_MARGIN = 24;
 export const SLEEP_AFTER_MS = 120_000;
-export const TICK_MS = 150;
+export const TICK_MS = 75;
 
 /** Ticks each frame stays on screen, per animation (walk and wave are fast, sleep is slow). */
-const HOLD: Record<AnimationName, number> = { walk: 1, wave: 2, blink: 1, idle: 3, think: 2, sleep: 4 };
+const HOLD: Record<AnimationName, number> = { walk: 1, wave: 3, blink: 2, idle: 6, think: 4, sleep: 8 };
 
 const loop = (anim: AnimationName, tick: number): Frame => ({ anim, index: Math.floor(tick / HOLD[anim]) % ANIMATIONS[anim].frames });
 
@@ -21,8 +21,8 @@ export const WAVE_TICKS = ANIMATIONS.wave.frames * HOLD.wave * 2;
 export function frameFor(mode: CatMode, tick: number): Frame {
   if (mode !== 'idle') return loop(mode, tick);
   // ~7s idle loop: breathe and wave the tail, with a quick blink every loop
-  const t = tick % 48;
-  if (t < ANIMATIONS.blink.frames) return { anim: 'blink', index: t };
+  const t = tick % 96;
+  if (t < ANIMATIONS.blink.frames * HOLD.blink) return { anim: 'blink', index: Math.floor(t / HOLD.blink) };
   return loop('idle', tick);
 }
 
@@ -51,10 +51,10 @@ export function besideBox(box: Box, vp: Viewport): Point {
   return { x: Math.max(8, x), y };
 }
 
-/** Walking time for a move: ~350 px/s, between 300 ms and 1.5 s. */
+/** Walking time for a move: ~160 px/s so the steps match the ground covered (no sliding), between 0.4 s and 3 s. */
 export function walkDuration(from: Point, to: Point): number {
   const d = Math.hypot(to.x - from.x, to.y - from.y);
-  return Math.round(Math.min(1500, Math.max(300, d / 0.35)));
+  return Math.round(Math.min(3000, Math.max(400, d / 0.16)));
 }
 
 /** Only re-target when the destination moved noticeably (avoids jitter while the page scrolls). */

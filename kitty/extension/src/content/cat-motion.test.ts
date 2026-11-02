@@ -12,20 +12,20 @@ describe('sprite sheet', () => {
 describe('frameFor', () => {
   it('loops each animation through all of its frames', () => {
     expect([0, 1, 2, 7, 8].map((t) => frameFor('walk', t).index)).toEqual([0, 1, 2, 7, 0]);
-    expect(frameFor('sleep', 4)).toEqual({ anim: 'sleep', index: 1 });
-    expect(frameFor('think', 13)).toEqual({ anim: 'think', index: 0 });
-    expect([0, 2, 4, 6].map((t) => frameFor('wave', t).index)).toEqual([0, 1, 2, 3]);
+    expect(frameFor('sleep', 8)).toEqual({ anim: 'sleep', index: 1 });
+    expect(frameFor('think', 25)).toEqual({ anim: 'think', index: 0 });
+    expect([0, 3, 6, 9].map((t) => frameFor('wave', t).index)).toEqual([0, 1, 2, 3]);
   });
 
   it('blinks at the start of each idle loop, then breathes', () => {
-    expect([0, 1, 2].map((t) => frameFor('idle', t))).toEqual([0, 1, 2].map((index) => ({ anim: 'blink', index })));
-    expect(frameFor('idle', 3).anim).toBe('idle');
-    expect(frameFor('idle', 48).anim).toBe('blink');
+    expect([0, 2, 4].map((t) => frameFor('idle', t))).toEqual([0, 1, 2].map((index) => ({ anim: 'blink', index })));
+    expect(frameFor('idle', 6).anim).toBe('idle');
+    expect(frameFor('idle', 96).anim).toBe('blink');
     for (let t = 0; t < 200; t++) expect(frameFor('idle', t).index).toBeLessThan(ANIMATIONS[frameFor('idle', t).anim].frames);
   });
 
   it('waves twice', () => {
-    expect(WAVE_TICKS).toBe(16);
+    expect(WAVE_TICKS).toBe(24);
   });
 });
 
@@ -43,9 +43,9 @@ describe('positions', () => {
   });
 
   it('walks at a sane speed and ignores tiny moves', () => {
-    expect(walkDuration({ x: 0, y: 0 }, { x: 10, y: 0 })).toBe(300);
-    expect(walkDuration({ x: 0, y: 0 }, { x: 350, y: 0 })).toBe(1000);
-    expect(walkDuration({ x: 0, y: 0 }, { x: 5000, y: 0 })).toBe(1500);
+    expect(walkDuration({ x: 0, y: 0 }, { x: 10, y: 0 })).toBe(400);
+    expect(walkDuration({ x: 0, y: 0 }, { x: 320, y: 0 })).toBe(2000);
+    expect(walkDuration({ x: 0, y: 0 }, { x: 5000, y: 0 })).toBe(3000);
     expect(movedEnough({ x: 0, y: 0 }, { x: 10, y: 10 })).toBe(false);
     expect(movedEnough({ x: 0, y: 0 }, { x: 30, y: 0 })).toBe(true);
   });

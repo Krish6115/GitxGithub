@@ -40,10 +40,16 @@ export function useCatMotion(target: Point | null, thinking: boolean): CatMotion
 
   // Walk to the destination when it changes noticeably.
   const dest = target ?? homePosition(vp);
+  const walk = useRef({ from: pos, start: 0, ms: 0 });
   useEffect(() => {
     if (!movedEnough(pos, dest, target ? 24 : 2)) return;
-    const ms = reducedMotion() ? 0 : walkDuration(pos, dest);
-    setFlip(dest.x < pos.x); // the sprite faces right; flip when walking left
+    // where the cat is on screen right now (it may still be mid-walk towards the old target)
+    const w = walk.current;
+    const t = w.ms ? Math.min(1, (Date.now() - w.start) / w.ms) : 1;
+    const here = { x: w.from.x + (pos.x - w.from.x) * t, y: w.from.y + (pos.y - w.from.y) * t };
+    const ms = reducedMotion() ? 0 : walkDuration(here, dest);
+    if (Math.abs(dest.x - here.x) > 8) setFlip(dest.x < here.x); // the sprite faces right; flip when walking left
+    walk.current = { from: here, start: Date.now(), ms };
     setMoveMs(ms);
     setWalkingUntil(Date.now() + ms);
     setPos(dest);
@@ -69,5 +75,6 @@ export function useCatMotion(target: Point | null, thinking: boolean): CatMotion
   const walking = Date.now() < walkingUntil;
   const waving = Date.now() < waveUntil;
   const mode: CatMode = walking ? 'walk' : thinking ? 'think' : waving ? 'wave' : asleep && !target ? 'sleep' : 'idle';
-  return { pos, frame: frameFor(mode, tick), flip: walking ? flip : false, mode, moveMs };
+  // the sprite faces right: flip to face the way it walks, and to face into the page while it rests
+  return { pos, frame: frameFor(mode, tick), flip: walking ? flip : true, mode, moveMs };
 }

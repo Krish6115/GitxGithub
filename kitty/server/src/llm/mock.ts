@@ -47,7 +47,10 @@ function mockTutor(prompt: string): string {
 function answer(req: ChatRequest): string {
   const lastUser = [...req.messages].reverse().find((m) => m.role === 'user')?.content ?? '';
   if (req.kind === 'tour') return mockTour(lastUser);
-  if (req.kind === 'explain') return 'Mock explanation: Kitty would explain the selected text here.';
+  if (req.kind === 'explain') {
+    const label = /RISK LABEL \(computed by Kitty, use it as given\): ([^:\n]+)/.exec(lastUser)?.[1];
+    return `${label ? `**${label}.** ` : ''}Mock explanation: Kitty would explain the selected text here (no model was called).`;
+  }
   return mockTutor(lastUser);
 }
 

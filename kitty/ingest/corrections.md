@@ -1,6 +1,6 @@
 # Corrections to common Git & GitHub misconceptions
 
-> Written for Kitty by the GitxGithub project. Each entry corrects a statement found in the repository's learning PDFs
+> Written for Kitty by the GitKitty project. Each entry corrects a statement found in the repository's learning PDFs
 > (see `kitty/ingest/AUDIT.md` §5) and links the official documentation it is based on.
 
 ## Does pushing a tag create a GitHub release?

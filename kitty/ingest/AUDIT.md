@@ -9,8 +9,8 @@ one PDF has no text layer and was reviewed visually.
 | File | Pages | Words | Text layer | Ownership / license | Use in Kitty index |
 |---|---:|---:|---|---|---|
 | `Git/Git_GitHub_101.pdf` | 3 | ~890 | yes | Repo author's study notes (Notion export) | **Yes** |
-| `Git/git_missing_topics(...).pdf` | 21 | ~2,970 | yes | Repo author (Krish6115/GitxGithub) | **Yes** |
-| `Scenario-Based_Guide/git_scenarios.pdf` | 22 | ~3,230 | yes | Repo author (Krish6115/GitxGithub) | **Yes** |
+| `Git/git_missing_topics(...).pdf` | 21 | ~2,970 | yes | Repo author (Krish6115/GitKitty) | **Yes** |
+| `Scenario-Based_Guide/git_scenarios.pdf` | 22 | ~3,230 | yes | Repo author (Krish6115/GitKitty) | **Yes** |
 | `Git/git-cheat-sheet-education.pdf` | 2 | ~720 | yes | GitHub Education cheat sheet (github/training-kit, CC BY 4.0, verified via the repo license) | **Yes, with attribution** |
 | `Git/Git_Github Notes.pdf` | 4 | 16 | **no (photos)** | Repository owner (pages signed `@girlie_mac`; see §4) | **Yes, via transcript** |
 

@@ -11,14 +11,15 @@ const IGNORED_DIRS = new Set([
   'node_modules', 'vendor', 'dist', 'build', 'out', 'target', '.git', '__pycache__', '.next', '.nuxt', 'coverage',
   'third_party', 'third-party', '.venv', 'venv', 'bower_components', '.yarn', '.idea', '.vscode', 'fixtures', '__snapshots__',
 ]);
-const BINARY = /\.(png|jpe?g|gif|webp|ico|svg|bmp|tiff?|mp[34]|mov|avi|wav|ogg|woff2?|ttf|otf|eot|pdf|zip|tar|gz|tgz|7z|rar|jar|war|class|exe|dll|so|dylib|bin|dat|db|sqlite|wasm|pyc|lock)$/i;
+const BINARY = /\.(png|jpe?g|gif|webp|ico|svg|bmp|tiff?|mp[34]|mov|avi|wav|ogg|woff2?|ttf|otf|eot|zip|tar|gz|tgz|7z|rar|jar|war|class|exe|dll|so|dylib|bin|dat|db|sqlite|wasm|pyc|lock)$/i;
 const LOCKFILES = new Set(['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'cargo.lock', 'poetry.lock', 'go.sum', 'composer.lock', 'gemfile.lock', 'bun.lockb', 'uv.lock']);
-const MANIFESTS = /^(package\.json|pyproject\.toml|setup\.py|setup\.cfg|requirements\.txt|go\.mod|cargo\.toml|pom\.xml|build\.gradle(\.kts)?|settings\.gradle(\.kts)?|gemfile|composer\.json|.*\.csproj|cmakelists\.txt|makefile|dockerfile|docker-compose\.ya?ml|compose\.ya?ml|deno\.json)$/i;
+const MANIFESTS = /^(package\.json|pyproject\.toml|setup\.py|setup\.cfg|requirements\.txt|go\.mod|cargo\.toml|pom\.xml|build\.gradle(\.kts)?|settings\.gradle(\.kts)?|gemfile|composer\.json|.*\.csproj|cmakelists\.txt|makefile|kconfig|kbuild|dockerfile|docker-compose\.ya?ml|compose\.ya?ml|deno\.json)$/i;
 const ENTRY = /^(main|index|app|server|cli|__main__|manage|program|lib|mod)\.[a-z]+$|^.*application\.(java|kt)$/i;
 const CONFIG = /^(tsconfig.*\.json|vite\.config\.\w+|webpack\.config\.\w+|next\.config\.\w+|nuxt\.config\.\w+|rollup\.config\.\w+|babel\.config\.\w+|jest\.config\.\w+|vitest\.config\.\w+|eslint\.config\.\w+|\.eslintrc.*|tox\.ini|pytest\.ini|\.env\.example|turbo\.json|nx\.json|lerna\.json|pnpm-workspace\.yaml)$/i;
 const DOCS = /^(readme|contributing|architecture|development|hacking|code_of_conduct)(\.\w+)?$/i;
 const CODE = /\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|kt|rb|php|cs|cpp|cc|c|h|hpp|swift|scala|ex|exs|dart|vue|svelte)$/i;
 const SRC_ROOTS = /^(src|lib|app|cmd|pkg|internal|server|client|packages|apps|core)$/i;
+const DOCUMENT = /.pdf$/i;
 const TEST = /(^|\/)(tests?|__tests__|spec)\/|[._-](test|spec)\.[a-z]+$|_test\.go$/i;
 
 /** Score one file; returns null for files a tour should never show. */
@@ -40,6 +41,7 @@ export function scoreFile(e: TreeEntry): RankedFile | null {
   };
 
   if (DOCS.test(lower)) add(depth === 0 ? 7 : 2, 'docs');
+  if (DOCUMENT.test(lower)) add(depth <= 1 ? 3 : 1.5, 'document'); // contents not shown, but a tour can point at it
   if (MANIFESTS.test(lower)) add(depth === 0 ? 8 : 4, 'manifest');
   if (CONFIG.test(lower)) add(depth === 0 ? 3 : 1.5, 'config');
   if (/^\.github\/workflows\/.+\.ya?ml$/i.test(e.path)) add(5 + 1.5, 'ci'); // offsets its depth penalty
@@ -47,6 +49,10 @@ export function scoreFile(e: TreeEntry): RankedFile | null {
     add(2, 'code');
     if (ENTRY.test(name)) add(depth <= 2 ? 7 : 4, 'entry point');
     if (SRC_ROOTS.test(parts[0] ?? '')) add(1, 'source root');
+    // substantial modules beat tiny helpers: +0..2 for 1 KB..100 KB, -1 for near-empty files
+    const size = e.size ?? 0;
+    if (size > 0 && size < 300) add(-1, 'tiny');
+    else if (size >= 1000) add(Math.min(2, Math.round(Math.log10(size / 1000) * 10) / 10), 'size');
   }
   if (TEST.test(e.path)) add(-1, 'test');
   if (/^docs?\//i.test(e.path) && /\.(md|mdx|rst)$/i.test(lower)) add(1, 'docs folder');
@@ -54,11 +60,12 @@ export function scoreFile(e: TreeEntry): RankedFile | null {
   return { path: e.path, score: Math.round(score * 10) / 10, reasons };
 }
 
-const CAPS: Record<string, number> = { ci: 2, test: 2, 'docs folder': 2 };
+// caps per kind of file; entry points are capped because big trees (e.g. Linux drivers/*/main.c) have dozens
+const CAPS: Record<string, number> = { ci: 2, test: 2, 'docs folder': 2, 'entry point': 4 };
 
 /**
  * Top `limit` files, deterministic (score desc, then path), with diversity caps:
- * at most 3 files per directory and small caps for CI / tests / docs-folder files.
+ * at most 3 files per directory (4 under source roots) and small caps for CI / tests / docs-folder files.
  */
 export function rankFiles(tree: TreeEntry[], limit = 25): RankedFile[] {
   const scored = tree.map(scoreFile).filter((f): f is RankedFile => f !== null);
@@ -68,7 +75,8 @@ export function rankFiles(tree: TreeEntry[], limit = 25): RankedFile[] {
   const out: RankedFile[] = [];
   for (const f of scored) {
     const dir = f.path.includes('/') ? f.path.slice(0, f.path.lastIndexOf('/')) : '.';
-    if ((perDir.get(dir) ?? 0) >= 3) continue;
+    const dirCap = SRC_ROOTS.test(f.path.split('/')[0] ?? '') ? 4 : 3;
+    if ((perDir.get(dir) ?? 0) >= dirCap) continue;
     const capped = f.reasons.find((r) => CAPS[r] !== undefined && (perKind.get(r) ?? 0) >= (CAPS[r] ?? 0));
     if (capped) continue;
     perDir.set(dir, (perDir.get(dir) ?? 0) + 1);

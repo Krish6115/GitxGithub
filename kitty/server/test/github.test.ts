@@ -41,7 +41,7 @@ describe('rankFiles', () => {
   });
 
   it('is deterministic and respects the limit', () => {
-    const tree = Array.from({ length: 80 }, (_, i) => blob(`src/m${String(i).padStart(2, '0')}/index.ts`));
+    const tree = Array.from({ length: 80 }, (_, i) => blob(`src/m${String(i).padStart(2, '0')}/util.ts`));
     expect(paths(tree, 25)).toHaveLength(25);
     expect(paths(tree, 25)).toEqual(paths([...tree].reverse(), 25));
   });
@@ -121,5 +121,34 @@ describe('GitHub client (fake fetch)', () => {
   it('rejects unexpected response shapes', async () => {
     const gh = createGitHubClient({ fetchImpl: (async () => res(200, { nope: true })) as unknown as typeof fetch });
     await expect(gh.getRepo('a', 'b')).rejects.toMatchObject({ code: 'upstream_error' });
+  });
+});
+
+describe('ranking refinements (from live checks)', () => {
+  it('prefers substantial modules over tiny helpers in the same folder', () => {
+    const tree = [
+      blob('pyproject.toml'), blob('src/requests/__init__.py', 5000), blob('src/requests/__version__.py', 400),
+      blob('src/requests/_internal_utils.py', 1500), blob('src/requests/sessions.py', 30_000), blob('src/requests/models.py', 35_000),
+      blob('src/requests/api.py', 6500),
+    ];
+    const top = paths(tree);
+    expect(top).toEqual(expect.arrayContaining(['src/requests/sessions.py', 'src/requests/models.py']));
+    expect(top.indexOf('src/requests/sessions.py')).toBeLessThan(top.indexOf('src/requests/__version__.py') === -1 ? Infinity : top.indexOf('src/requests/__version__.py'));
+  });
+
+  it('includes PDFs as documents so docs-only repos can be toured', () => {
+    expect(paths([blob('README.md'), blob('Git/notes.pdf', 500_000 / 4), blob('logo.png')])).toEqual(['README.md', 'Git/notes.pdf']);
+  });
+});
+
+describe('raw throttling fallback', () => {
+  it('falls back to the contents API when raw.githubusercontent.com returns 429', async () => {
+    const fetchImpl = vi.fn(async (url: string) =>
+      url.startsWith('https://raw.githubusercontent.com/') ? new Response('slow down', { status: 429 }) : new Response('file body'));
+    const gh = createGitHubClient({ fetchImpl: fetchImpl as unknown as typeof fetch });
+    expect(await gh.getText('a', 'b', 'f'.repeat(40), 'src/x.ts', 100)).toBe('file body');
+    const fallback = fetchImpl.mock.calls[1] as unknown as [string, RequestInit];
+    expect(fallback[0]).toBe(`https://api.github.com/repos/a/b/contents/src/x.ts?ref=${'f'.repeat(40)}`);
+    expect((fallback[1].headers as Record<string, string>).Accept).toBe('application/vnd.github.raw');
   });
 });

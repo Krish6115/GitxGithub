@@ -72,9 +72,15 @@ export function createGitHubClient(opts: GitHubClientOptions = {}): GitHubClient
     getHeadSha: async (o, r, branch) => (await getJson(`/repos/${o}/${r}/commits/${encodeURIComponent(branch)}`, CommitSchema)).sha,
     getTree: (o, r, sha) => getJson(`/repos/${o}/${r}/git/trees/${sha}?recursive=1`, TreeSchema),
     async getText(o, r, sha, path, maxChars) {
-      const res = await doFetch(`${raw}/${o}/${r}/${sha}/${enc(path)}`, {
+      let res = await doFetch(`${raw}/${o}/${r}/${sha}/${enc(path)}`, {
         headers: { 'User-Agent': 'kitty-gitxgithub', ...(opts.token ? { Authorization: `Bearer ${opts.token}` } : {}) },
       });
+      if (res.status === 429 || res.status === 403) {
+        // raw.githubusercontent.com throttles busy IPs; fall back to the contents API (uses the token's API quota)
+        res = await doFetch(`${api}/repos/${o}/${r}/contents/${enc(path)}?ref=${sha}`, {
+          headers: { ...headers, Accept: 'application/vnd.github.raw' },
+        });
+      }
       if (!res.ok) return null;
       const text = await res.text();
       if (text.includes('\u0000')) return null; // binary

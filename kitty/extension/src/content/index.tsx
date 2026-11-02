@@ -1,6 +1,7 @@
 import { render } from 'preact';
 import { ExplainUI } from './ExplainUI';
 import { KittyApp } from './KittyApp';
+import { syncTheme } from './theme';
 import css from './cat.css?inline';
 
 const HOST_ID = 'kitty-root';
@@ -16,6 +17,7 @@ function mount(): void {
   shadow.append(style, container);
   // Attach to <html>, not <body>: GitHub's Turbo navigation swaps <body>.
   document.documentElement.append(host);
+  syncTheme(host);
   render(
     <>
       <KittyApp />

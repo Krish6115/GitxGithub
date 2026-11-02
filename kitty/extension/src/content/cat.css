@@ -65,13 +65,12 @@ button.ghost { background: transparent; }
   box-shadow: 0 0 0 4px rgb(240 160 75 / 0.25);
   transition: top 0.15s, left 0.15s, width 0.15s, height 0.15s;
 }
-@media (prefers-color-scheme: dark) {
-  .kitty { color: #e6edf3; }
-  .bubble { background: #22272e; border-color: #f0a04b; }
-  .bubble .why, .bubble .meta { color: #9da7b3; }
-  .badge { background: #3d2a0f; color: #f6c27f; }
-  button.ghost { color: #e6edf3; border-color: #9da7b3; }
-}
+/* dark theme follows GitHub's own setting (set on the host by theme.ts), not just the OS */
+:host([data-theme="dark"]) .kitty { color: #e6edf3; }
+:host([data-theme="dark"]) .bubble { background: #22272e; border-color: #f0a04b; }
+:host([data-theme="dark"]) .bubble .why, :host([data-theme="dark"]) .bubble .meta, :host([data-theme="dark"]) .bubble .hint { color: #9da7b3; }
+:host([data-theme="dark"]) .badge { background: #3d2a0f; color: #f6c27f; }
+:host([data-theme="dark"]) button.ghost { color: #e6edf3; border-color: #9da7b3; }
 @media (prefers-reduced-motion: reduce) {
   .mode-think .cat, .mode-walk .cat svg, .thinking::after { animation: none; }
   .kitty, .highlight { transition: none; }
@@ -113,8 +112,8 @@ button.ghost { background: transparent; }
 .warn { color: #9a6700; font-size: 12px; }
 .error { color: #cf222e; }
 .srcs { font-size: 12px; color: #57606a; } .srcs a { margin-right: 6px; color: #b4690e; }
-@media (prefers-color-scheme: dark) {
-  .bubble.explain { color: #e6edf3; }
-  .risk-safe { color: #3fb950; background: #0f2a17; } .risk-rewrite { color: #d29922; background: #2b2111; } .risk-danger { color: #f85149; background: #2d1214; }
-  .srcs { color: #9da7b3; }
-}
+:host([data-theme="dark"]) .bubble.explain { color: #e6edf3; }
+:host([data-theme="dark"]) .risk-safe { color: #3fb950; background: #0f2a17; }
+:host([data-theme="dark"]) .risk-rewrite { color: #d29922; background: #2b2111; }
+:host([data-theme="dark"]) .risk-danger { color: #f85149; background: #2d1214; }
+:host([data-theme="dark"]) .srcs { color: #9da7b3; }

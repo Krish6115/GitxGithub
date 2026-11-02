@@ -51,3 +51,4 @@ describe('positions', () => {
     expect(movedEnough({ x: 0, y: 0 }, { x: 30, y: 0 })).toBe(true);
   });
 });
+

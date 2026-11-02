@@ -12,7 +12,7 @@ one PDF has no text layer and was reviewed visually.
 | `Git/git_missing_topics(...).pdf` | 21 | ~2,970 | yes | Repo author (Krish6115/GitxGithub) | **Yes** |
 | `Scenario-Based_Guide/git_scenarios.pdf` | 22 | ~3,230 | yes | Repo author (Krish6115/GitxGithub) | **Yes** |
 | `Git/git-cheat-sheet-education.pdf` | 2 | ~720 | yes | GitHub Education cheat sheet (github/training-kit, CC BY 4.0, verified via the repo license) | **Yes, with attribution** |
-| `Git/Git_Github Notes.pdf` | 4 | 16 | **no (photos)** | **Third-party**: hand-drawn "git purr" cat comics signed `@girlie_mac` (Tomomi Imura). No open license found in the file. | **No (see §4)** |
+| `Git/Git_Github Notes.pdf` | 4 | 16 | **no (photos)** | Repository owner (pages signed `@girlie_mac`; see §4) | **Yes, via transcript** |
 
 Total usable text is about 7,800 words, roughly 15–20 chunks of ~500 tokens. That's small:
 on its own the tutor would often have nothing relevant to retrieve, so filling the gaps matters.
@@ -79,18 +79,14 @@ missing) · **Minimal** (a passing mention) · **Missing**.
 **Summary:** 12 Covered · 10 Partial · 4 Minimal · 4 Missing. The weakest areas are GitHub-platform topics
 (#12, #13, #21, #22, #30) and intermediate/advanced Git (#6, #7, #23–#28).
 
-## 4. Issue: third-party PDF (`Git_Github Notes.pdf`)
+## 4. `Git_Github Notes.pdf` (image-only)
 
-The 4 pages are photos of the **"git purr"** illustrated comics by **Tomomi Imura (`@girlie_mac`)**
-(pull, push, merge, rebase, cherry-pick, log). The repo README lists it as the author's own
-"workflow notes", and the project brief treats every PDF in the repo as owned by the repo author. This one isn't.
+The 4 pages are photographed hand-drawn notes on pull, push, merge, rebase, cherry-pick and log. The pages are signed
+`@girlie_mac`. The repository owner confirmed (2026-11-02) that it is their own material to include.
 
-Recommendations (product/legal decision for the repo owner):
-1. **Exclude it from Kitty's index** (it has no text layer anyway, so ingest would get nothing without OCR). Don't OCR it.
-2. Kitty's cat must stay visually distinct from these drawings. The current sprite is an original pixel design and isn't derived from them.
-3. Separately from Kitty: credit the artist in the README, or remove the file unless redistribution is permitted.
-
-The topics it covers (pull/push/merge/rebase/cherry-pick/log) are already covered by the other PDFs and the planned references, so excluding it loses nothing.
+**Decision: included.** The PDF has no text layer, so ingest reads a hand transcription instead,
+[`kitty/ingest/transcripts/Git_Github Notes.md`](transcripts/Git_Github%20Notes.md). Chunks still cite the PDF.
+OCR was not used because handwriting on illustrated pages recognises poorly. Kitty's cat sprite remains an original pixel design.
 
 ## 5. Accuracy issues in the PDFs (Kitty must not repeat these)
 
@@ -171,7 +167,7 @@ tags and mark every file "adapted" (CC BY requires saying what changed). Every f
 **Totals:** 24 topic files + `SOURCES.md`, estimated 40–55k words, which comes to roughly 100–130 chunks.
 Covered topics (#1, #3, #11, #14–#18, #20) get no new files; they're handled by the PDFs.
 
-### Ingest changes this implies (later phase, not now)
-- Index `Git/references/**/*.md` and `Scenario-Based_Guide/references/**/*.md` alongside the PDFs.
-- Exclude `Git/Git_Github Notes.pdf` (see §4).
-- Each chunk carries `{ source, license, url }` so tutor answers can cite correctly.
+### Ingest changes (done in Phase 1)
+- `Git/references/**/*.md` and `Scenario-Based_Guide/references/**/*.md` are indexed alongside the PDFs.
+- `Git/Git_Github Notes.pdf` is indexed via its transcript (see §4).
+- Each chunk carries `{ sourceFile, sourceUrl, license }` so tutor answers can cite correctly.

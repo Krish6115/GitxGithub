@@ -1,0 +1,41 @@
+name: kitty
+
+on:
+  push:
+    branches: [main]
+    paths: ['kitty/**', 'Git/**', 'Scenario-Based_Guide/**', '.github/workflows/kitty.yml']
+  pull_request:
+    paths: ['kitty/**', 'Git/**', 'Scenario-Based_Guide/**', '.github/workflows/kitty.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kitty-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: kitty
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: kitty/package-lock.json
+      - run: npm ci
+      - name: Typecheck and build
+        run: npm run build
+      - name: Unit tests (network disabled)
+        run: npm test
+      - name: Retrieval eval (hit@6 >= 85%)
+        run: npm run eval -w ingest
+      - name: Index is up to date with the sources
+        run: |
+          npm run ingest
+          git diff --exit-code -- server/data/index.json || { echo "::error::server/data/index.json is stale - run npm run ingest and commit it"; exit 1; }

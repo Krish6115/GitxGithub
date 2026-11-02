@@ -2,6 +2,7 @@
 // Usage: npm run e2e -w extension -- <cat|onboarding|tour|chat|explain|all> [--repo owner/name] [--question "..."] [--server URL]
 import { catE2E } from './cat.e2e.js';
 import { dragE2E } from './drag.e2e.js';
+import { tourAskE2E } from './tour-ask.e2e.js';
 import { chatE2E } from './chat.e2e.js';
 import { explainE2E } from './explain.e2e.js';
 import { onboardingE2E } from './onboarding.e2e.js';
@@ -17,6 +18,7 @@ const which = args.find((a) => !a.startsWith('--') && !args[args.indexOf(a) - 1]
 const suites: Record<string, () => Promise<void>> = {
   cat: () => catE2E(),
   drag: () => dragE2E(),
+  'tour-ask': () => tourAskE2E(opt('repo')),
   onboarding: () => onboardingE2E(opt('server')),
   tour: () => tourE2E(opt('repo')),
   chat: () => chatE2E(opt('question')),

@@ -1,0 +1,16 @@
+# Dependencies & build output
+node_modules/
+dist/
+coverage/
+.vite/
+*.tsbuildinfo
+
+# Secrets — never commit keys
+.env
+.env.*
+!.env.example
+
+# OS / editor
+desktop.ini
+Thumbs.db
+.DS_Store

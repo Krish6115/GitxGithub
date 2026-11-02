@@ -1,7 +1,7 @@
 // Content-side tour controller: loads/saves the tour in chrome.storage.session, follows GitHub navigation
 // (turbo:load, popstate and URL changes), keeps the current step in sync with the page, and starts new tours.
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
-import { pathFromUrl, repoFromUrl, stepUrl } from '../shared/github-page';
+import { pathFromUrl, repoFromUrl, signedInLogin, stepUrl } from '../shared/github-page';
 import { errorText, TOUR_PORT, type TourPortEvent } from '../shared/messages';
 import { syncToPath, TOUR_STATE_KEY, withIndex, type TourState } from '../shared/tour';
 
@@ -68,12 +68,13 @@ export function useTour() {
     setPhase({ kind: 'idle' });
   }, []);
 
-  const start = useCallback(() => {
+  /** Start a general tour, or (with `issue`) a walkthrough of the files to change for that issue. */
+  const start = useCallback((issue?: number) => {
     if (!repo) return;
     portRef.current?.disconnect();
     const port = chrome.runtime.connect({ name: TOUR_PORT });
     portRef.current = port;
-    setPhase({ kind: 'loading', message: 'Kitty is getting ready…' });
+    setPhase({ kind: 'loading', message: issue ? `Kitty is reading issue #${issue}…` : 'Kitty is getting ready…' });
     port.onMessage.addListener((e: TourPortEvent) => {
       if (e.type === 'progress' && e.stage !== 'ping') setPhase({ kind: 'loading', message: e.message });
       else if (e.type === 'error') setPhase({ kind: 'error', message: errorText(e.code, e.message) });
@@ -87,7 +88,8 @@ export function useTour() {
         });
       }
     });
-    port.postMessage({ type: 'start', owner: repo.owner, repo: repo.repo });
+    const login = signedInLogin();
+    port.postMessage({ type: 'start', owner: repo.owner, repo: repo.repo, ...(issue ? { issue } : {}), ...(login ? { login } : {}) });
   }, [repo?.owner, repo?.repo]);
 
   return { href, repo, tour, phase, setPhase, onTourRepo, atCurrentStep, goTo, exit, start };

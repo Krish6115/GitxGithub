@@ -52,3 +52,16 @@ export function pathFromUrl(href: string, ref: RepoRef, sha: string): string | n
 export function stepUrl(ref: RepoRef, sha: string, path: string): string {
   return `https://github.com/${ref.owner}/${ref.repo}/blob/${sha}/${path.split('/').map(encodeURIComponent).join('/')}`;
 }
+
+/** The number in /<owner>/<repo>/issues/<n> or /pull/<n> URLs, else null. */
+function numberAt(href: string, section: 'issues' | 'pull'): number | null {
+  if (!repoFromUrl(href)) return null;
+  const [, , kind, n] = new URL(href).pathname.split('/').filter(Boolean);
+  return kind === section && n && /^\d{1,9}$/.test(n) ? Number(n) : null;
+}
+export const issueNumberFromUrl = (href: string): number | null => numberAt(href, 'issues');
+export const pullNumberFromUrl = (href: string): number | null => numberAt(href, 'pull');
+
+/** The signed-in GitHub user, read from github.com's own <meta name="user-login"> (empty when signed out). */
+export const signedInLogin = (doc: Document = document): string | undefined =>
+  doc.querySelector<HTMLMetaElement>('meta[name="user-login"]')?.content?.trim() || undefined;

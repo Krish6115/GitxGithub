@@ -36,3 +36,25 @@ export async function postStream(path: string, body: unknown, onEvent: (event: s
     onEvent(ev.event, JSON.parse(ev.data));
   }
 }
+
+/** POST JSON and parse the JSON reply. Throws ApiError for HTTP errors and network failures. */
+export async function postJson<T>(path: string, body: unknown): Promise<T> {
+  const s = await getSettings();
+  let res: Response;
+  try {
+    res = await fetch(`${s.serverUrl.replace(/\/+$/, '')}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(s.kittyKey ? { 'X-Kitty-Key': s.kittyKey } : {}),
+        ...(s.githubToken ? { 'X-Kitty-GitHub-Token': s.githubToken } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new ApiError('network', 'Could not reach the Kitty server.');
+  }
+  const data = (await res.json().catch(() => null)) as (T & { code?: string; message?: string }) | null;
+  if (!res.ok || data === null) throw new ApiError(data?.code ?? 'upstream_error', data?.message ?? `Server returned HTTP ${res.status}.`);
+  return data;
+}

@@ -1,6 +1,6 @@
 // Service worker: the only part of Kitty that talks to the Kitty server (keys never reach page context).
-import { ApiError, postStream } from '../shared/api';
-import { EXPLAIN_PORT, SIDEPANEL_TAB_KEY, TOUR_PORT, type ExplainPortEvent, type ExplainPortRequest, type ExplainSelectionMessage, type OpenChatMessage, type TourPortEvent, type TourPortRequest } from '../shared/messages';
+import { ApiError, postJson, postStream } from '../shared/api';
+import { API_PATHS, EXPLAIN_PORT, SIDEPANEL_TAB_KEY, TOUR_PORT, type ApiMessage, type ExplainPortEvent, type ExplainPortRequest, type ExplainSelectionMessage, type OpenChatMessage, type TourPortEvent, type TourPortRequest } from '../shared/messages';
 import { getSettings } from '../shared/settings';
 import { readSse } from '../shared/sse';
 import { startState, TOUR_STATE_KEY, type TourResult } from '../shared/tour';
@@ -24,7 +24,7 @@ async function runTour(req: TourPortRequest, send: (e: TourPortEvent) => void, s
         ...(settings.kittyKey ? { 'X-Kitty-Key': settings.kittyKey } : {}),
         ...(settings.githubToken ? { 'X-Kitty-GitHub-Token': settings.githubToken } : {}),
       },
-      body: JSON.stringify({ owner: req.owner, repo: req.repo }),
+      body: JSON.stringify({ owner: req.owner, repo: req.repo, ...(req.issue ? { issue: req.issue } : {}) }),
       signal,
     });
   } catch {
@@ -42,7 +42,7 @@ async function runTour(req: TourPortRequest, send: (e: TourPortEvent) => void, s
       send({ type: 'progress', stage: 'ping', message: '' }); // keeps the worker and the port alive
     } else if (ev.event === 'result') {
       const result = JSON.parse(ev.data) as TourResult;
-      await chrome.storage.session.set({ [TOUR_STATE_KEY]: startState(result) });
+      await chrome.storage.session.set({ [TOUR_STATE_KEY]: startState(result, req.login) });
       return send({ type: 'done' });
     } else if (ev.event === 'error') {
       const e = JSON.parse(ev.data) as { code: string; message: string };
@@ -67,6 +67,15 @@ chrome.runtime.onConnect.addListener((port) => {
     };
     void runTour(msg, send, abort.signal);
   });
+});
+
+// Good first issues and PR pre-flight: one-shot JSON calls on behalf of the content script.
+chrome.runtime.onMessage.addListener((msg: ApiMessage, _sender, sendResponse) => {
+  if (msg?.type !== 'api' || !(API_PATHS as readonly string[]).includes(msg.path)) return false;
+  postJson(msg.path, msg.body)
+    .then((data) => sendResponse({ ok: true, data }))
+    .catch((e: unknown) => sendResponse({ ok: false, code: e instanceof ApiError ? e.code : 'upstream_error', message: e instanceof Error ? e.message : 'Something went wrong.' }));
+  return true; // async response
 });
 
 // The cat's "Ask Kitty" item: open the side panel on the chat tab. Chrome only allows this right after a user

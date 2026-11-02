@@ -26,6 +26,9 @@ export interface TourMeta {
   repaired: boolean;
   droppedSteps: string[];
   unreadableFiles: number;
+  defaultBranch?: string;
+  /** Set for "Help me fix this issue" walkthroughs. */
+  issue?: { number: number; title: string; url: string; labels: string[] };
 }
 
 export interface TourResult {
@@ -43,12 +46,15 @@ export interface TourState {
   currentIndex: number;
   /** Full result, for the side panel overview. */
   result: TourResult;
+  /** Signed-in GitHub user when the tour started (for fork commands). */
+  login?: string;
 }
 
 export const TOUR_STATE_KEY = 'kitty:tour';
 
-export function startState(result: TourResult): TourState {
+export function startState(result: TourResult, login?: string): TourState {
   return {
+    ...(login ? { login } : {}),
     owner: result.meta.owner,
     repo: result.meta.repo,
     sha: result.meta.sha,
@@ -91,7 +97,7 @@ export function tourContext(s: TourState, index = s.currentIndex): TourContextPa
   if (!step) return null;
   return {
     repo: `${s.owner}/${s.repo}`,
-    summary: s.result.tour.summary.slice(0, 2000),
+    summary: `${s.result.meta.issue ? `Walkthrough for fixing issue #${s.result.meta.issue.number}: ${s.result.meta.issue.title}. ` : ''}${s.result.tour.summary}`.slice(0, 2000),
     stepNumber: i + 1,
     totalSteps: s.steps.length,
     step: { path: step.path, title: step.title, what: step.what, why_it_matters: step.why_it_matters },

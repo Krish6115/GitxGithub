@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ApiError, postStream } from '../shared/api';
 import { CHAT_KEY, sourceLabel, toHistory, trimChat, type ChatMessage, type ChatSource } from '../shared/chat';
-import { errorText } from '../shared/messages';
+import { CHAT_DRAFT_KEY, errorText } from '../shared/messages';
 import { Markdown } from '../shared/Markdown';
 
 type Assistant = Extract<ChatMessage, { role: 'assistant' }>;
@@ -16,6 +16,19 @@ export function ChatView() {
 
   useEffect(() => {
     void chrome.storage.session.get(CHAT_KEY).then((r) => setMessages(((r[CHAT_KEY] as ChatMessage[] | undefined) ?? []).map((m) => (m.role === 'assistant' && m.status === 'streaming' ? { ...m, status: 'stopped' } : m))));
+    // "Ask a follow-up" from an explanation bubble pre-fills the question box
+    const takeDraft = (draft: unknown): void => {
+      if (typeof draft !== 'string' || !draft) return;
+      setInput(draft);
+      void chrome.storage.session.remove(CHAT_DRAFT_KEY);
+      requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>('.composer textarea')?.focus());
+    };
+    void chrome.storage.session.get(CHAT_DRAFT_KEY).then((r) => takeDraft(r[CHAT_DRAFT_KEY]));
+    const onChange = (c: Record<string, chrome.storage.StorageChange>, area: string): void => {
+      if (area === 'session' && c[CHAT_DRAFT_KEY]) takeDraft(c[CHAT_DRAFT_KEY].newValue);
+    };
+    chrome.storage.onChanged.addListener(onChange);
+    return () => chrome.storage.onChanged.removeListener(onChange);
   }, []);
   useEffect(() => {
     if (!busy) void chrome.storage.session.set({ [CHAT_KEY]: trimChat(messages) });

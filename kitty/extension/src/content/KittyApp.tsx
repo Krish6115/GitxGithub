@@ -5,6 +5,7 @@ import { boxOf, findFileHeader, type Box } from './highlight';
 import { PixelCat } from './PixelCat';
 import { useCatMotion } from './useCatMotion';
 import { useTour } from './useTour';
+import { CHAT_FOCUS_KEY, type ChatFocus } from '../shared/tour';
 
 /** Re-find the file header after navigation (GitHub renders file views asynchronously) and track scroll/resize. */
 function useHighlight(active: boolean, href: string): Box | null {
@@ -42,6 +43,14 @@ export function KittyApp() {
     ? { top: `${Math.round(cat.pos.y)}px`, transition: `right ${cat.moveMs}ms linear, top ${cat.moveMs}ms linear` }
     : { bottom: `${Math.round(vp.height - cat.pos.y - CAT_SIZE)}px`, transition: `right ${cat.moveMs}ms linear, bottom ${cat.moveMs}ms linear` };
 
+  // "Ask" on a tour step: open the side panel chat already pointed at this step.
+  const askAboutStep = (index: number): void => {
+    if (!t.tour) return;
+    const focus: ChatFocus = { kind: 'tour-step', owner: t.tour.owner, repo: t.tour.repo, index };
+    void chrome.storage.session.set({ [CHAT_FOCUS_KEY]: focus });
+    void chrome.runtime.sendMessage({ type: 'open-chat' }).then((r: { ok?: boolean } | undefined) => setChatHint(!r?.ok));
+  };
+
   let bubble = null;
   if (t.phase.kind === 'loading') {
     bubble = <div class="bubble" role="status"><p class="thinking">{t.phase.message}</p></div>;
@@ -70,8 +79,10 @@ export function KittyApp() {
         <div class="row">
           <button class="ghost" disabled={n === 0} onClick={() => void t.goTo(n - 1)}>Back</button>
           {n < total - 1 ? <button onClick={() => void t.goTo(n + 1)}>Next</button> : <button onClick={() => void t.exit()}>Finish</button>}
+          <button class="ghost" data-kitty="ask-step" title="Ask Kitty about this step in the side panel" onClick={() => askAboutStep(n)}>Ask</button>
           <button class="ghost" onClick={() => void t.exit()}>Exit</button>
         </div>
+        {chatHint && <p class="hint">Click the Kitty icon in the toolbar to open the chat.</p>}
       </div>
     ) : (
       <div class="bubble" data-kitty="resume">

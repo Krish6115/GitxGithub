@@ -71,3 +71,29 @@ export function syncToPath(s: TourState, path: string | null): TourState {
   const i = s.steps.findIndex((st) => st.path === path);
   return i >= 0 && i !== s.currentIndex ? { ...s, currentIndex: i } : s;
 }
+
+/** chrome.storage.session key: the tour step the user clicked "Ask" on (the chat attaches it to the next question). */
+export const CHAT_FOCUS_KEY = 'kitty:chat-focus';
+export type ChatFocus = { kind: 'tour-step'; owner: string; repo: string; index: number };
+
+/** What the tutor gets about the tour: the repo summary and one step. */
+export interface TourContextPayload {
+  repo: string;
+  summary: string;
+  stepNumber: number;
+  totalSteps: number;
+  step: TourStep;
+}
+
+export function tourContext(s: TourState, index = s.currentIndex): TourContextPayload | null {
+  const i = clampIndex(s, index);
+  const step = s.steps[i];
+  if (!step) return null;
+  return {
+    repo: `${s.owner}/${s.repo}`,
+    summary: s.result.tour.summary.slice(0, 2000),
+    stepNumber: i + 1,
+    totalSteps: s.steps.length,
+    step: { path: step.path, title: step.title, what: step.what, why_it_matters: step.why_it_matters },
+  };
+}

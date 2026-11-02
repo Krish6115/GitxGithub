@@ -10,7 +10,7 @@ export interface ChatSource {
 }
 
 export type ChatMessage =
-  | { role: 'user'; content: string }
+  | { role: 'user'; content: string; /** e.g. "Step 4: login.go" when asked from a tour step */ about?: string }
   | {
       role: 'assistant';
       content: string;

@@ -5,6 +5,8 @@ import { CHAT_KEY, sourceLabel, toHistory, trimChat, type ChatMessage, type Chat
 import { CHAT_DRAFT_KEY, errorText } from '../shared/messages';
 import { Markdown } from '../shared/Markdown';
 import { pageLabel, READ_PAGE_KEY, type PageContext, type PageContextRequest } from '../shared/page-context';
+import { CHAT_FOCUS_KEY, TOUR_STATE_KEY, tourContext, type ChatFocus, type TourState } from '../shared/tour';
+import { TourPanel } from './TourView';
 
 /** Ask the content script in the active tab what's on screen (null when it isn't a GitHub page). */
 async function activePageContext(): Promise<PageContext | null> {
@@ -28,6 +30,8 @@ export function ChatView() {
   const endRef = useRef<HTMLDivElement | null>(null);
   const [readPage, setReadPage] = useState(true);
   const [page, setPage] = useState<PageContext | null>(null);
+  const [tour, setTour] = useState<TourState | null>(null);
+  const [focus, setFocus] = useState<ChatFocus | null>(null);
   const busy = messages.at(-1)?.role === 'assistant' && (messages.at(-1) as Assistant).status === 'streaming';
 
   useEffect(() => {
@@ -46,6 +50,31 @@ export function ChatView() {
     chrome.storage.onChanged.addListener(onChange);
     return () => chrome.storage.onChanged.removeListener(onChange);
   }, []);
+  // The running tour, and the step the user clicked "Ask" on (from the cat's bubble or the tour list).
+  useEffect(() => {
+    const takeFocus = (f: unknown): void => {
+      if (!f || (f as ChatFocus).kind !== 'tour-step') return setFocus(null);
+      setFocus(f as ChatFocus);
+      requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>('.composer textarea')?.focus());
+    };
+    void chrome.storage.session.get([TOUR_STATE_KEY, CHAT_FOCUS_KEY]).then((r) => {
+      setTour((r[TOUR_STATE_KEY] as TourState | undefined) ?? null);
+      takeFocus(r[CHAT_FOCUS_KEY]);
+    });
+    const onChange = (c: Record<string, chrome.storage.StorageChange>, area: string): void => {
+      if (area !== 'session') return;
+      if (TOUR_STATE_KEY in c) setTour((c[TOUR_STATE_KEY]?.newValue as TourState | undefined) ?? null);
+      if (CHAT_FOCUS_KEY in c) takeFocus(c[CHAT_FOCUS_KEY]?.newValue);
+    };
+    chrome.storage.onChanged.addListener(onChange);
+    return () => chrome.storage.onChanged.removeListener(onChange);
+  }, []);
+  // the focused step only applies to the tour it came from
+  const focusIndex = focus && tour && focus.owner === tour.owner && focus.repo === tour.repo ? focus.index : null;
+  const askAbout = (index: number): void => void chrome.storage.session.set({ [CHAT_FOCUS_KEY]: { kind: 'tour-step', owner: tour?.owner ?? '', repo: tour?.repo ?? '', index } satisfies ChatFocus });
+  const clearFocus = (): void => void chrome.storage.session.remove(CHAT_FOCUS_KEY);
+  const focusStep = focusIndex !== null ? tour?.steps[focusIndex] : undefined;
+
   // Keep "what Kitty can see" in sync with the active tab.
   useEffect(() => {
     void chrome.storage.local.get(READ_PAGE_KEY).then((r) => setReadPage(r[READ_PAGE_KEY] !== false));
@@ -82,14 +111,17 @@ export function ChatView() {
     if (!q || busy) return;
     const history = toHistory(messages);
     setInput('');
-    setMessages((ms) => trimChat([...ms, { role: 'user', content: q }, { role: 'assistant', content: '', sources: [], status: 'streaming' }]));
+    // while a tour runs, the question carries the step: the one the user picked, or the step on screen
+    const tourCtx = tour ? tourContext(tour, focusIndex ?? tour.currentIndex) : null;
+    const about = focusIndex !== null && tourCtx ? `Step ${tourCtx.stepNumber}: ${tourCtx.step.path}` : undefined;
+    setMessages((ms) => trimChat([...ms, { role: 'user', content: q, ...(about ? { about } : {}) }, { role: 'assistant', content: '', sources: [], status: 'streaming' }]));
     const abort = new AbortController();
     abortRef.current = abort;
     const ctx = readPage ? await activePageContext() : null;
     if (ctx) setPage(ctx);
     const pageBody = ctx ? { page: { url: ctx.url, title: ctx.title, pageType: ctx.pageType, selection: ctx.selection, text: ctx.text, truncated: ctx.truncated } } : {};
     try {
-      await postStream('/tutor', { question: q, history, ...pageBody }, (event, data) => {
+      await postStream('/tutor', { question: q, history, ...pageBody, ...(tourCtx ? { tour: tourCtx } : {}) }, (event, data) => {
         const d = data as Record<string, unknown>;
         if (event === 'sources') updateLast((m) => ({ ...m, sources: d.sources as ChatSource[] }));
         else if (event === 'delta') updateLast((m) => ({ ...m, content: m.content + String(d.text ?? '') }));
@@ -105,18 +137,19 @@ export function ChatView() {
 
   return (
     <section class="chat">
+      {tour && <TourPanel state={tour} onAsk={askAbout} />}
       <div class="messages" aria-live="polite">
         {messages.length === 0 && (
           <div class="muted">
             <p>Ask me anything about Git or GitHub, or about the page you're looking at. I answer from Kitty's learning material and cite my sources.</p>
-            {[...(page && readPage ? ['Explain this page', 'What should I look at first here?'] : []), 'How do I undo my last commit?', 'How do I sync my fork with upstream?', "What's the difference between merge and rebase?"].map((s) => (
+            {[...(focusIndex !== null ? ['Explain this step in more detail', 'How does this file connect to the rest of the repo?'] : []), ...(page && readPage && focusIndex === null ? ['Explain this page', 'What should I look at first here?'] : []), 'How do I undo my last commit?', 'How do I sync my fork with upstream?', "What's the difference between merge and rebase?"].map((s) => (
               <button key={s} class="chip" onClick={() => void send(s)}>{s}</button>
             ))}
           </div>
         )}
         {messages.map((m, i) =>
           m.role === 'user' ? (
-            <div key={i} class="msg user">{m.content}</div>
+            <div key={i} class="msg user">{m.about && <span class="about">📍 {m.about}</span>}{m.content}</div>
           ) : (
             <div key={i} class="msg kitty" data-status={m.status}>
               {m.content ? <Markdown text={m.content} sources={m.sources} /> : m.status === 'streaming' && <p class="thinking">Kitty is thinking</p>}
@@ -146,11 +179,17 @@ export function ChatView() {
           : <span class="muted">Kitty can't see this page</span>}
       </label>
       <form class="composer" onSubmit={(e) => { e.preventDefault(); void send(input); }}>
+        {focusStep && focusIndex !== null && (
+          <div class="focus-chip" data-kitty="focus-chip">
+            <span>📍 Asking about step {focusIndex + 1}: <strong>{focusStep.title}</strong> ({focusStep.path.split('/').pop()})</span>
+            <button type="button" title="Stop asking about this step" aria-label="Clear step" onClick={clearFocus}>✕</button>
+          </div>
+        )}
         <textarea
           value={input}
           maxLength={2000}
           rows={2}
-          placeholder={page && readPage ? "Ask about this page or any Git question…" : "Ask a Git question…"}
+          placeholder={focusIndex !== null ? `Ask about step ${focusIndex + 1}…` : page && readPage ? "Ask about this page or any Git question…" : "Ask a Git question…"}
           aria-label="Your question"
           onInput={(e) => setInput((e.target as HTMLTextAreaElement).value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(input); } }}

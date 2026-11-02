@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { pathFromUrl, repoFromUrl, stepUrl } from './github-page';
 import { errorText } from './messages';
 import { readSse } from './sse';
-import { startState, syncToPath, withIndex, type TourResult } from './tour';
+import { startState, syncToPath, tourContext, withIndex, type TourResult } from './tour';
 
 const SHA = 'abcdef0123456789abcdef0123456789abcdef01';
 const ref = { owner: 'honojs', repo: 'hono' };
@@ -79,5 +79,14 @@ describe('errorText', () => {
     expect(errorText('subscription_required', 'x')).toMatch(/subscription/);
     expect(errorText('key_required', 'x')).toMatch(/settings/);
     expect(errorText('weird_code', 'Fallback text')).toBe('Fallback text');
+  });
+});
+
+describe('tour context for the chat', () => {
+  it('describes the current step, or the one the user asked about', () => {
+    const s = withIndex(startState(result), 1);
+    expect(tourContext(s)).toMatchObject({ repo: 'honojs/hono', summary: 's', stepNumber: 2, totalSteps: 3, step: { path: 'src/index.ts' } });
+    expect(tourContext(s, 2)?.stepNumber).toBe(3);
+    expect(tourContext(s, 99)?.stepNumber).toBe(3); // clamped
   });
 });

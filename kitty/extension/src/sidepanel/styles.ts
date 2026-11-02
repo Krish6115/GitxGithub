@@ -11,16 +11,27 @@ export const css = `
   .tabs button { all: unset; cursor: pointer; padding: 6px 10px; border-bottom: 2px solid transparent; color: var(--muted); }
   .tabs button.active { color: var(--fg); border-bottom-color: var(--accent); font-weight: 600; }
   .tabs button:focus-visible { outline: 2px solid var(--accent); }
-  button:not(.tabs button):not(.copy):not(.steps button) { font: inherit; cursor: pointer; padding: 4px 12px; border-radius: 6px; border: 1px solid rgb(31 35 40 / 0.15); background: var(--accent); color: #fff; font-weight: 600; }
-  button:not(.tabs button):not(.copy):not(.steps button):not(.ghost):hover:not(:disabled) { background: var(--accent-hover); }
+  button:not(.tabs button):not(.copy):not(.steps button):not(.focus-chip button) { font: inherit; cursor: pointer; padding: 4px 12px; border-radius: 6px; border: 1px solid rgb(31 35 40 / 0.15); background: var(--accent); color: #fff; font-weight: 600; }
+  button:not(.tabs button):not(.copy):not(.steps button):not(.focus-chip button):not(.ghost):hover:not(:disabled) { background: var(--accent-hover); }
   button.ghost { background: transparent !important; color: var(--fg) !important; border-color: var(--line) !important; font-weight: 400 !important; }
   button:disabled { opacity: 0.5; cursor: default; }
   .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
   .badge { background: #dafbe1; color: #1a7f37; border: 1px solid var(--accent); border-radius: 8px; padding: 4px 8px; font-size: 12px; }
   .stack { display: flex; flex-wrap: wrap; gap: 4px; } .stack span { border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; font-size: 12px; }
   .steps { padding-left: 20px; margin: 0; } .steps li { margin: 4px 0; }
-  .steps button { all: unset; cursor: pointer; display: flex; flex-direction: column; padding: 4px 6px; border-radius: 6px; width: 100%; }
-  .steps button:hover, .steps li.current button { background: rgb(46 160 67 / 0.15); }
+  .steps li { display: flex; gap: 6px; align-items: center; }
+  .steps button.step { all: unset; cursor: pointer; display: flex; flex-direction: column; padding: 4px 6px; border-radius: 6px; flex: 1; min-width: 0; }
+  .steps button.ask-step { all: unset; cursor: pointer; font-size: 12px; padding: 2px 8px; border: 1px solid var(--line); border-radius: 6px; color: var(--fg); }
+  .steps button.ask-step:hover { border-color: var(--accent-hover); color: var(--accent-hover); }
+  .steps button.step:hover, .steps li.current button.step { background: rgb(46 160 67 / 0.15); }
+  .tour-panel { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; margin-bottom: 10px; background: var(--panel); }
+  .tour-panel > summary { cursor: pointer; font-size: 13px; }
+  .tour-panel[open] { max-height: 45vh; overflow-y: auto; }
+  .tour-panel details { margin-top: 6px; } .tour-panel details summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+  .focus-chip { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 8px; margin: 0 0 6px; border: 1px solid var(--accent-hover); border-radius: 999px; background: rgb(46 160 67 / 0.12); }
+  .focus-chip span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .focus-chip button { all: unset; cursor: pointer; color: var(--muted); padding: 0 4px; }
+  .msg .about { display: block; font-size: 11px; color: var(--muted); margin-bottom: 2px; }
   .steps code { font-size: 12px; color: var(--muted); word-break: break-all; }
   .pre { white-space: pre-wrap; }
   .chat { display: flex; flex-direction: column; flex: 1; gap: 8px; }

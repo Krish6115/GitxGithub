@@ -39,3 +39,16 @@ export function errorText(code: string, fallback: string): string {
 /** chrome.storage.session key for the side panel's active tab ("tour" | "chat" | "settings"). */
 export const SIDEPANEL_TAB_KEY = 'kitty:sidepanel-tab';
 export type OpenChatMessage = { type: 'open-chat' };
+
+export const EXPLAIN_PORT = 'kitty-explain';
+export type ExplainPortRequest = { type: 'start'; text: string; page: { url: string; pageType: string } };
+export type ExplainPortEvent =
+  | { type: 'meta'; kind: 'command' | 'diff' | 'prose' | 'code'; risk: 'safe' | 'rewrites_history' | 'can_lose_work' | null; truncated: boolean }
+  | { type: 'sources'; sources: import('./chat').ChatSource[] }
+  | { type: 'delta'; text: string }
+  | { type: 'done'; unverifiedFlags: string[]; truncated: boolean }
+  | { type: 'error'; code: string; message: string };
+/** Sent by the service worker when the user picks "Ask Kitty about this" in the right-click menu. */
+export type ExplainSelectionMessage = { type: 'explain-selection'; text: string };
+/** chrome.storage.session key: text to pre-fill in the side panel chat ("Ask a follow-up"). */
+export const CHAT_DRAFT_KEY = 'kitty:chat-draft';

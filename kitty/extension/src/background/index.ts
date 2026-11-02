@@ -1,5 +1,6 @@
 // Service worker: the only part of Kitty that talks to the Kitty server (keys never reach page context).
-import { SIDEPANEL_TAB_KEY, TOUR_PORT, type OpenChatMessage, type TourPortEvent, type TourPortRequest } from '../shared/messages';
+import { ApiError, postStream } from '../shared/api';
+import { EXPLAIN_PORT, SIDEPANEL_TAB_KEY, TOUR_PORT, type ExplainPortEvent, type ExplainPortRequest, type ExplainSelectionMessage, type OpenChatMessage, type TourPortEvent, type TourPortRequest } from '../shared/messages';
 import { getSettings } from '../shared/settings';
 import { readSse } from '../shared/sse';
 import { startState, TOUR_STATE_KEY, type TourResult } from '../shared/tour';
@@ -76,4 +77,36 @@ chrome.runtime.onMessage.addListener((msg: OpenChatMessage, sender, sendResponse
     .then(() => sendResponse({ ok: true }))
     .catch(() => sendResponse({ ok: false }));
   return true; // async response
+});
+
+// "Explain this": stream /explain for the content script (content scripts can't call the server directly).
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name !== EXPLAIN_PORT) return;
+  const abort = new AbortController();
+  port.onDisconnect.addListener(() => abort.abort());
+  port.onMessage.addListener((msg: ExplainPortRequest) => {
+    if (msg.type !== 'start') return;
+    const send = (e: ExplainPortEvent): void => {
+      try {
+        port.postMessage(e);
+      } catch {
+        abort.abort();
+      }
+    };
+    postStream('/explain', { text: msg.text, page: msg.page }, (event, data) => {
+      if (event === 'meta' || event === 'sources' || event === 'delta' || event === 'done' || event === 'error') send({ type: event, ...(data as object) } as ExplainPortEvent);
+    }, abort.signal).catch((e: unknown) => {
+      if (!abort.signal.aborted) send({ type: 'error', code: e instanceof ApiError ? e.code : 'network', message: e instanceof Error ? e.message : 'Request failed.' });
+    });
+  });
+});
+
+// Right-click menu on selected text.
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({ id: 'kitty-explain', title: 'Ask Kitty about this', contexts: ['selection'], documentUrlPatterns: ['https://github.com/*'] });
+});
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId !== 'kitty-explain' || tab?.id === undefined || !info.selectionText) return;
+  const msg: ExplainSelectionMessage = { type: 'explain-selection', text: info.selectionText };
+  void chrome.tabs.sendMessage(tab.id, msg);
 });

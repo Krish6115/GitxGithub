@@ -175,13 +175,17 @@ describe('contributor routes', () => {
     const issues = [issue({ number: 3, labels: ['good first issue'] })];
     const fetchImpl = (async (input: string | URL | Request) => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-      if (url.startsWith(`https://api.github.com/repos/${fx.owner}/${fx.repo}/issues?`)) return new Response(JSON.stringify(issues));
+      if (url.startsWith(`https://api.github.com/repos/${fx.owner}/${fx.repo}/issues?`)) {
+        // the beginner label query finds an older issue the "recent" list missed
+        return new Response(JSON.stringify(url.includes('labels=good%20first%20issue') ? [...issues, issue({ number: 11, labels: ['good first issue'], comments: 0 })] : issues));
+      }
       return new Response('{}', { status: 404 });
     }) as typeof fetch;
     const app = createApp(loadEnv({}), { githubFetch: fetchImpl });
     const res = await app.request('/issues', { method: 'POST', body: JSON.stringify({ owner: fx.owner, repo: fx.repo }), headers: { 'content-type': 'application/json' } });
     expect(res.status).toBe(200);
-    expect(((await res.json()) as { issues: { number: number }[] }).issues[0]?.number).toBe(3);
+    const numbers = ((await res.json()) as { issues: { number: number }[] }).issues.map((i) => i.number);
+    expect([...numbers].sort((a, b) => a - b)).toEqual([3, 11]); // merged and de-duplicated
   });
 
   it('POST /preflight validates its input', async () => {

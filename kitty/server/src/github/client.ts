@@ -82,8 +82,8 @@ export interface GitHubClient {
   /** File text at a commit, cut to `maxChars`. Returns null for missing or binary files. */
   getText(owner: string, repo: string, sha: string, path: string, maxChars: number): Promise<string | null>;
   getIssue(owner: string, repo: string, n: number): Promise<Issue>;
-  /** Open, unassigned issues (and PRs, which callers filter out), most recently updated first. */
-  listOpenIssues(owner: string, repo: string): Promise<Issue[]>;
+  /** Open, unassigned issues (and PRs, which callers filter out), most recently updated first; optionally with one label. */
+  listOpenIssues(owner: string, repo: string, label?: string): Promise<Issue[]>;
   getPull(owner: string, repo: string, n: number): Promise<Pull>;
   getPullFiles(owner: string, repo: string, n: number): Promise<PullFile[]>;
   getPullCommits(owner: string, repo: string, n: number): Promise<PullCommit[]>;
@@ -122,7 +122,8 @@ export function createGitHubClient(opts: GitHubClientOptions = {}): GitHubClient
     getHeadSha: async (o, r, branch) => (await getJson(`/repos/${o}/${r}/commits/${encodeURIComponent(branch)}`, CommitSchema)).sha,
     getTree: (o, r, sha) => getJson(`/repos/${o}/${r}/git/trees/${sha}?recursive=1`, TreeSchema),
     getIssue: (o, r, n) => getJson(`/repos/${o}/${r}/issues/${n}`, IssueSchema),
-    listOpenIssues: (o, r) => getJson(`/repos/${o}/${r}/issues?state=open&assignee=none&sort=updated&per_page=100`, z.array(IssueSchema)),
+    listOpenIssues: (o, r, label) =>
+      getJson(`/repos/${o}/${r}/issues?state=open&assignee=none&sort=updated&per_page=100${label ? `&labels=${encodeURIComponent(label)}` : ''}`, z.array(IssueSchema)),
     getPull: (o, r, n) => getJson(`/repos/${o}/${r}/pulls/${n}`, PullSchema),
     getPullFiles: (o, r, n) => getJson(`/repos/${o}/${r}/pulls/${n}/files?per_page=100`, z.array(PullFileSchema)),
     getPullCommits: (o, r, n) => getJson(`/repos/${o}/${r}/pulls/${n}/commits?per_page=100`, z.array(PullCommitSchema)),

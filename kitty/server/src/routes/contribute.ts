@@ -13,6 +13,7 @@ import type { RouteDeps } from './common.js';
 
 const name = z.string().regex(/^[A-Za-z0-9_.-]{1,100}$/);
 const IssuesRequest = z.object({ owner: name, repo: name });
+const BEGINNER_LABELS = ['good first issue', 'help wanted'];
 const PreflightRequest = z.object({ owner: name, repo: name, pr: z.number().int().positive().max(100_000_000) });
 
 export function contributeRoute(env: Env, limiter: RateLimiter, deps: RouteDeps = {}): Hono {
@@ -42,7 +43,12 @@ export function contributeRoute(env: Env, limiter: RateLimiter, deps: RouteDeps 
     const github = setup(c);
     if (github instanceof Response) return github;
     try {
-      const result = rankBeginnerIssues(await github.listOpenIssues(body.data.owner, body.data.repo));
+      // recent issues plus the two most common beginner labels (they may be older than the latest 100)
+      const { owner, repo } = body.data;
+      const lists = await Promise.all([github.listOpenIssues(owner, repo), ...BEGINNER_LABELS.map((l) => github.listOpenIssues(owner, repo, l).catch(() => []))]);
+      const seen = new Set<number>();
+      const all = lists.flat().filter((i) => !seen.has(i.number) && seen.add(i.number));
+      const result = rankBeginnerIssues(all);
       issueCache.set(key, result);
       return c.json(result);
     } catch (e) {

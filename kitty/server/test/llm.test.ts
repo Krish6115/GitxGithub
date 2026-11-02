@@ -66,11 +66,13 @@ describe('BharatCodeProvider (openai SDK, fake fetch)', () => {
     const { p } = make(fetchImpl);
     const r = await p.chat(req);
     await p.chat({ ...req, kind: 'tour' });
+    await p.chat({ ...req, kind: 'tutor' });
     expect(r).toMatchObject({ text: 'pong', truncated: false, usage: { totalTokens: 8 } });
     expect(String(fetchImpl.mock.calls[0]?.[0])).toBe('https://bc.test/v1/chat/completions');
     expect(bodies[0]).toMatchObject({ model: 'qwen-3.8-27b', stream: true, max_tokens: 1500, reasoning_effort: 'none' });
     expect(bodies[1]).toMatchObject({ max_tokens: 16000 });
     expect(bodies[1]).not.toHaveProperty('reasoning_effort');
+    expect(bodies[2]).toMatchObject({ max_tokens: 6000, reasoning_effort: 'low' });
   });
 
   it('retries 503 with backoff and then streams', async () => {

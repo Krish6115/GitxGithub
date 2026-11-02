@@ -125,3 +125,32 @@ describe('POST /tutor', () => {
     expect(tour.status).toBe(429);
   });
 });
+
+describe('streamTutor retries', () => {
+  const failingThen = (failures: number, failAfterDelta = false): Provider => {
+    let n = 0;
+    return {
+      name: 'bharatcode',
+      chat: async () => { throw new Error('unused'); },
+      async *stream(): AsyncGenerator<StreamEvent> {
+        const { KittyError } = await import('../src/llm/errors.js');
+        if (n++ < failures) {
+          if (failAfterDelta) yield { type: 'delta', text: 'partial ' };
+          throw new KittyError('timeout', 'stalled');
+        }
+        yield { type: 'delta', text: 'answer' };
+        yield { type: 'done', result: { text: 'answer', finishReason: 'stop', truncated: false, usage: null, model: 'x' } };
+      },
+    };
+  };
+
+  it('retries once when the stream fails before any text', async () => {
+    const evs = await collect(streamTutor({ provider: failingThen(1), retrieve: () => SOURCES }, { question: 'How do I revert?', history: [] }));
+    expect(evs.at(-1)).toMatchObject({ type: 'done' });
+  });
+
+  it('does not retry after text was shown, or more than once', async () => {
+    await expect(collect(streamTutor({ provider: failingThen(1, true), retrieve: () => SOURCES }, { question: 'How do I revert?', history: [] }))).rejects.toMatchObject({ code: 'timeout' });
+    await expect(collect(streamTutor({ provider: failingThen(2), retrieve: () => SOURCES }, { question: 'How do I revert?', history: [] }))).rejects.toMatchObject({ code: 'timeout' });
+  });
+});

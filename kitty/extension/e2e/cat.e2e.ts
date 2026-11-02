@@ -9,10 +9,11 @@ export async function catE2E(): Promise<void> {
     await page.waitForSelector('#kitty-root', { state: 'attached', timeout: 15_000 });
     const info = await page.evaluate(() => {
       const root = document.getElementById('kitty-root')?.shadowRoot;
-      const svg = root?.querySelector('.cat svg');
-      const r = svg?.getBoundingClientRect();
+      const sprite = root?.querySelector<HTMLElement>('.cat .sprite');
+      const r = sprite?.getBoundingClientRect();
       return {
-        drawn: (svg?.querySelectorAll('rect').length ?? 0) > 100,
+        drawn: !!sprite && sprite.style.backgroundImage.startsWith('url("data:image/png') && (r?.width ?? 0) >= 64,
+        frame: sprite?.dataset.frame,
         mode: root?.querySelector('.kitty')?.getAttribute('data-kitty-mode'),
         w: r?.width, h: r?.height, right: r ? Math.round(innerWidth - r.right) : null, bottom: r ? Math.round(innerHeight - r.bottom) : null,
       };

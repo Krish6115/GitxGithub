@@ -2,7 +2,8 @@
 import type { Box } from './highlight';
 import { ANIMATIONS, type AnimationName, type Frame } from './sprite-sheet';
 
-export type CatMode = 'idle' | 'walk' | 'think' | 'sleep' | 'wave';
+/** held = being dragged by the user; landed = just dropped. */
+export type CatMode = 'idle' | 'walk' | 'think' | 'sleep' | 'wave' | 'held' | 'landed';
 
 export const CAT_SIZE = 96;
 export const HOME_MARGIN = 24;
@@ -18,7 +19,10 @@ const loop = (anim: AnimationName, tick: number): Frame => ({ anim, index: Math.
 export const WAVE_TICKS = ANIMATIONS.wave.frames * HOLD.wave * 2;
 
 /** Frame for a mode at a given animation tick (one tick = TICK_MS). */
-export function frameFor(mode: CatMode, tick: number): Frame {
+export function frameFor(mode: CatMode, tick: number, fast = false): Frame {
+  // held up by the scruff: paws paddle, and the eyes squeeze shut when swung fast
+  if (mode === 'held') return fast ? { anim: 'blink', index: 1 } : { anim: 'walk', index: Math.floor(tick / 2) % ANIMATIONS.walk.frames };
+  if (mode === 'landed') return { anim: 'blink', index: Math.min(2, Math.floor(tick / 2) % 6) };
   if (mode !== 'idle') return loop(mode, tick);
   // ~7s idle loop: breathe and wave the tail, with a quick blink every loop
   const t = tick % 96;
@@ -37,6 +41,31 @@ export interface Viewport {
 
 /** Viewport size without scrollbars (what `position: fixed` offsets are measured against). */
 export const viewport = (): Viewport => ({ width: document.documentElement.clientWidth, height: document.documentElement.clientHeight });
+
+/** Where the user parked the cat, as offsets from the bottom-right corner (so it stays put when the window resizes). */
+export interface SavedHome {
+  right: number;
+  bottom: number;
+}
+export const HOME_KEY = 'kitty:home';
+
+/** Keep the cat fully on screen. */
+export const clampToViewport = (p: Point, vp: Viewport, margin = 4): Point => ({
+  x: Math.min(Math.max(margin, p.x), Math.max(margin, vp.width - CAT_SIZE - margin)),
+  y: Math.min(Math.max(margin, p.y), Math.max(margin, vp.height - CAT_SIZE - margin)),
+});
+
+export const toSavedHome = (p: Point, vp: Viewport): SavedHome => ({
+  right: Math.round(vp.width - CAT_SIZE - p.x),
+  bottom: Math.round(vp.height - CAT_SIZE - p.y),
+});
+
+/** Resting spot: where the user dropped it, or the bottom-right corner. */
+export const restingPosition = (vp: Viewport, saved: SavedHome | null): Point =>
+  saved ? clampToViewport({ x: vp.width - CAT_SIZE - saved.right, y: vp.height - CAT_SIZE - saved.bottom }, vp) : homePosition(vp);
+
+/** Swing angle while dangling: leans against the direction of travel, up to 25 degrees. */
+export const swingFor = (vx: number): number => Math.max(-25, Math.min(25, -vx * 18));
 
 /** Resting spot in the bottom-right corner (top-left of the cat). */
 export const homePosition = (vp: Viewport): Point => ({

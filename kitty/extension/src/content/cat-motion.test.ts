@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { besideBox, CAT_SIZE, frameFor, homePosition, movedEnough, walkDuration, WAVE_TICKS } from './cat-motion';
+import { besideBox, CAT_SIZE, clampToViewport, frameFor, homePosition, movedEnough, restingPosition, swingFor, toSavedHome, walkDuration, WAVE_TICKS } from './cat-motion';
 import { ANIMATIONS, SHEET_COLS } from './sprite-sheet';
 
 describe('sprite sheet', () => {
@@ -51,3 +51,35 @@ describe('positions', () => {
   });
 });
 
+
+describe('dragging the cat', () => {
+  const vp = { width: 1280, height: 800 };
+
+  it('paddles its paws while held and squeezes its eyes when swung fast', () => {
+    expect(frameFor('held', 0).anim).toBe('walk');
+    expect(frameFor('held', 4).index).toBe(2);
+    expect(frameFor('held', 0, true)).toEqual({ anim: 'blink', index: 1 });
+    expect(frameFor('landed', 0).anim).toBe('blink');
+  });
+
+  it('swings against the direction of travel, within limits', () => {
+    expect(swingFor(0)).toBeCloseTo(0);
+    expect(swingFor(1)).toBeLessThan(0);
+    expect(swingFor(-1)).toBeGreaterThan(0);
+    expect(swingFor(10)).toBe(-25);
+    expect(swingFor(-10)).toBe(25);
+  });
+
+  it('remembers the drop spot relative to the bottom-right corner and keeps it on screen', () => {
+    const spot = { x: 300, y: 200 };
+    const saved = toSavedHome(spot, vp);
+    expect(restingPosition(vp, saved)).toEqual(spot);
+    // the window shrinks: the cat keeps its distance from the corner but stays visible
+    const small = { width: 600, height: 400 };
+    const p = restingPosition(small, saved);
+    expect(p.x).toBeGreaterThanOrEqual(4);
+    expect(p.y).toBeGreaterThanOrEqual(4);
+    expect(restingPosition(vp, null)).toEqual(homePosition(vp));
+    expect(clampToViewport({ x: -50, y: 5000 }, vp)).toEqual({ x: 4, y: 800 - CAT_SIZE - 4 });
+  });
+});

@@ -21,6 +21,16 @@
 .cat:hover { transform: translateY(-2px); }
 .cat:focus-visible { outline: 2px solid #f0a04b; outline-offset: 4px; border-radius: 6px; }
 .sprite { display: block; background-repeat: no-repeat; }
+.cat { touch-action: none; cursor: grab; }
+/* held by the scruff: swings from the top, stretches a little and wiggles */
+.pose { transform-origin: 50% 8%; transition: transform 120ms ease-out; }
+.mode-held .cat { cursor: grabbing; }
+.mode-held .cat:hover { transform: none; }
+.mode-held .pose .sprite { animation: dangle 0.5s ease-in-out infinite; }
+@keyframes dangle { 0%, 100% { scale: 1 1.06; } 50% { scale: 1 1.1; translate: 0 2px; } }
+/* dropped: a quick squash-and-stretch landing */
+.mode-landed .pose { animation: land 0.45s ease-out; }
+@keyframes land { 0% { transform: scale(1.08, 0.86); } 45% { transform: scale(0.94, 1.08) translateY(-6px); } 100% { transform: none; } }
 /* the cat is dark: a soft light rim keeps it visible on GitHub's dark theme */
 :host([data-theme="dark"]) .sprite { filter: drop-shadow(0 0 1px rgba(230, 237, 243, 0.55)); }
 
@@ -69,7 +79,7 @@ button.ghost { background: transparent; }
 :host([data-theme="dark"]) .badge { background: #3d2a0f; color: #f6c27f; }
 :host([data-theme="dark"]) button.ghost { color: #e6edf3; border-color: #9da7b3; }
 @media (prefers-reduced-motion: reduce) {
-  .thinking::after { animation: none; }
+  .thinking::after, .mode-held .pose .sprite, .mode-landed .pose { animation: none; }
   .kitty, .highlight { transition: none; }
 }
 

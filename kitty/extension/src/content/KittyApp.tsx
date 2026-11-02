@@ -122,8 +122,19 @@ export function KittyApp() {
         style={{ right: `${Math.round(vp.width - cat.pos.x - CAT_SIZE)}px`, ...anchor }}
       >
         {bubble}
-        <button class="cat" aria-label="Kitty" title="Kitty" onClick={() => setMenuOpen((o) => !o)}>
-          <PixelCat frame={cat.frame} flip={cat.flip} />
+        <button
+          class="cat"
+          aria-label="Kitty (drag to move)"
+          title="Kitty: click for options, drag to move"
+          onPointerDown={cat.onPointerDown}
+          onClick={() => {
+            if (cat.consumeDrag()) return; // a drag isn't a click
+            setMenuOpen((o) => !o);
+          }}
+        >
+          <div class="pose" style={{ transform: cat.mode === 'held' ? `rotate(${cat.swing}deg)` : undefined }}>
+            <PixelCat frame={cat.frame} flip={cat.flip} />
+          </div>
         </button>
       </div>
     </>

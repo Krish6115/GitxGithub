@@ -1,8 +1,7 @@
 :host { all: initial; }
+/* right/bottom are set inline from the cat's position so it can walk anywhere */
 .kitty {
   position: fixed;
-  right: 24px;
-  bottom: 24px;
   z-index: 2147483647;
   display: flex;
   flex-direction: column;
@@ -10,9 +9,9 @@
   gap: 8px;
   font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
   color: #1f2328;
-  transition: right 0.4s ease, bottom 0.4s ease;
 }
-.kitty.is-touring { right: 32px; }
+/* near the top of the screen the bubble goes under the cat */
+.kitty.below { flex-direction: column-reverse; }
 .cat {
   all: unset;
   cursor: pointer;
@@ -21,8 +20,11 @@
 }
 .cat:hover { transform: translateY(-2px); }
 .cat:focus-visible { outline: 2px solid #f0a04b; outline-offset: 4px; border-radius: 6px; }
-.cat img { display: block; image-rendering: pixelated; }
-.is-thinking .cat { animation: bob 0.9s ease-in-out infinite; }
+.cat svg { display: block; }
+.mode-think .cat { animation: bob 0.9s ease-in-out infinite; }
+.mode-walk .cat svg { animation: step 0.3s steps(2) infinite; }
+@keyframes step { 50% { transform: translateY(-1px); } }
+.mode-sleep .cat { opacity: 0.9; }
 @keyframes bob { 50% { transform: translateY(-6px); } }
 
 .bubble {
@@ -71,7 +73,7 @@ button.ghost { background: transparent; }
   button.ghost { color: #e6edf3; border-color: #9da7b3; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .is-thinking .cat, .thinking::after { animation: none; }
+  .mode-think .cat, .mode-walk .cat svg, .thinking::after { animation: none; }
   .kitty, .highlight { transition: none; }
 }
 

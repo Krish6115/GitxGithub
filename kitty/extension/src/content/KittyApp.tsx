@@ -1,6 +1,9 @@
 // The on-page Kitty: cat, menu, tour speech bubble and file highlight (rendered inside Kitty's shadow root).
 import { useEffect, useState } from 'preact/hooks';
+import { besideBox, CAT_SIZE, viewport } from './cat-motion';
 import { boxOf, findFileHeader, type Box } from './highlight';
+import { PixelCat } from './PixelCat';
+import { useCatMotion } from './useCatMotion';
 import { useTour } from './useTour';
 
 /** Re-find the file header after navigation (GitHub renders file views asynchronously) and track scroll/resize. */
@@ -22,7 +25,7 @@ function useHighlight(active: boolean, href: string): Box | null {
   return box;
 }
 
-export function KittyApp({ spriteUrl }: { spriteUrl: string }) {
+export function KittyApp() {
   const t = useTour();
   const [menuOpen, setMenuOpen] = useState(false);
   const [chatHint, setChatHint] = useState(false);
@@ -30,6 +33,14 @@ export function KittyApp({ spriteUrl }: { spriteUrl: string }) {
   const showStep = Boolean(step && t.atCurrentStep);
   const box = useHighlight(showStep, t.href);
   const loading = t.phase.kind === 'loading';
+  const vp = viewport();
+  // During a tour the cat walks to the highlighted file header; otherwise it rests bottom-right.
+  const cat = useCatMotion(box ? besideBox(box, vp) : null, loading);
+  // Near the top the bubble goes under the cat, so the container is anchored by its top edge instead of its bottom.
+  const below = cat.pos.y < 280;
+  const anchor = below
+    ? { top: `${Math.round(cat.pos.y)}px`, transition: `right ${cat.moveMs}ms linear, top ${cat.moveMs}ms linear` }
+    : { bottom: `${Math.round(vp.height - cat.pos.y - CAT_SIZE)}px`, transition: `right ${cat.moveMs}ms linear, bottom ${cat.moveMs}ms linear` };
 
   let bubble = null;
   if (t.phase.kind === 'loading') {
@@ -105,10 +116,14 @@ export function KittyApp({ spriteUrl }: { spriteUrl: string }) {
   return (
     <>
       {box && <div class="highlight" data-kitty="highlight" style={{ top: `${box.top}px`, left: `${box.left}px`, width: `${box.width}px`, height: `${box.height}px` }} />}
-      <div class={`kitty${loading ? ' is-thinking' : ''}${showStep ? ' is-touring' : ''}`}>
+      <div
+        class={`kitty mode-${cat.mode}${below ? ' below' : ''}`}
+        data-kitty-mode={cat.mode}
+        style={{ right: `${Math.round(vp.width - cat.pos.x - CAT_SIZE)}px`, ...anchor }}
+      >
         {bubble}
         <button class="cat" aria-label="Kitty" title="Kitty" onClick={() => setMenuOpen((o) => !o)}>
-          <img src={spriteUrl} alt="Kitty the cat" width={64} height={64} draggable={false} />
+          <PixelCat frame={cat.frame} flip={cat.flip} />
         </button>
       </div>
     </>

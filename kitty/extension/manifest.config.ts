@@ -16,5 +16,4 @@ export default defineManifest({
   content_scripts: [
     { matches: ['https://github.com/*'], js: ['src/content/index.tsx'], run_at: 'document_idle' },
   ],
-  web_accessible_resources: [{ resources: ['sprites/*'], matches: ['https://github.com/*'] }],
 });

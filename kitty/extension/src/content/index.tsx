@@ -18,7 +18,7 @@ function mount(): void {
   document.documentElement.append(host);
   render(
     <>
-      <KittyApp spriteUrl={chrome.runtime.getURL('sprites/kitty.svg')} />
+      <KittyApp />
       <ExplainUI hostId={HOST_ID} />
     </>,
     container,

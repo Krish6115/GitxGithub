@@ -7,9 +7,21 @@ export const TutorTurnSchema = z.object({
 });
 export type TutorTurn = z.infer<typeof TutorTurnSchema>;
 
+/** The GitHub page the user is looking at (read by the extension; untrusted). */
+export const PageContextSchema = z.object({
+  url: z.string().max(1000),
+  title: z.string().max(300).default(''),
+  pageType: z.string().max(40).default('other'),
+  selection: z.string().max(2000).default(''),
+  text: z.string().max(8000).default(''),
+  truncated: z.boolean().default(false),
+});
+export type PageContext = z.infer<typeof PageContextSchema>;
+
 export const TutorRequestSchema = z.object({
   question: z.string().trim().min(1).max(2000),
   history: z.array(TutorTurnSchema).max(40).default([]),
+  page: PageContextSchema.optional(),
 });
 export type TutorRequest = z.infer<typeof TutorRequestSchema>;
 

@@ -39,7 +39,7 @@ export async function* streamTutor(deps: TutorDeps, req: TutorRequest, signal?: 
   };
   const request = {
     kind: 'tutor' as const,
-    messages: tutorMessages(req.question, history, chunks, weak),
+    messages: tutorMessages(req.question, history, chunks, weak, req.page),
     ...(isShortQuestion(req.question) ? { reasoningEffort: 'none' as const } : {}),
     ...(signal ? { signal } : {}),
   };

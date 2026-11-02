@@ -1,0 +1,27 @@
+{
+  "name": "@kitty/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json",
+    "smoke": "tsx scripts/smoke.ts",
+    "live-tour": "tsx scripts/live-tour.ts",
+    "live-tutor": "tsx scripts/live-tutor.ts",
+    "live-explain": "tsx scripts/live-explain.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.1.5",
+    "hono": "4.13.16",
+    "minisearch": "7.2.0",
+    "openai": "7.39.0",
+    "zod": "4.6.7"
+  }
+}

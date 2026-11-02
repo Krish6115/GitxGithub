@@ -1,0 +1,27 @@
+{
+  "name": "kitty",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "extension",
+    "server",
+    "ingest"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n server,ext -c cyan,magenta \"npm run dev -w server\" \"npm run dev -w extension\"",
+    "build": "npm run typecheck && npm run build -w extension -w server",
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "vitest run",
+    "ingest": "npm run ingest -w ingest"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "concurrently": "10.0.6",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  }
+}

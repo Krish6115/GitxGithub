@@ -1,0 +1,20 @@
+{
+  "name": "@kitty/ingest",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "ingest": "tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "refs:fetch": "tsx scripts/references/fetch.ts",
+    "refs:build": "tsx scripts/references/build.ts",
+    "eval": "tsx eval/run.ts"
+  },
+  "dependencies": {
+    "minisearch": "7.2.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "unpdf": "1.9.1"
+  }
+}

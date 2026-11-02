@@ -1,0 +1,217 @@
+[
+  {
+    "id": "undo-last-commit",
+    "question": "I committed to main by mistake but haven't pushed yet. How do I undo the last commit and keep my changes?",
+    "expected": [
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Git/references/reset-demystified.md",
+      "Git/Git_GitHub_101.pdf"
+    ]
+  },
+  {
+    "id": "merge-vs-rebase",
+    "question": "What's the difference between git merge and git rebase?",
+    "expected": [
+      "Git/references/rebasing.md",
+      "Git/Git_Github Notes.pdf",
+      "Git/references/branches-and-merging.md"
+    ]
+  },
+  {
+    "id": "sync-fork",
+    "question": "How do I keep my fork up to date with the original repository?",
+    "expected": [
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Git/Git_GitHub_101.pdf"
+    ]
+  },
+  {
+    "id": "switch-without-commit",
+    "question": "I need to switch branches but I'm in the middle of something and don't want to commit half-done work yet.",
+    "expected": [
+      "Git/references/stashing-and-cleaning.md",
+      "Git/Git_GitHub_101.pdf"
+    ]
+  },
+  {
+    "id": "squash-before-pr",
+    "question": "How do I squash my last 4 commits into one before opening a PR?",
+    "expected": [
+      "Git/references/rebasing.md",
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Git/Git_GitHub_101.pdf"
+    ]
+  },
+  {
+    "id": "what-is-pull",
+    "question": "What does git pull actually do? Is it the same as fetch and merge?",
+    "expected": [
+      "Git/Git_Github Notes.pdf",
+      "Git/references/remotes-and-tracking-branches.md",
+      "Git/git-cheat-sheet-education.pdf"
+    ]
+  },
+  {
+    "id": "resolve-conflict",
+    "question": "Git says CONFLICT (content): Merge conflict in src/auth.js. How do I resolve it?",
+    "expected": [
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Scenario-Based_Guide/references/resolving-conflicts-on-github.md",
+      "Git/references/advanced-merging-and-conflicts.md"
+    ]
+  },
+  {
+    "id": "ours-theirs-rebase",
+    "question": "During a rebase, which side is 'ours' and which is 'theirs'?",
+    "expected": [
+      "Scenario-Based_Guide/references/resolving-conflicts-during-rebase.md",
+      "Git/references/advanced-merging-and-conflicts.md"
+    ]
+  },
+  {
+    "id": "recover-deleted-branch",
+    "question": "I accidentally deleted a branch that had unmerged work. Can I get it back?",
+    "expected": [
+      "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+      "Scenario-Based_Guide/git_scenarios.pdf"
+    ]
+  },
+  {
+    "id": "find-bug-commit",
+    "question": "Something broke between last week and today and there are 200 commits. How do I find which commit introduced the bug?",
+    "expected": [
+      "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+      "Scenario-Based_Guide/git_scenarios.pdf"
+    ]
+  },
+  {
+    "id": "apply-one-fix",
+    "question": "How do I bring just one bug-fix commit from the dev branch into main without merging everything?",
+    "expected": [
+      "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Git/Git_Github Notes.pdf"
+    ]
+  },
+  {
+    "id": "ssh-setup",
+    "question": "How do I set up an SSH key so I can push to GitHub without typing my password?",
+    "expected": [
+      "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Git/references/authentication-ssh-and-tokens.md"
+    ]
+  },
+  {
+    "id": "pat-types",
+    "question": "What's the difference between a fine-grained and a classic personal access token?",
+    "expected": [
+      "Git/references/authentication-ssh-and-tokens.md"
+    ]
+  },
+  {
+    "id": "review-pr",
+    "question": "As a reviewer, how do I leave comments and approve or request changes on a pull request?",
+    "expected": [
+      "Git/references/pull-requests-and-code-review.md"
+    ]
+  },
+  {
+    "id": "close-issue-from-pr",
+    "question": "How do I link a pull request so that the issue closes automatically when it's merged?",
+    "expected": [
+      "Git/references/issues-and-templates.md",
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf"
+    ]
+  },
+  {
+    "id": "protect-main",
+    "question": "How can I make main require an approving review and passing CI checks before anything is merged?",
+    "expected": [
+      "Git/references/branch-protection-and-rulesets.md"
+    ]
+  },
+  {
+    "id": "verified-commits",
+    "question": "My commits don't show the Verified badge on GitHub. How do I sign my commits?",
+    "expected": [
+      "Git/references/commit-signing.md"
+    ]
+  },
+  {
+    "id": "submodules",
+    "question": "How do I include another Git repository inside my project and update it to a newer version later?",
+    "expected": [
+      "Git/references/submodules.md"
+    ]
+  },
+  {
+    "id": "two-branches-at-once",
+    "question": "Can I have two branches checked out in different folders at the same time?",
+    "expected": [
+      "Git/references/worktrees.md"
+    ]
+  },
+  {
+    "id": "run-tests-before-commit",
+    "question": "How can I automatically run my linter before every commit and block the commit if it fails?",
+    "expected": [
+      "Git/references/hooks.md"
+    ]
+  },
+  {
+    "id": "large-files",
+    "question": "Our repository has huge .psd design files. How should we store them in Git?",
+    "expected": [
+      "Git/references/git-lfs.md"
+    ]
+  },
+  {
+    "id": "internals-head",
+    "question": "What exactly is HEAD, and how does Git store commits under the hood?",
+    "expected": [
+      "Git/references/git-internals.md",
+      "Git/references/reset-demystified.md"
+    ]
+  },
+  {
+    "id": "leaked-secret",
+    "question": "I accidentally pushed an API key in a .env file to GitHub. What should I do?",
+    "expected": [
+      "Scenario-Based_Guide/references/removing-sensitive-data.md",
+      "Scenario-Based_Guide/git_scenarios.pdf"
+    ]
+  },
+  {
+    "id": "unfamiliar-repo",
+    "question": "I just opened a big unfamiliar open source repository on GitHub. Where do I start to understand it?",
+    "expected": [
+      "Scenario-Based_Guide/references/understanding-an-unfamiliar-repo.md",
+      "Scenario-Based_Guide/references/contributing-to-open-source.md"
+    ]
+  },
+  {
+    "id": "update-pr-after-review",
+    "question": "A maintainer asked me to make changes to my pull request. How do I update it?",
+    "expected": [
+      "Scenario-Based_Guide/references/updating-a-pr-after-review.md",
+      "Git/references/pull-requests-and-code-review.md"
+    ]
+  },
+  {
+    "id": "tag-creates-release",
+    "question": "If I push a tag to GitHub, does that automatically create a release?",
+    "expected": [
+      "kitty/ingest/corrections.md"
+    ]
+  },
+  {
+    "id": "credential-store-safe",
+    "question": "Is it safe to save my GitHub token with git config credential.helper store?",
+    "expected": [
+      "kitty/ingest/corrections.md",
+      "Git/references/authentication-ssh-and-tokens.md"
+    ]
+  }
+]

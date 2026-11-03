@@ -4,8 +4,8 @@ Kitty is a pixel cat that lives on **github.com** (Chrome extension) and turns G
 
 | | What it does |
 |---|---|
-| 🗺️ **Tour this repo** | Click the cat on any repository. Kitty picks the key files and walks you through them one by one, with a short "what it is / why it matters" for each. Understand a codebase *before* you hand it to an AI. |
-| 💬 **Ask Kitty** | Side-panel chat. Answers are scenario-first (Situation → Commands → Why → How to undo) and cite their sources. |
+| 🗺️ **Tour this repo** | Click the cat on any repository. Kitty picks the files that map the project (README, how it's built, the entry point, the core modules one per area, tests, CI: 5 steps for small repos, up to 12 for big ones) and starts walking at once. The model's "what it is / why it matters" for each file streams in while you read. |
+| 💬 **Ask Kitty** | Side-panel chat. Answers are scenario-first (Situation → Commands → Why → How to undo) and cite their sources. It sees the page you're on, knows your tour step, and can send the cat: "find me a Docker issue", "tour pallets/flask" or "help me fix cli/cli#123" take your tab there and the cat takes over. |
 | 🔍 **Explain this** | Select a command, diff, PR text or code (or right-click it) for a short explanation. Commands get a risk label: *Safe*, *Rewrites history* or *Can lose work*. |
 | 🌱 **Find a good first issue** | On a repo page: open, unassigned issues ranked for newcomers (beginner labels, quiet threads, recent activity). No AI tokens. |
 | 🛠️ **Help me fix this issue** | On an issue page (or from the list above): Kitty walks you through the files most likely involved, explains what to look for in each, and gives you a fix plan plus exact git commands for your fork, a branch named after the issue, and the link that opens the PR form. |
@@ -13,7 +13,7 @@ Kitty is a pixel cat that lives on **github.com** (Chrome extension) and turns G
 
 ## Install
 
-1. Download `kitty-extension-v0.5.0.zip` from the [latest release](https://github.com/Krish6115/GitKitty/releases/latest) and unzip it.
+1. Download `kitty-extension-v0.6.0.zip` from the [latest release](https://github.com/Krish6115/GitKitty/releases/latest) and unzip it.
 2. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and pick the folder.
 3. The welcome screen checks the server connection. Open any repo and click the cat.
 
@@ -78,7 +78,7 @@ flowchart LR
 
 | Feature | Typical tokens | Typical time |
 |---|---|---|
-| Repo tour | 5k (small repo) – 25k (Linux kernel) | 30–40 s |
+| Repo tour | ~10k | walking in ~2 s; explanations done in 20–90 s |
 | Tutor answer | ~3k | first words in 3–8 s |
 | Explain this | ~1k | 5–14 s |
 

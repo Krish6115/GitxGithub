@@ -32,7 +32,8 @@ npm run build -w extension           # load kitty/extension/dist as an unpacked 
 | Command | What it does |
 |---|---|
 | `npm test` | 160+ unit tests (network disabled) |
-| `npm run eval -w ingest` | Retrieval quality check (target ≥ 85% hit@6) |
+| `npm run eval -w ingest` | Retrieval quality check: 52 questions, target ≥ 85% hit@6 |
+| `npm run build-faq -w server` | Regenerate the saved instant answers (`server/data/faq.json`) with the real model |
 | `npm run ingest` | Rebuild the knowledge index from the PDFs and references |
 | `npm run e2e -w extension -- all` | Browser e2e suites ([details](extension/e2e/README.md)) |
 | `VITE_KITTY_SERVER_URL=<url> npm run package -w extension` | Build the release zip |
@@ -80,6 +81,7 @@ flowchart LR
 |---|---|---|
 | Repo tour | ~10k | walking in ~2 s; explanations done in 20–90 s |
 | Tutor answer | ~3k | first words in 3–8 s |
+| Common question (saved answer) | 0 | instant |
 | Explain this | ~1k | 5–14 s |
 
 Tours are cached per repository commit, so a second tour of the same repo costs nothing.

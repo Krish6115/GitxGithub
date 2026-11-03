@@ -6,6 +6,8 @@ export interface Watchdog {
   signal: AbortSignal;
   /** Call on every received chunk (content or reasoning) to switch to / reset the idle timer. */
   activity(): void;
+  /** Stop now with this error (e.g. a caller's own "no answer text yet" limit). */
+  abortWith(reason: unknown): void;
   dispose(): void;
 }
 
@@ -30,6 +32,9 @@ export function createWatchdog(t: StreamTimeouts, parent?: AbortSignal): Watchdo
     activity() {
       clearTimeout(stageTimer);
       stageTimer = setTimeout(() => fail('idle'), t.idleMs);
+    },
+    abortWith(reason) {
+      if (!ctrl.signal.aborted) ctrl.abort(reason);
     },
     dispose() {
       clearTimeout(total);

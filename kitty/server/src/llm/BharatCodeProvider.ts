@@ -59,6 +59,13 @@ export function createBharatCodeProvider(cfg: BharatCodeConfig): Provider {
     };
     const effort = req.reasoningEffort ?? budget.reasoningEffort;
     const wd = createWatchdog(timeouts, req.signal);
+    // With a per-request first-token limit, only real answer text counts as "started": the model also streams
+    // empty and reasoning-only chunks while it is queued or thinking, which would otherwise keep the wait open.
+    const ctrl = new AbortController();
+    const firstText = req.firstTokenMs !== undefined
+      ? setTimeout(() => ctrl.abort(new KittyError('timeout', 'The model did not start answering in time.')), timeouts.firstTokenMs)
+      : undefined;
+    ctrl.signal.addEventListener('abort', () => wd.abortWith(ctrl.signal.reason), { once: true });
     let text = '';
     let finishReason = 'unknown';
     let usage: Usage | null = null;
@@ -92,6 +99,7 @@ export function createBharatCodeProvider(cfg: BharatCodeConfig): Provider {
         if (choice?.finish_reason) finishReason = choice.finish_reason;
         const delta = choice?.delta?.content;
         if (delta) {
+          clearTimeout(firstText);
           text += delta;
           yield { type: 'delta', text: delta };
         }
@@ -102,6 +110,7 @@ export function createBharatCodeProvider(cfg: BharatCodeConfig): Provider {
       if (wd.signal.aborted && wd.signal.reason instanceof KittyError) throw wd.signal.reason;
       throw mapError(e);
     } finally {
+      clearTimeout(firstText);
       wd.dispose();
     }
     if (finishReason === 'length' && text.trim() === '') {

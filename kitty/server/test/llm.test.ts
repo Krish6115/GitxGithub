@@ -162,3 +162,18 @@ describe('mock provider path parsing', () => {
     expect(JSON.parse(r.text).steps.map((s: { path: string }) => s.path)).toEqual(['README.md', 'Git/Git_Github Notes.pdf']);
   });
 });
+
+describe('waiting for the first words (live: BharatCode streams empty chunks while queued)', () => {
+  it('gives up when only empty chunks arrive before the per-request first-text limit', async () => {
+    const empty = Array.from({ length: 40 }, (_, i) => (i % 2 ? 50 : delta('')));
+    const { p } = make(async () => sse(empty), { firstTokenMs: 60_000, idleMs: 60_000 });
+    const t0 = Date.now();
+    await expect(p.chat({ kind: 'tutor', messages: [{ role: 'user', content: 'hi' }], firstTokenMs: 300 })).rejects.toMatchObject({ code: 'timeout' });
+    expect(Date.now() - t0).toBeLessThan(900);
+  });
+
+  it('keeps the old behaviour without a per-request limit (any chunk counts)', async () => {
+    const { p } = make(async () => sse([delta(''), 50, delta(''), 50, delta('ok', 'stop'), usageChunk]), { firstTokenMs: 80 });
+    await expect(p.chat({ kind: 'tutor', messages: [{ role: 'user', content: 'hi' }] })).resolves.toMatchObject({ text: 'ok' });
+  });
+});

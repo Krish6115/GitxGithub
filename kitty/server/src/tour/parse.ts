@@ -102,3 +102,40 @@ export function completedSteps(partial: string): TourStep[] {
   }
   return out;
 }
+
+/**
+ * A planned tour: Kitty's steps, in Kitty's order, with the model's explanation wherever it wrote one (from the
+ * full JSON, or whatever steps finished streaming before a timeout). Never fails: missing parts keep the drafts.
+ */
+export function mergePlannedTour(
+  drafts: { path: string; title: string; what: string; why_it_matters: string }[],
+  modelText: string,
+  fallback: { summary: string; howToContribute: string },
+): { tour: Tour; described: number; ignored: string[] } {
+  let full: Tour | null = null;
+  try {
+    const parsed = TourSchema.safeParse(extractJsonObject(modelText));
+    if (parsed.success) full = parsed.data;
+  } catch {
+    /* incomplete reply: use the streamed steps */
+  }
+  const written = full?.steps ?? (modelText ? completedSteps(modelText) : []);
+  const byPath = new Map(written.map((s) => [normalisePath(s.path), s]));
+  const planned = new Set(drafts.map((d) => d.path));
+  const steps = drafts.map((d) => {
+    const m = byPath.get(d.path);
+    return m ? { path: d.path, title: m.title, what: m.what, why_it_matters: m.why_it_matters } : { path: d.path, title: d.title, what: d.what, why_it_matters: d.why_it_matters };
+  });
+  return {
+    tour: {
+      steps,
+      summary: full?.summary ?? fallback.summary,
+      stack: full?.stack ?? [],
+      how_to_run: full?.how_to_run ?? 'Not stated in the repo.',
+      how_to_contribute: full?.how_to_contribute ?? fallback.howToContribute,
+      good_first_issue_tips: full?.good_first_issue_tips ?? [],
+    },
+    described: drafts.filter((d) => byPath.has(d.path)).length,
+    ignored: [...byPath.keys()].filter((p) => !planned.has(p)),
+  };
+}

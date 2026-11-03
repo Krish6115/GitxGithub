@@ -39,6 +39,10 @@ export interface TourMeta {
   defaultBranch: string;
   /** Set for "Help me fix this issue" walkthroughs. */
   issue?: { number: number; title: string; url: string; labels: string[] };
+  /** Planned tours: how many steps the model explained (the rest keep Kitty's own notes). */
+  described?: number;
+  /** Planned tours: the model was too slow or failed, so the tour uses Kitty's own notes. */
+  modelFailed?: boolean;
 }
 
 export interface TourResult {

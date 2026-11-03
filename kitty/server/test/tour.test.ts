@@ -63,7 +63,10 @@ describe('getTour', () => {
     const cache = newCache();
     const stages: string[] = [];
     const r = await getTour({ github: gh, provider, cache, maxSteps: 10 }, { owner: f.owner, repo: f.repo, onProgress: (s) => stages.push(s) });
-    expect(r.meta).toMatchObject({ sha: f.sha, cached: false, repaired: false, partial: false, droppedSteps: [] });
+    expect(r.meta).toMatchObject({ sha: f.sha, cached: false, repaired: false, partial: false, described: 5 });
+    // Kitty plans a 5-step tour for this small repo; the model's extra 6th file is ignored
+    expect(r.tour.steps).toHaveLength(5);
+    expect(r.meta.droppedSteps).toHaveLength(1);
     expect(stages).toEqual(['fetching', 'ranking', 'thinking', 'writing']);
     expect(provider.requests[0]?.kind).toBe('tour');
 
@@ -73,21 +76,30 @@ describe('getTour', () => {
     expect(provider.requests).toHaveLength(1);
   });
 
-  it('repairs once when too few valid steps come back, sending only allowed paths', async () => {
+  const withIssue = () => fixtureRepo({ issues: [{ number: 1, title: 'Routes crash', body: 'src/routes.js', html_url: 'https://github.com/acme/todo-api/issues/1', state: 'open', comments: 0, created_at: '2026-10-01T00:00:00Z', updated_at: '2026-10-01T00:00:00Z', labels: [], assignees: [] }] });
+
+  it('repairs an issue walkthrough once when too few valid steps come back, sending only allowed paths', async () => {
     const provider = scripted([tourJson(['a.js', 'b.js', 'README.md']), tourJson(GOOD)]);
-    const r = await getTour({ github: fakeGitHub(fixtureRepo()), provider, cache: newCache(), maxSteps: 10 }, { owner: 'acme', repo: 'todo-api' });
+    const r = await getTour({ github: fakeGitHub(withIssue()), provider, cache: newCache(), maxSteps: 10 }, { owner: 'acme', repo: 'todo-api', issue: 1 });
     expect(r.meta.repaired).toBe(true);
     expect(r.meta.usage?.totalTokens).toBe(300);
     const repairPrompt = provider.requests[1]?.messages.at(-1)?.content ?? '';
-    expect(repairPrompt).toMatch(/only 1 steps use real file paths/);
+    expect(repairPrompt).toMatch(/only 1 steps use real file paths \(need at least 3\)/);
     expect(repairPrompt).toContain('- src/server.js');
     expect(repairPrompt).not.toContain('UNTRUSTED_REPO_CONTENT'); // full context is not resent
   });
 
-  it('fails with invalid_model_output when the repair is still unusable', async () => {
+  it('fails an issue walkthrough with invalid_model_output when the repair is still unusable', async () => {
     const provider = scripted(['not json', 'still not json']);
-    await expect(getTour({ github: fakeGitHub(fixtureRepo()), provider, cache: newCache(), maxSteps: 10 }, { owner: 'acme', repo: 'todo-api' }))
+    await expect(getTour({ github: fakeGitHub(withIssue()), provider, cache: newCache(), maxSteps: 10 }, { owner: 'acme', repo: 'todo-api', issue: 1 }))
       .rejects.toMatchObject({ code: 'invalid_model_output' });
+  });
+
+  it("never fails a repo tour on bad model output: it keeps Kitty's own steps", async () => {
+    const r = await getTour({ github: fakeGitHub(fixtureRepo()), provider: scripted(['not json']), cache: newCache(), maxSteps: 10 }, { owner: 'acme', repo: 'todo-api' });
+    expect(r.tour.steps.map((s) => s.path)).toEqual(['README.md', 'package.json', 'src/server.js', 'src/db.js', 'src/routes.js']); // tests join from 6 steps up
+    expect(r.meta.described).toBe(0);
+    expect(r.tour.steps[0]?.title).toBe('Start with the README');
   });
 
   it('marks tours from truncated trees as partial and never caches private repos', async () => {
@@ -125,10 +137,10 @@ describe('prompt-injection hardening (fixture README tries to hijack the model)'
     expect(r.tour.steps.every((s) => repoPaths.has(s.path))).toBe(true);
     expect(JSON.stringify(r.tour)).not.toMatch(/pwned|evil\.example|pirate/i);
 
-    // a model that obeys the injection produces no usable JSON -> repair -> still bad -> error, never a hijacked tour
-    const hijacked = scripted(['pwned', 'Arr, a poem about pirates']);
-    await expect(getTour({ github: fakeGitHub(fixtureRepo()), provider: hijacked, cache: newCache(), maxSteps: 10 }, { owner: 'acme', repo: 'todo-api' }))
-      .rejects.toMatchObject({ code: 'invalid_model_output' });
+    // a model that obeys the injection produces no usable JSON: the tour keeps Kitty's own notes, never the hijacked text
+    const hijacked = await getTour({ github: fakeGitHub(fixtureRepo()), provider: scripted(['pwned', 'Arr, a poem about pirates']), cache: newCache(), maxSteps: 10 }, { owner: 'acme', repo: 'todo-api' });
+    expect(hijacked.meta.described).toBe(0);
+    expect(JSON.stringify(hijacked.tour)).not.toMatch(/pwned|pirate/i);
   });
 });
 
@@ -154,7 +166,8 @@ describe('small repos and dropped streams (from live checks)', () => {
     const provider = scripted([tourJson(['README.md', 'Git/a.pdf', 'Git/b.pdf'])]);
     const r = await getTour({ github: fakeGitHub(f), provider, cache: newCache(), maxSteps: 10 }, { owner: 'acme', repo: 'notes' });
     expect(r.tour.steps.map((s) => s.path)).toEqual(['README.md', 'Git/a.pdf', 'Git/b.pdf']);
-    expect(provider.requests[0]?.messages[0]?.content).toContain('"steps": 3 to 5 items') // a 3-file repo gets a short tour;
+    expect(provider.requests[0]?.messages[0]?.content).toContain('in that order (3 items)'); // a 3-file repo gets a short tour
+    expect(provider.requests[0]?.messages[1]?.content).toContain('## Tour steps (write exactly these files, in this order)\n1. README.md');
     expect(provider.requests[0]?.messages[1]?.content).toContain('(binary document: contents not shown)');
   });
 

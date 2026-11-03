@@ -1,11 +1,15 @@
 // Repo tour pipeline: GitHub -> rank -> context -> model (streamed) -> validate/repair -> cache.
 import type { GitHubClient } from '../github/client.js';
 import { buildTourContext } from '../github/context.js';
+import { draftStep, planSteps, type PlannedStep } from '../github/plan.js';
 import { findDoc, issueHints, rankFiles, topLevelLayout } from '../github/rank.js';
 import type { LruCache } from '../lib/lru.js';
-import { KittyError } from '../llm/errors.js';
+import { KittyError, type KittyErrorCode } from '../llm/errors.js';
+
+/** Model failures a planned tour survives (it falls back to Kitty's own step notes). */
+const SOFT_MODEL_ERRORS: KittyErrorCode[] = ['timeout', 'upstream_error', 'upstream_unavailable', 'invalid_model_output', 'reasoning_budget_exhausted'];
 import type { ChatMessage, ChatResult, Provider, ReasoningEffort } from '../llm/types.js';
-import { completedSteps, validateTour } from './parse.js';
+import { completedSteps, mergePlannedTour, validateTour } from './parse.js';
 import { repairMessages, tourMessages, type TourMode } from './prompt.js';
 import { ISSUE_MAX_STEPS, ISSUE_MIN_REQUESTED_STEPS, ISSUE_MIN_VALID_STEPS, MIN_REQUESTED_STEPS, MIN_VALID_STEPS, type TourResult, type TourStep } from './schema.js';
 
@@ -40,6 +44,8 @@ export interface TourStart {
   partial: boolean;
   expectedSteps: number;
   issue?: { number: number; title: string; url: string; labels: string[] };
+  /** Planned tours: Kitty's own steps, shown at once and replaced as the model explains each file. */
+  draft?: PlannedStep[];
 }
 
 /** How many steps a repo needs: small repos get a short tour, very large ones a longer one. */
@@ -113,8 +119,11 @@ export async function getTour(deps: TourServiceDeps, req: TourRequest): Promise<
   // the step count fits the repo; huge truncated trees count as very large
   const maxSteps = mode === 'issue' ? Math.min(deps.maxSteps, ISSUE_MAX_STEPS) : Math.min(deps.maxSteps, stepsFor(tree.truncated ? 100_000 : fileCount));
   progress('ranking', issue ? 'Finding the files this issue touches…' : tree.truncated ? 'Large repo: ranking key files from a partial file list…' : 'Picking the key files…');
-  // ~2 candidates per step keeps the prompt small (fast) while leaving the model a real choice
-  const ranked = rankFiles(tree.tree, Math.min(25, maxSteps * 2 + 4), issue ? issueHints(issue.title, issue.body ?? '') : undefined);
+  const candidates = rankFiles(tree.tree, 25, issue ? issueHints(issue.title, issue.body ?? '') : undefined);
+  // repo tours: Kitty picks and orders the steps itself (instant); the model only explains them.
+  // issue walkthroughs need judgement, so the model picks from ~2 candidates per step.
+  const plan = mode === 'repo' ? planSteps(candidates, maxSteps) : null;
+  const ranked = plan ?? candidates.slice(0, Math.min(25, maxSteps * 2 + 4));
   const effort: ReasoningEffort | undefined = undefined; // the tour budget already uses low effort
   const readmePath = findDoc(tree.tree, 'readme');
   const contributingPath = findDoc(tree.tree, 'contributing');
@@ -142,7 +151,15 @@ export async function getTour(deps: TourServiceDeps, req: TourRequest): Promise<
   }, issue ? 14_000 : undefined);
 
   const issueMeta = issue ? { number: issue.number, title: issue.title, url: issue.html_url, labels: issue.labels } : undefined;
-  req.onStart?.({ owner, repo, sha, defaultBranch: info.default_branch, partial: tree.truncated, expectedSteps: maxSteps, ...(issueMeta ? { issue: issueMeta } : {}) });
+  // the planned steps only include files GitHub actually served (or documents)
+  const planned = plan ? plan.filter((f) => ctx.includedPaths.includes(f.path)) : null;
+  const drafts = planned?.map(draftStep);
+  req.onStart?.({
+    owner, repo, sha, defaultBranch: info.default_branch, partial: tree.truncated,
+    expectedSteps: planned?.length ?? maxSteps,
+    ...(issueMeta ? { issue: issueMeta } : {}),
+    ...(drafts ? { draft: drafts } : {}),
+  });
   progress('thinking', 'Kitty is thinking…');
   const repoPaths = new Set(tree.tree.map((e) => e.path));
   // stream steps out as they complete, so the cat can start walking on step 1
@@ -152,12 +169,47 @@ export async function getTour(deps: TourServiceDeps, req: TourRequest): Promise<
     for (const step of completedSteps(text)) {
       if (sent.size >= maxSteps) return;
       if (sent.has(step.path) || !repoPaths.has(step.path)) continue;
+      const index = planned ? planned.findIndex((f) => f.path === step.path) : sent.size;
+      if (index < 0) continue; // planned tours: only the planned files
       sent.add(step.path);
-      req.onStep(step, sent.size - 1);
+      req.onStep(step, index);
     }
   };
   const onFirst = (): void => progress('writing', 'Kitty is writing the tour…');
   const onRetry = (): void => progress('thinking', 'The model connection dropped; retrying once…');
+
+  if (planned && drafts) {
+    if (planned.length === 0) throw new KittyError('invalid_model_output', 'This repository has no readable files to build a tour from.');
+    const list = planned.map((f, i) => `${i + 1}. ${f.path}`).join('\n');
+    const prompt = `${ctx.text}\n\n## Tour steps (write exactly these files, in this order)\n${list}`;
+    let text = '';
+    let usage: ChatResult['usage'] = null;
+    let modelFailed = false;
+    try {
+      const r = await streamToResult(provider, tourMessages(prompt, ctx.nonce, planned.length, planned.length, 'repo'), signal, onFirst, onRetry, effort, onText);
+      text = r.text;
+      usage = r.usage;
+    } catch (e) {
+      // the tour already works from Kitty's own plan: a slow or failed model only costs the nicer explanations
+      if (!(e instanceof KittyError) || !SOFT_MODEL_ERRORS.includes(e.code) || signal?.aborted) throw e;
+      modelFailed = true;
+    }
+    const merged = mergePlannedTour(drafts, text, {
+      summary: info.description ?? `${owner}/${repo}`,
+      howToContribute: contributingPath ? `See ${contributingPath} in the repo.` : 'Not stated in the repo.',
+    });
+    const out: TourResult = {
+      tour: merged.tour,
+      meta: {
+        owner, repo, sha, partial: tree.truncated, cached: false, provider: provider.name, repaired: false,
+        droppedSteps: merged.ignored, usage, contextTokens: ctx.approxTokens, unreadableFiles,
+        defaultBranch: info.default_branch, described: merged.described, ...(modelFailed ? { modelFailed } : {}),
+      },
+    };
+    // only cache tours the model fully explained
+    if (!info.private && !modelFailed && merged.described === drafts.length) cache.set(key, out);
+    return out;
+  }
   // small repos may not have enough candidate files for the usual minimums
   const minValid = Math.min(mode === 'issue' ? ISSUE_MIN_VALID_STEPS : MIN_VALID_STEPS, maxSteps - 1, ctx.includedPaths.length);
   const minSteps = Math.min(mode === 'issue' ? ISSUE_MIN_REQUESTED_STEPS : MIN_REQUESTED_STEPS, maxSteps, ctx.includedPaths.length);

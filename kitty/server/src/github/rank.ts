@@ -22,6 +22,8 @@ const SRC_ROOTS = /^(src|lib|app|cmd|pkg|internal|server|client|packages|apps|co
 const DOCUMENT = /.pdf$/i;
 const TEST = /(^|\/)(tests?|__tests__|spec)\/|[._-](test|spec)\.[a-z]+$|_test\.go$/i;
 
+const AUX_DIRS = /^(playgrounds?|examples?|demos?|samples?|benchmarks?|bench|perf|e2e|scripts|tools|website|site|stories|storybook|templates?|test-utils|mocks?|__mocks__|sandbox|integration)$/i;
+
 /** Score one file; returns null for files a tour should never show. */
 export function scoreFile(e: TreeEntry): RankedFile | null {
   if (e.type !== 'blob') return null;
@@ -33,20 +35,31 @@ export function scoreFile(e: TreeEntry): RankedFile | null {
   if ((e.size ?? 0) > 200_000) return null; // usually generated
 
   const depth = parts.length - 1;
+  // monorepos: packages/<name>/src/... is the real source, so those leading folders don't count as depth
+  const mono = /^(packages|apps|crates|libs|modules|services)\/[^/]+\/((src|lib)\/)?/i.exec(e.path)?.[0] ?? '';
+  const effectiveDepth = depth - (mono ? mono.split('/').filter(Boolean).length : 0);
   const reasons: string[] = [];
-  let score = -1.5 * Math.max(0, depth - 1);
+  let score = -1.5 * Math.max(0, effectiveDepth - 1);
   const add = (n: number, why: string): void => {
     score += n;
     reasons.push(why);
   };
+  // demos, examples, benchmarks and scripts are not where a project's core lives
+  if (parts.slice(0, -1).some((d) => AUX_DIRS.test(d))) add(-6, 'aux');
+  if (mono && /^(packages|crates|libs)\//i.test(e.path)) add(1, 'package source');
 
   if (DOCS.test(lower)) add(depth === 0 ? 7 : 2, 'docs');
   if (DOCUMENT.test(lower)) add(depth <= 1 ? 3 : 1.5, 'document'); // contents not shown, but a tour can point at it
   if (MANIFESTS.test(lower)) add(depth === 0 ? 8 : 4, 'manifest');
   if (CONFIG.test(lower)) add(depth === 0 ? 3 : 1.5, 'config');
   if (/^\.github\/workflows\/.+\.ya?ml$/i.test(e.path)) add(5 + 1.5, 'ci'); // offsets its depth penalty
+  if (/^\.github\/workflows\/(ci|test|tests|build|main|check|checks)\.ya?ml$/i.test(e.path)) add(2, 'main ci');
+  // any "<tool>.config.<ext>" (rollup, tailwind, playwright, ...) is config, not core code
+  if (!CONFIG.test(lower) && /\.config\.[a-z]+$/i.test(lower)) add(depth === 0 ? 3 : 1.5, 'config');
   if (CODE.test(lower)) {
     add(2, 'code');
+    if (lower.endsWith('.d.ts')) add(-3, 'type declarations');
+    if (/^docs?$/i.test(parts[0] ?? '') && depth > 0) add(-4, 'docs tooling');
     if (ENTRY.test(name)) add(depth <= 2 ? 7 : 4, 'entry point');
     if (SRC_ROOTS.test(parts[0] ?? '')) add(1, 'source root');
     // substantial modules beat tiny helpers: +0..2 for 1 KB..100 KB, -1 for near-empty files

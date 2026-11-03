@@ -22,6 +22,7 @@ function kindOf(f: RankedFile): Kind {
   if (r.has('manifest')) return 'manifest';
   if (r.has('ci')) return 'ci';
   if (r.has('test')) return 'test';
+  if (r.has('config')) return 'config'; // vite.config.ts and friends are code files, but config
   if (r.has('entry point')) return 'entry';
   if (r.has('code')) return 'core';
   if (r.has('docs') || r.has('docs folder') || r.has('document')) return 'docs';

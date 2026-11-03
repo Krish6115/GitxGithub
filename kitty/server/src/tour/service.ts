@@ -186,7 +186,7 @@ export async function getTour(deps: TourServiceDeps, req: TourRequest): Promise<
     let usage: ChatResult['usage'] = null;
     let modelFailed = false;
     try {
-      const r = await streamToResult(provider, tourMessages(prompt, ctx.nonce, planned.length, planned.length, 'repo'), signal, onFirst, onRetry, effort, onText);
+      const r = await streamToResult(provider, tourMessages(prompt, ctx.nonce, planned.length, planned.length, 'repo'), signal, onFirst, onRetry, 'none', onText); // Kitty chose the files: no reasoning needed
       text = r.text;
       usage = r.usage;
     } catch (e) {

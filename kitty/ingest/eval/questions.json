@@ -443,5 +443,78 @@
       "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
       "Git/references/branches-and-merging.md"
     ]
+  },
+  {
+    "id": "create-release-tag",
+    "question": "how do i create an annotated tag for v1.0 and push it to github",
+    "expected": [
+      "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+      "Scenario-Based_Guide/git_scenarios.pdf"
+    ]
+  },
+  {
+    "id": "remove-worktree",
+    "question": "how do i remove or delete a git worktree when im done with it",
+    "expected": [
+      "Git/references/worktrees.md"
+    ]
+  },
+  {
+    "id": "clean-dry-run",
+    "question": "how to preview what git clean would delete before actually deleting it",
+    "expected": [
+      "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+      "Git/references/stashing-and-cleaning.md"
+    ]
+  },
+  {
+    "id": "log-oneline-graph",
+    "question": "how to view commit history as a one line graph in git log",
+    "expected": [
+      "Git/Git_Github Notes.pdf",
+      "Git/git-cheat-sheet-education.pdf"
+    ]
+  },
+  {
+    "id": "ssh-signing",
+    "question": "can i sign git commits using my ssh key instead of gpg",
+    "expected": [
+      "Git/references/commit-signing.md"
+    ]
+  },
+  {
+    "id": "git-aliases",
+    "question": "how do i create shortcuts or aliases for common git commands",
+    "expected": [
+      "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf"
+    ]
+  },
+  {
+    "id": "git-lfs-attributes",
+    "question": "why does git lfs modify .gitattributes and what goes inside it",
+    "expected": [
+      "Git/references/git-lfs.md"
+    ]
+  },
+  {
+    "id": "clone-submodules",
+    "question": "cloned a repo with submodules but the subfolder is empty, how do i download it",
+    "expected": [
+      "Git/references/submodules.md"
+    ]
+  },
+  {
+    "id": "gitignore-unignore",
+    "question": "how do i ignore everything in a folder except one file in .gitignore",
+    "expected": [
+      "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf"
+    ]
+  },
+  {
+    "id": "github-cli-pr",
+    "question": "how to create a pull request from terminal with github cli gh",
+    "expected": [
+      "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf"
+    ]
   }
 ]

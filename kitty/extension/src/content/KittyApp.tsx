@@ -7,6 +7,8 @@ import { useCatMotion } from './useCatMotion';
 import { useTour } from './useTour';
 import { IssuesView, PreflightView } from './ContributeViews';
 import { useApi } from './useApi';
+import { requestExplain } from './useExplain';
+import { issueText, usePendingAction } from './usePendingAction';
 import { issueNumberFromUrl, pullNumberFromUrl } from '../shared/github-page';
 import type { BeginnerIssues, PreflightResult } from '../shared/contribute';
 import { CHAT_FOCUS_KEY, type ChatFocus } from '../shared/tour';
@@ -48,6 +50,17 @@ export function KittyApp() {
     setLastIssue(issue);
     t.start(issue);
   };
+  // actions from the side panel chat ("find me an issue... take me there") run here once this page loads
+  usePendingAction(t.href, (a) => {
+    const [owner, repo] = a.repo.split('/');
+    if (a.type === 'tour') startTour();
+    else if (a.type === 'fix_issue') startTour(a.number);
+    else if (a.type === 'check_pr') {
+      setMenuOpen(false);
+      setPanel('preflight');
+      preflightApi.run({ owner, repo, pr: a.number });
+    } else void issueText(a.number).then(requestExplain);
+  });
   const step = t.tour && t.onTourRepo ? t.tour.steps[t.tour.currentIndex] : undefined;
   const showStep = Boolean(step && t.atCurrentStep);
   const box = useHighlight(showStep, t.href);

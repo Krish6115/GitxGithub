@@ -74,6 +74,8 @@ export function contributionPlan(p: ContributionInput): ContributionPlan {
 
 /** Mirror of the server's POST /issues reply. */
 export interface BeginnerIssue {
+  /** owner/name */
+  repo: string;
   number: number;
   title: string;
   url: string;

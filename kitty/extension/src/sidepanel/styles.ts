@@ -32,6 +32,9 @@ export const css = `
   .focus-chip { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 8px; margin: 0 0 6px; border: 1px solid var(--accent-hover); border-radius: 999px; background: rgb(46 160 67 / 0.12); }
   .focus-chip span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .focus-chip button { all: unset; cursor: pointer; color: var(--muted); padding: 0 4px; }
+  .action-card { margin-top: 6px; padding: 6px 8px; border: 1px solid var(--accent-hover); border-radius: 8px; background: rgb(46 160 67 / 0.08); }
+  .action-card p { margin: 0 0 4px; } .found { margin: 4px 0 0; padding-left: 18px; } .found li { margin: 0 0 8px; } .found a { color: var(--fg); text-decoration: none; }
+  button.small { padding: 1px 8px; font-size: 12px; }
   .msg .about { display: block; font-size: 11px; color: var(--muted); margin-bottom: 2px; }
   .steps code { font-size: 12px; color: var(--muted); word-break: break-all; }
   .pre { white-space: pre-wrap; }

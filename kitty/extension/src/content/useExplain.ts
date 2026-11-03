@@ -29,6 +29,10 @@ function visibleEnd(range: Range): Rect {
   return toRect(last ?? range.getBoundingClientRect());
 }
 
+/** In-page requests to explain some text (kept inside the content script; the page itself can't trigger it). */
+const explainRequests = new Set<(text: string) => void>();
+export const requestExplain = (text: string): void => explainRequests.forEach((f) => f(text));
+
 export function useExplain(hostId: string) {
   const [offer, setOffer] = useState<{ text: string; rect: Rect } | null>(null);
   const [current, setCurrent] = useState<Explanation | null>(null);
@@ -93,6 +97,13 @@ export function useExplain(hostId: string) {
     });
     port.postMessage({ type: 'start', text, page: { url: location.href, pageType: pageTypeFromUrl(location.href) } });
   }, []);
+
+  // Other parts of Kitty (e.g. a chat action "explain this issue") can ask for an explanation directly.
+  useEffect(() => {
+    const onRequest = (text: string): void => explain(text.trim(), null);
+    explainRequests.add(onRequest);
+    return () => void explainRequests.delete(onRequest);
+  }, [explain]);
 
   // Right-click menu: explain the selection the browser reports (use the live selection's position when it matches).
   useEffect(() => {

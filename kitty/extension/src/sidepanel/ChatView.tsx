@@ -1,6 +1,8 @@
 // "Ask Kitty" tutor chat: streamed answers with numbered sources, unverified-flag notes, stop and new chat.
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { ApiError, postStream } from '../shared/api';
+import { ApiError, postJson, postStream } from '../shared/api';
+import { actionLabel, actionUrl, PENDING_ACTION_KEY, stripAction, type KittyAction, type PageAction, type PendingAction } from '../shared/actions';
+import type { BeginnerIssues } from '../shared/contribute';
 import { CHAT_KEY, sourceLabel, toHistory, trimChat, type ChatMessage, type ChatSource } from '../shared/chat';
 import { CHAT_DRAFT_KEY, errorText } from '../shared/messages';
 import { Markdown } from '../shared/Markdown';
@@ -22,6 +24,16 @@ async function activePageContext(): Promise<PageContext | null> {
 }
 
 type Assistant = Extract<ChatMessage, { role: 'assistant' }>;
+
+/** Send the active tab to the action's page; the cat there picks the action up and runs it. */
+async function runOnPage(action: PageAction): Promise<void> {
+  const url = actionUrl(action);
+  const pending: PendingAction = { action, url, at: Date.now() };
+  await chrome.storage.session.set({ [PENDING_ACTION_KEY]: pending });
+  const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  if (tab?.id !== undefined) await chrome.tabs.update(tab.id, { url });
+  else await chrome.tabs.create({ url });
+}
 
 export function ChatView() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -125,6 +137,17 @@ export function ChatView() {
         const d = data as Record<string, unknown>;
         if (event === 'sources') updateLast((m) => ({ ...m, sources: d.sources as ChatSource[] }));
         else if (event === 'delta') updateLast((m) => ({ ...m, content: m.content + String(d.text ?? '') }));
+        else if (event === 'action') {
+          const action = d.action as KittyAction;
+          updateLast((m) => ({ ...m, action, ...(action.type === 'find_issues' ? { found: { status: 'loading' } } : {}) }));
+          if (action.type === 'find_issues') {
+            postJson<BeginnerIssues>('/search-issues', { query: action.query, ...(action.repo ? { repo: action.repo } : {}) })
+              .then((r) => updateLast((m) => ({ ...m, found: { status: 'done', issues: r.issues, labeled: r.labeled } })))
+              .catch((e: unknown) => updateLast((m) => ({ ...m, found: { status: 'error', error: e instanceof ApiError ? errorText(e.code, e.message) : 'Search failed.' } })));
+          } else {
+            void runOnPage(action);
+          }
+        }
         else if (event === 'done') updateLast((m) => ({ ...m, status: 'done', unverifiedFlags: d.unverifiedFlags as string[], truncated: Boolean(d.truncated) }));
         else if (event === 'error') updateLast((m) => ({ ...m, status: 'error', error: errorText(String(d.code), String(d.message)) }));
       }, abort.signal);
@@ -152,7 +175,29 @@ export function ChatView() {
             <div key={i} class="msg user">{m.about && <span class="about">📍 {m.about}</span>}{m.content}</div>
           ) : (
             <div key={i} class="msg kitty" data-status={m.status}>
-              {m.content ? <Markdown text={m.content} sources={m.sources} /> : m.status === 'streaming' && <p class="thinking">Kitty is thinking</p>}
+              {m.content ? <Markdown text={stripAction(m.content)} sources={m.sources} /> : m.status === 'streaming' && <p class="thinking">Kitty is thinking</p>}
+              {m.action && (
+                <div class="action-card" data-kitty="action">
+                  <p>🐾 {actionLabel(m.action)}{m.action.type !== 'find_issues' && ': Kitty is taking you there.'}</p>
+                  {m.action.type !== 'find_issues' && <button class="ghost small" onClick={() => void runOnPage(m.action as PageAction)}>Go again</button>}
+                  {m.found?.status === 'loading' && <p class="thinking small">Searching GitHub</p>}
+                  {m.found?.status === 'error' && <p class="error small">{m.found.error}</p>}
+                  {m.found?.status === 'done' && (m.found.issues?.length ? (
+                    <ol class="found" data-kitty="found">
+                      {m.found.issues.map((i) => (
+                        <li key={`${i.repo}#${i.number}`}>
+                          <a href={i.url} target="_blank" rel="noopener noreferrer"><strong>{i.repo}#{i.number}</strong> {i.title}</a>
+                          {i.labels.length > 0 && <div class="small muted">{i.labels.slice(0, 3).join(' · ')}</div>}
+                          <div class="row">
+                            <button class="small" data-kitty="show-issue" onClick={() => void runOnPage({ type: 'explain_issue', repo: i.repo, number: i.number })}>Show me</button>
+                            <button class="ghost small" onClick={() => void runOnPage({ type: 'fix_issue', repo: i.repo, number: i.number })}>Help me fix it</button>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : <p class="small muted">No open, beginner-friendly issues matched. Try other words.</p>)}
+                </div>
+              )}
               {m.status === 'error' && <p class="error">{m.error}</p>}
               {m.status === 'stopped' && <p class="muted small">Stopped.</p>}
               {m.truncated && <p class="muted small">The answer hit its length limit and may be incomplete.</p>}

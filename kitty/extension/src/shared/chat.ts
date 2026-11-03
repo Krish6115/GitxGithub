@@ -19,6 +19,10 @@ export type ChatMessage =
       unverifiedFlags?: string[];
       truncated?: boolean;
       error?: string;
+      /** Something the answer asked Kitty to do (open a repo, explain an issue, find issues...). */
+      action?: import('./actions').KittyAction;
+      /** Results of a find_issues action. */
+      found?: { status: 'loading' | 'done' | 'error'; issues?: import('./contribute').BeginnerIssue[]; labeled?: boolean; error?: string };
     };
 
 export const CHAT_KEY = 'kitty:chat';

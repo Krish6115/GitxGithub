@@ -3,7 +3,7 @@ import { ApiError, postJson, postStream } from '../shared/api';
 import { API_PATHS, EXPLAIN_PORT, SIDEPANEL_TAB_KEY, TOUR_PORT, type ApiMessage, type ExplainPortEvent, type ExplainPortRequest, type ExplainSelectionMessage, type OpenChatMessage, type TourPortEvent, type TourPortRequest } from '../shared/messages';
 import { getSettings } from '../shared/settings';
 import { readSse } from '../shared/sse';
-import { startState, TOUR_STATE_KEY, type TourResult } from '../shared/tour';
+import { appendStep, finishState, streamingState, TOUR_STATE_KEY, type TourResult, type TourStart, type TourState, type TourStep } from '../shared/tour';
 
 chrome.runtime.onInstalled.addListener((details) => {
   void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
@@ -34,20 +34,42 @@ async function runTour(req: TourPortRequest, send: (e: TourPortEvent) => void, s
     const err = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
     return send({ type: 'error', code: err.code ?? 'upstream_error', message: err.message ?? `Server returned HTTP ${res.status}.` });
   }
+  const loadTour = async (): Promise<TourState | null> => ((await chrome.storage.session.get(TOUR_STATE_KEY))[TOUR_STATE_KEY] as TourState | undefined) ?? null;
+  let start: TourStart | null = null;
+  // Chrome stops an idle service worker after ~30s; calling an extension API keeps it alive while the tour streams
+  const keepAlive = setInterval(() => void chrome.runtime.getPlatformInfo(), 20_000);
+  try {
   for await (const ev of readSse(res.body)) {
-    if (ev.event === 'progress') {
+    if (ev.event === 'start') {
+      start = JSON.parse(ev.data) as TourStart;
+    } else if (ev.event === 'step' && start) {
+      const { index, step } = JSON.parse(ev.data) as { index: number; step: TourStep };
+      if (index === 0) {
+        await chrome.storage.session.set({ [TOUR_STATE_KEY]: streamingState(start, step, req.login) });
+        send({ type: 'first-step' });
+      } else {
+        const cur = await loadTour();
+        if (cur?.streaming && cur.sha === start.sha) await chrome.storage.session.set({ [TOUR_STATE_KEY]: appendStep(cur, step) });
+      }
+    } else if (ev.event === 'progress') {
       const p = JSON.parse(ev.data) as { stage: string; message: string };
       send({ type: 'progress', stage: p.stage, message: p.message });
     } else if (ev.event === 'ping') {
       send({ type: 'progress', stage: 'ping', message: '' }); // keeps the worker and the port alive
     } else if (ev.event === 'result') {
       const result = JSON.parse(ev.data) as TourResult;
-      await chrome.storage.session.set({ [TOUR_STATE_KEY]: startState(result, req.login) });
+      await chrome.storage.session.set({ [TOUR_STATE_KEY]: finishState(await loadTour(), result, req.login) });
       return send({ type: 'done' });
     } else if (ev.event === 'error') {
       const e = JSON.parse(ev.data) as { code: string; message: string };
+      // keep the steps that already arrived, just stop waiting for more
+      const cur = await loadTour();
+      if (cur?.streaming) await chrome.storage.session.set({ [TOUR_STATE_KEY]: { ...cur, streaming: false } });
       return send({ type: 'error', code: e.code, message: e.message });
     }
+  }
+  } finally {
+    clearInterval(keepAlive);
   }
   send({ type: 'error', code: 'upstream_error', message: 'The server closed the connection early.' });
 }
@@ -55,14 +77,16 @@ async function runTour(req: TourPortRequest, send: (e: TourPortEvent) => void, s
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name !== TOUR_PORT) return;
   const abort = new AbortController();
-  port.onDisconnect.addListener(() => abort.abort());
+  let started = false; // after step 1 the page navigates to it, which disconnects the port: keep streaming
+  port.onDisconnect.addListener(() => started || abort.abort());
   port.onMessage.addListener((msg: TourPortRequest) => {
     if (msg.type !== 'start') return;
     const send = (e: TourPortEvent): void => {
+      if (e.type === 'first-step') started = true;
       try {
         port.postMessage(e);
       } catch {
-        abort.abort(); // tab closed or navigated away
+        if (!started) abort.abort(); // tab closed or navigated away before step 1; after it, keep streaming
       }
     };
     void runTour(msg, send, abort.signal);

@@ -89,7 +89,7 @@ export function KittyApp() {
       <div class="bubble tour" data-kitty="step">
         <div class="meta">
           {t.tour.result.meta.issue && <span class="badge" title={t.tour.result.meta.issue.title}>Issue #{t.tour.result.meta.issue.number}</span>}
-          Step {n + 1} of {total}
+          Step {n + 1} of {t.tour.streaming ? `~${Math.max(total, t.tour.expectedSteps ?? total)}` : total}
           {t.tour.partial && <span class="badge" title="GitHub returned only part of this repository's file list">Large repo · partial tour</span>}
         </div>
         <h3>{step.title}</h3>
@@ -97,7 +97,13 @@ export function KittyApp() {
         <p class="why"><strong>Why it matters:</strong> {step.why_it_matters}</p>
         <div class="row">
           <button class="ghost" disabled={n === 0} onClick={() => void t.goTo(n - 1)}>Back</button>
-          {n < total - 1 ? <button onClick={() => void t.goTo(n + 1)}>Next</button> : <button onClick={() => void t.exit()}>Finish</button>}
+          {n < total - 1 ? (
+            <button onClick={() => void t.goTo(n + 1)}>Next</button>
+          ) : t.tour.streaming ? (
+            <button disabled title="Kitty is still writing the next step">Next</button>
+          ) : (
+            <button onClick={() => void t.exit()}>Finish</button>
+          )}
           <button class="ghost" data-kitty="ask-step" title="Ask Kitty about this step in the side panel" onClick={() => askAboutStep(n)}>Ask</button>
           <button class="ghost" onClick={() => void t.exit()}>Exit</button>
         </div>
@@ -107,6 +113,7 @@ export function KittyApp() {
             <a href="#" data-kitty="show-commands" onClick={(e) => { e.preventDefault(); askAboutStep(n); }}>Show them</a>
           </p>
         )}
+        {t.tour.streaming && n === total - 1 && <p class="hint thinking" data-kitty="writing-next">Kitty is writing the next step</p>}
         {chatHint && <p class="hint">Click the Kitty icon in the toolbar to open the chat.</p>}
       </div>
     ) : (

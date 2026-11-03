@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { pathFromUrl, repoFromUrl, stepUrl } from './github-page';
 import { errorText } from './messages';
 import { readSse } from './sse';
-import { startState, syncToPath, tourContext, withIndex, type TourResult } from './tour';
+import { appendStep, finishState, startState, streamingState, syncToPath, tourContext, withIndex, type TourResult } from './tour';
 
 const SHA = 'abcdef0123456789abcdef0123456789abcdef01';
 const ref = { owner: 'honojs', repo: 'hono' };
@@ -88,5 +88,25 @@ describe('tour context for the chat', () => {
     expect(tourContext(s)).toMatchObject({ repo: 'honojs/hono', summary: 's', stepNumber: 2, totalSteps: 3, step: { path: 'src/index.ts' } });
     expect(tourContext(s, 2)?.stepNumber).toBe(3);
     expect(tourContext(s, 99)?.stepNumber).toBe(3); // clamped
+  });
+});
+
+describe('streaming tours', () => {
+  const start = { owner: 'honojs', repo: 'hono', sha: SHA, defaultBranch: 'main', partial: false, expectedSteps: 7 };
+  const step = (path: string) => ({ path, title: path, what: 'w', why_it_matters: 'y' });
+
+  it('opens on step 1 and appends steps as they arrive', () => {
+    let s = streamingState(start, step('README.md'));
+    expect(s).toMatchObject({ streaming: true, expectedSteps: 7, currentIndex: 0 });
+    s = appendStep(appendStep(s, step('src/index.ts')), step('src/index.ts'));
+    expect(s.steps.map((x) => x.path)).toEqual(['README.md', 'src/index.ts']);
+  });
+
+  it('keeps the user on the step they are reading when the final tour arrives', () => {
+    const s = withIndex(appendStep(streamingState(start, step('README.md')), step('src/index.ts')), 1);
+    const done = finishState(s, result);
+    expect(done.streaming).toBeUndefined();
+    expect(done.steps[done.currentIndex]?.path).toBe('src/index.ts');
+    expect(finishState(null, result).currentIndex).toBe(0);
   });
 });

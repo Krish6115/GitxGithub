@@ -75,13 +75,16 @@ export function useTour() {
     const port = chrome.runtime.connect({ name: TOUR_PORT });
     portRef.current = port;
     setPhase({ kind: 'loading', message: issue ? `Kitty is reading issue #${issue}…` : 'Kitty is getting ready…' });
+    let opened = false;
     port.onMessage.addListener((e: TourPortEvent) => {
       if (e.type === 'progress' && e.stage !== 'ping') setPhase({ kind: 'loading', message: e.message });
       else if (e.type === 'error') setPhase({ kind: 'error', message: errorText(e.code, e.message) });
-      else if (e.type === 'done') {
+      else if (e.type === 'first-step' || e.type === 'done') {
+        // step 1 is ready (the rest may still be streaming): open it; the service worker keeps going
         setPhase({ kind: 'idle' });
         port.disconnect();
-        // open the first step
+        if (opened) return;
+        opened = true;
         void load().then((t) => {
           const first = t?.steps[0];
           if (t && first) location.assign(stepUrl(t, t.sha, first.path));

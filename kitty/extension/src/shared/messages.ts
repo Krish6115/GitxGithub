@@ -13,6 +13,7 @@ export type ApiReply<T> = { ok: true; data: T } | { ok: false; code: string; mes
 
 export type TourPortEvent =
   | { type: 'progress'; stage: string; message: string }
+  | { type: 'first-step' } // step 1 is in chrome.storage.session; the rest is still streaming
   | { type: 'done' } // the tour was saved to chrome.storage.session
   | { type: 'error'; code: string; message: string };
 

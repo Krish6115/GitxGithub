@@ -48,6 +48,50 @@ export interface TourState {
   result: TourResult;
   /** Signed-in GitHub user when the tour started (for fork commands). */
   login?: string;
+  /** The model is still writing: more steps (and the overview) are on the way. */
+  streaming?: boolean;
+  /** How many steps the server asked for (shown as "step 1 of ~7" while streaming). */
+  expectedSteps?: number;
+}
+
+/** The server's "start" event: everything needed to open step 1 before the rest of the tour is written. */
+export interface TourStart {
+  owner: string;
+  repo: string;
+  sha: string;
+  defaultBranch: string;
+  partial: boolean;
+  expectedSteps: number;
+  issue?: { number: number; title: string; url: string; labels: string[] };
+}
+
+/** A tour that is still streaming, with its first step. */
+export function streamingState(start: TourStart, first: TourStep, login?: string): TourState {
+  const result: TourResult = {
+    tour: { summary: '', stack: [], steps: [first], how_to_run: '', how_to_contribute: '', good_first_issue_tips: [] },
+    meta: {
+      owner: start.owner, repo: start.repo, sha: start.sha, partial: start.partial, cached: false, provider: '',
+      repaired: false, droppedSteps: [], unreadableFiles: 0, defaultBranch: start.defaultBranch,
+      ...(start.issue ? { issue: start.issue } : {}),
+    },
+  };
+  return { ...startState(result, login), streaming: true, expectedSteps: start.expectedSteps };
+}
+
+/** Add a newly streamed step (ignored if it is a different tour or the step is already there). */
+export function appendStep(s: TourState, step: TourStep): TourState {
+  if (!s.streaming || s.steps.some((x) => x.path === step.path)) return s;
+  const steps = [...s.steps, step];
+  return { ...s, steps, result: { ...s.result, tour: { ...s.result.tour, steps } } };
+}
+
+/** The final tour replaces a streaming one; the user stays on the step they are reading. */
+export function finishState(prev: TourState | null, result: TourResult, login?: string): TourState {
+  const next = startState(result, login);
+  if (!prev?.streaming || prev.owner !== next.owner || prev.repo !== next.repo || prev.sha !== next.sha) return next;
+  const path = prev.steps[prev.currentIndex]?.path;
+  const i = next.steps.findIndex((x) => x.path === path);
+  return i >= 0 ? { ...next, currentIndex: i } : next;
 }
 
 export const TOUR_STATE_KEY = 'kitty:tour';

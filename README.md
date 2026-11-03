@@ -24,7 +24,7 @@ A Chrome extension that lives on github.com:
 - 🛠️ **Help me fix this issue:** a walkthrough of the files that matter for one issue, plus the exact git commands for your fork and branch.
 - ✈️ **Check my PR:** a pre-flight check for what maintainers usually send back, with a fix command for each problem.
 
-**Install:** download `kitty-extension-v0.6.0.zip` from the [latest release](https://github.com/Krish6115/GitKitty/releases/latest), unzip it, open `chrome://extensions`, turn on **Developer mode**, then **Load unpacked**.
+**Install:** download `kitty-extension-v0.6.1.zip` from the [latest release](https://github.com/Krish6115/GitKitty/releases/latest), unzip it, open `chrome://extensions`, turn on **Developer mode**, then **Load unpacked**.
 
 ➡️ How it works, running your own server, and costs: **[kitty/README.md](kitty/README.md)**
 

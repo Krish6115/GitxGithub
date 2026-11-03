@@ -1,0 +1,1509 @@
+{
+  "generatedAt": "2026-11-03T08:11:50.583Z",
+  "model": "qwen-3.8-27b",
+  "entries": [
+    {
+      "id": "undo-last-commit-keep",
+      "questions": [
+        "How do I undo my last commit but keep the changes?",
+        "undo last commit keep changes",
+        "I committed too early, how do I uncommit and keep my work?",
+        "revert my last local commit without losing changes"
+      ],
+      "answer": "**Situation:** You want to undo your most recent commit but keep the file changes — either locally (before pushing) or on a shared branch (after pushing).\n\n**Commands:**\n\n```bash\n# If NOT pushed yet — undo commit, keep changes staged\ngit reset HEAD~1 --soft\n\n# If NOT pushed yet — undo commit, keep changes unstaged in working tree\ngit reset HEAD~1 --mixed\n\n# If ALREADY pushed to remote — safe undo that keeps changes in the code\ngit revert HEAD --no-edit\ngit push origin main\n```\n\n**Why:** The right command depends on when you pushed [1][5]. `git reset HEAD~1 --soft` moves the branch pointer back one commit while leaving your files and the staging area untouched, so the changes are still staged and ready to recommit [1]. `--mixed` does the same but leaves the changes unstaged [1]. Once the commit is on a shared remote, don't reset — history rewrites are dangerous for teammates. Instead `git revert` creates a *new* commit that undoes the old one, so nothing is removed and it's safe on public branches [6][5]. Reverts are also undoable, since you can always revert the revert [6].\n\n**How to undo:**\n- If you reset too far, use `git reflog` to find the lost commit and recover it with `git branch <name> <hash>` — but do it soon, unreachable commits expire from the reflog after 30 days by default [4][1].\n- If you reverted, just revert the revert commit to restore the original change [6].",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Git & GitHub Real-World Scenarios",
+          "headingPath": [
+            "Scenario 06: Undoing Mistakes"
+          ],
+          "sourceFile": "Scenario-Based_Guide/git_scenarios.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Scenario-Based_Guide/git_scenarios.pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 2,
+          "title": "Advanced merging and conflict resolution",
+          "headingPath": [
+            "Advanced Merging",
+            "Undoing Merges",
+            "Reverse the commit"
+          ],
+          "sourceFile": "Git/references/advanced-merging-and-conflicts.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Advanced-Merging",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 3,
+          "title": "Rebasing and rewriting history",
+          "headingPath": [
+            "Rewriting History",
+            "Changing the Last Commit"
+          ],
+          "sourceFile": "Git/references/rebasing.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 4,
+          "title": "Corrections to common Git & GitHub misconceptions",
+          "headingPath": [
+            "How long does the reflog keep lost commits?"
+          ],
+          "sourceFile": "kitty/ingest/corrections.md",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/kitty/ingest/corrections.md",
+          "license": "Kitty project (corrections; links official docs)"
+        },
+        {
+          "n": 5,
+          "title": "Git & GitHub Real-World Scenarios",
+          "headingPath": [
+            "Scenario : Master Quick Reference"
+          ],
+          "sourceFile": "Scenario-Based_Guide/git_scenarios.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Scenario-Based_Guide/git_scenarios.pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 6,
+          "title": "Git & GitHub Advanced Topics",
+          "headingPath": [
+            "03. git revert"
+          ],
+          "sourceFile": "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/git_missing_topics(other%20than%20101%2Cnotes%2Ccheatsheet).pdf",
+          "license": "Repository author"
+        }
+      ]
+    },
+    {
+      "id": "undo-pushed-commit",
+      "questions": [
+        "How do I undo a commit I already pushed?",
+        "undo a pushed commit safely",
+        "I pushed a bad commit to main, how do I undo it?"
+      ],
+      "answer": "**Situation:** You've already pushed a commit to a shared branch (like `main`) and need to undo it — since it's on the remote, rewriting history with `git reset` would be dangerous for your teammates [2][4].\n\n**Commands:**\n\n```bash\ngit log --oneline               # find the hash of the commit to undo\ngit revert <hash> --no-edit     # create an inverse commit (safe after push)\ngit push origin main            # push the revert commit to remote\n```\n\n**Why:** `git revert` adds a new commit that undoes the changes of the previous one, rather than removing commits from history. It doesn't rewrite history, so it's safe on shared/public branches — unlike `git reset`, which is dangerous once teammates have pulled [2][4]. Using `--no-edit` skips opening the editor for the commit message [1][2].\n\nIf the commit you need to undo is a **merge commit**, use:\n\n```bash\ngit revert -m 1 <merge-commit-hash>   # -m 1 keeps the mainline parent\n```\n\nThe `-m 1` flag tells Git which parent is the \"mainline\" to keep [2][3].\n\n**Special case — a sensitive file like `.env`:** revert removes it from the current state, but it stays in history. The notes mention a \"nuclear\" option to strip it from history entirely with `git filter-branch`, though that rewrites history [1]. For a shared repo, coordinate with your team before doing that.\n\n**How to undo the revert itself:** if you revert too much, just revert the revert:\n\n```bash\ngit revert <revert-commit-hash>   # \"revert the revert\" — always an option with revert [2][3]\n```\n\nThat's one of revert's big advantages: it's undoable, whereas `git reset --hard` is irreversible without the reflog [1][2].",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Git & GitHub Real-World Scenarios",
+          "headingPath": [
+            "Scenario 06: Undoing Mistakes"
+          ],
+          "sourceFile": "Scenario-Based_Guide/git_scenarios.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Scenario-Based_Guide/git_scenarios.pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 2,
+          "title": "Git & GitHub Advanced Topics",
+          "headingPath": [
+            "03. git revert"
+          ],
+          "sourceFile": "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/git_missing_topics(other%20than%20101%2Cnotes%2Ccheatsheet).pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 3,
+          "title": "Advanced merging and conflict resolution",
+          "headingPath": [
+            "Advanced Merging",
+            "Undoing Merges",
+            "Reverse the commit"
+          ],
+          "sourceFile": "Git/references/advanced-merging-and-conflicts.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Advanced-Merging",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 4,
+          "title": "Git & GitHub Real-World Scenarios",
+          "headingPath": [
+            "Scenario : Master Quick Reference"
+          ],
+          "sourceFile": "Scenario-Based_Guide/git_scenarios.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Scenario-Based_Guide/git_scenarios.pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 5,
+          "title": "Git & GitHub Advanced Topics",
+          "headingPath": [
+            "Quick Reference Card"
+          ],
+          "sourceFile": "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/git_missing_topics(other%20than%20101%2Cnotes%2Ccheatsheet).pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 6,
+          "title": "Git & GitHub Notes (illustrated): pull, push, merge, rebase, cherry-pick, log",
+          "headingPath": [
+            "git push"
+          ],
+          "sourceFile": "Git/Git_Github Notes.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/Git_Github%20Notes.pdf",
+          "license": "Repository author"
+        }
+      ]
+    },
+    {
+      "id": "discard-local-changes",
+      "questions": [
+        "How do I discard my local changes to a file?",
+        "throw away changes in a file",
+        "reset a file to the last commit",
+        "undo unsaved edits in git"
+      ],
+      "answer": "**Situation:** You've made local edits to a file in your working directory and want to throw them away, restoring the file to the version in your last commit.\n\n**Commands:**\n```bash\ngit status                                   # see which files are modified\ngit checkout -- path/to/your-file            # discard changes to that file\n```\n\n**Why:** `git status` shows your modified files and even reminds you of this exact move — its hint reads \"use `git checkout -- <file>` to discard changes in working directory\" [5]. The `--` tells Git everything after it is a file path, not a branch name, so `git checkout -- file` replaces your working-copy edits with the committed version.\n\n**How to undo:** There isn't an undo — once you discard the changes, those edits are gone from the working tree (they were never committed, so nothing in Git retains them). If you might want the changes back later, commit or stash them first instead of discarding.",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Removing sensitive data (leaked secrets) from a repository",
+          "headingPath": [
+            "Removing sensitive data from a repository",
+            "Purging a file from your local repository's history using git-filter-repo"
+          ],
+          "sourceFile": "Scenario-Based_Guide/references/removing-sensitive-data.md",
+          "sourceUrl": "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 2,
+          "title": "Git Large File Storage (LFS)",
+          "headingPath": [
+            "Configuring Git Large File Storage"
+          ],
+          "sourceFile": "Git/references/git-lfs.md",
+          "sourceUrl": "https://docs.github.com/en/repositories/working-with-files/managing-large-files/configuring-git-large-file-storage",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 3,
+          "title": "Submodules",
+          "headingPath": [
+            "Submodules",
+            "Working on a Project with Submodules",
+            "Pulling in Upstream Changes from the Submodule Remote"
+          ],
+          "sourceFile": "Git/references/submodules.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Submodules",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 4,
+          "title": "Submodules",
+          "headingPath": [
+            "Submodules",
+            "Working on a Project with Submodules",
+            "Pulling Upstream Changes from the Project Remote"
+          ],
+          "sourceFile": "Git/references/submodules.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Submodules",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 5,
+          "title": "Resolving merge conflicts (on GitHub and locally)",
+          "headingPath": [
+            "Resolving a merge conflict using the command line",
+            "Competing line change merge conflicts"
+          ],
+          "sourceFile": "Scenario-Based_Guide/references/resolving-conflicts-on-github.md",
+          "sourceUrl": "https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/resolving-a-merge-conflict-using-the-command-line",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 6,
+          "title": "Git & GitHub Real-World Scenarios",
+          "headingPath": [
+            "Scenario 02: Upload Your First File"
+          ],
+          "sourceFile": "Scenario-Based_Guide/git_scenarios.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Scenario-Based_Guide/git_scenarios.pdf",
+          "license": "Repository author"
+        }
+      ]
+    },
+    {
+      "id": "unstage-file",
+      "questions": [
+        "How do I unstage a file?",
+        "I added the wrong file with git add, how do I remove it from staging?",
+        "undo git add"
+      ],
+      "answer": "**Situation:** You've staged a file with `git add` but want it back out of the staging area while keeping your edits in the working directory.\n\n**Commands:**\n```bash\ngit restore --staged file_name.txt   # unstage one file, keep your edits\ngit restore --staged .               # unstage everything\ngit status                           # confirm it's now \"not staged\"\n```\n\nAlternatively, the classic form does the same thing:\n```bash\ngit reset HEAD file_name.txt         # same effect: unstage, keep edits\n```\n\n**Why:** `git restore --staged` copies the file's state from HEAD back into the index (staging area), so the file shows up as modified-but-unstaged — your actual edits in the working directory are untouched [2][4]. `git reset HEAD <file>` works the same way; it pulls the file's version from HEAD into the index without touching your working tree [3]. Both are safe — neither discards your changes [2].\n\nIf you're already inside interactive staging (`git add -p` or the interactive prompt), you can unstage from there with the `r` (revert) command, selecting the file by number [1].\n\n**How to undo:** Just stage it again with `git add file_name.txt` — nothing was lost, only moved out of the index.\n\n⚠️ Avoid `git reset --hard` for this — it discards changes irreversibly (without reflog) [2]. Use `git restore` for file-level undo instead.",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Interactive and partial staging",
+          "headingPath": [
+            "Interactive Staging",
+            "Staging and Unstaging Files"
+          ],
+          "sourceFile": "Git/references/interactive-staging.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Interactive-Staging",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 2,
+          "title": "Git & GitHub Real-World Scenarios",
+          "headingPath": [
+            "Scenario 06: Undoing Mistakes"
+          ],
+          "sourceFile": "Scenario-Based_Guide/git_scenarios.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Scenario-Based_Guide/git_scenarios.pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 3,
+          "title": "Reset demystified: HEAD, index and working tree",
+          "headingPath": [
+            "Reset Demystified",
+            "Reset With a Path"
+          ],
+          "sourceFile": "Git/references/reset-demystified.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Reset-Demystified",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 4,
+          "title": "Git GitHub 101",
+          "headingPath": [
+            "Git & GitHub 101",
+            "Working with Existing Projects on GitHub"
+          ],
+          "sourceFile": "Git/Git_GitHub_101.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/Git_GitHub_101.pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 5,
+          "title": "Git & GitHub Advanced Topics",
+          "headingPath": [
+            "10. git aliases"
+          ],
+          "sourceFile": "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/git_missing_topics(other%20than%20101%2Cnotes%2Ccheatsheet).pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 6,
+          "title": "Git & GitHub Advanced Topics",
+          "headingPath": [
+            "03. git revert"
+          ],
+          "sourceFile": "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/git_missing_topics(other%20than%20101%2Cnotes%2Ccheatsheet).pdf",
+          "license": "Repository author"
+        }
+      ]
+    },
+    {
+      "id": "amend-message",
+      "questions": [
+        "How do I change my last commit message?",
+        "fix a typo in the last commit message",
+        "edit the previous commit message"
+      ],
+      "answer": "**Situation:** Your last commit has a message you want to change (a typo, or it doesn't describe the change well), and the commit hasn't been pushed yet.\n\n**Commands:**\n```bash\ngit commit --amend -m \"Better commit message\"   # replace the message inline, no editor\ngit commit --amend                               # opens your editor to edit the message instead\n```\n\n**Why:** `git commit --amend` replaces your last commit with a new one that has your updated message (and/or updated content) [1][4]. Using `-m` sets the new message directly from the command line; without it, Git opens the commit message editor so you can rewrite it there [1][4]. Because the commit is replaced, its SHA-1 hash changes — it's like a very small rebase [1].\n\n**How to undo / be careful:**\n- Only amend commits you **haven't pushed** yet. Amending a pushed commit rewrites history; if you've already pushed it, you'd need `git push origin branch-name --force-with-lease`, which is safer than `--force` because it fails if someone else pushed since your last pull [4]. Never amend `main` or other shared branches — rewrite personal feature branches only [4].\n- If you just want to fix the message and nothing else, the amend fully replaces the old commit, so there's nothing extra to clean up locally. The old commit will simply no longer be referenced by the branch.\n\n**Tip:** If you don't want to retype the whole message, run `git commit --amend` with no `-m` and edit only the first line in your editor [1]. And if you need to change a commit message that's *not* the last one, use interactive rebase instead — see source [2] for that workflow.",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Rebasing and rewriting history",
+          "headingPath": [
+            "Rewriting History",
+            "Changing the Last Commit"
+          ],
+          "sourceFile": "Git/references/rebasing.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 2,
+          "title": "Rebasing and rewriting history",
+          "headingPath": [
+            "Rewriting History",
+            "Changing Multiple Commit Messages"
+          ],
+          "sourceFile": "Git/references/rebasing.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 3,
+          "title": "Git hooks",
+          "headingPath": [
+            "Git Hooks",
+            "Client-Side Hooks",
+            "Committing-Workflow Hooks"
+          ],
+          "sourceFile": "Git/references/hooks.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 4,
+          "title": "Git & GitHub Advanced Topics",
+          "headingPath": [
+            "04. git commit --amend"
+          ],
+          "sourceFile": "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/git_missing_topics(other%20than%20101%2Cnotes%2Ccheatsheet).pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 5,
+          "title": "Signing commits and tags",
+          "headingPath": [
+            "About commit signature verification",
+            "About commit signature verification",
+            "Persistent commit signature verification",
+            "Records persist even after revocation and expiration"
+          ],
+          "sourceFile": "Git/references/commit-signing.md",
+          "sourceUrl": "https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 6,
+          "title": "Git internals: objects, refs and HEAD",
+          "headingPath": [
+            "Git Objects",
+            "Commit Objects"
+          ],
+          "sourceFile": "Git/references/git-internals.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Internals-Git-Objects",
+          "license": "CC BY-NC-SA 3.0"
+        }
+      ]
+    },
+    {
+      "id": "sync-fork",
+      "questions": [
+        "How do I sync my fork with upstream?",
+        "update my fork with the original repository",
+        "my fork is behind the original repo, how do I catch up?",
+        "keep a fork up to date"
+      ],
+      "answer": "**Situation:** Your fork on GitHub is behind the original (upstream) repository — say 30 new commits — and you want to bring it up to date before making more changes.\n\n**Commands:**\n```bash\ngit fetch --all --prune          # download all changes without applying them yet\ngit checkout main                # switch to your local main branch\ngit reset --hard upstream/main   # make main exactly match upstream (Method A)\n# — or —\ngit rebase upstream/main         # replay your own commits on top (Method B)\n# — or —\ngit pull upstream main           # just pull the changes (Method C)\n\ngit push origin main             # update YOUR fork on GitHub\ngit push origin main --force-with-lease   # needed if you used reset --hard\n\ngit checkout feature/my-feature  # refresh your feature branch (optional)\ngit rebase main\n```\n\n**Why:** `git fetch --all --prune` downloads the latest commits from all remotes without touching your working tree, and drops tracking refs for deleted remote branches [1]. `upstream` is the original repo and `origin` is your fork — so `reset --hard upstream/main` (or `rebase`/`pull`) syncs your local main to the original, and `git push origin main` pushes that sync to your fork on GitHub [1][2][4]. If you rewrote history with `reset --hard`, the push needs `--force-with-lease` [1]. The `upstream` remote itself is set up with `git remote add upstream` as part of the fork workflow [2].\n\nThere's also a zero-command option: GitHub's **Sync fork** button on the fork's page on GitHub.com syncs you directly [1][3]. Note that forking a repo doesn't enable syncing by default — the fork needs **Allow fork syncing** enabled in its branch protection settings [5].\n\n**How to undo:** If the sync went wrong, you can reset back to where you were — `git reflog` will show your previous positions [2]. If you already pushed to a shared branch, prefer `git revert` over `git reset` [2]. To abort an in-progress rebase, run `git rebase --abort` [1].",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Git & GitHub Real-World Scenarios",
+          "headingPath": [
+            "Scenario 07: Keeping Fork in Sync"
+          ],
+          "sourceFile": "Scenario-Based_Guide/git_scenarios.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Scenario-Based_Guide/git_scenarios.pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 2,
+          "title": "Git & GitHub Real-World Scenarios",
+          "headingPath": [
+            "Scenario : Master Quick Reference"
+          ],
+          "sourceFile": "Scenario-Based_Guide/git_scenarios.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Scenario-Based_Guide/git_scenarios.pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 3,
+          "title": "Contributing to an open source project",
+          "headingPath": [
+            "Contributing to a project",
+            "Creating your own copy of a project"
+          ],
+          "sourceFile": "Scenario-Based_Guide/references/contributing-to-open-source.md",
+          "sourceUrl": "https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 4,
+          "title": "Git GitHub 101",
+          "headingPath": [
+            "Git & GitHub 101",
+            "How Git works"
+          ],
+          "sourceFile": "Git/Git_GitHub_101.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/Git_GitHub_101.pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 5,
+          "title": "Branch protection rules and rulesets",
+          "headingPath": [
+            "About protected branches",
+            "About branch protection settings",
+            "Lock branch"
+          ],
+          "sourceFile": "Git/references/branch-protection-and-rulesets.md",
+          "sourceUrl": "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 6,
+          "title": "Submodules",
+          "headingPath": [
+            "Submodules",
+            "Working on a Project with Submodules",
+            "Pulling Upstream Changes from the Project Remote"
+          ],
+          "sourceFile": "Git/references/submodules.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Submodules",
+          "license": "CC BY-NC-SA 3.0"
+        }
+      ]
+    },
+    {
+      "id": "merge-vs-rebase",
+      "questions": [
+        "What's the difference between merge and rebase?",
+        "merge vs rebase",
+        "should I use git merge or git rebase?"
+      ],
+      "answer": "**Situation:** You want to understand how `merge` and `rebase` differ when integrating changes from one branch into another.\n\n**Commands:**\n```bash\ngit checkout experiment\ngit rebase master        # replay experiment's commits on top of master\ngit checkout master\ngit merge experiment     # fast-forward to the rebased result\n\n# --- or, the merge alternative ---\ngit merge experiment     # creates a merge commit joining the two histories\n```\n\n**Why:**\n- `merge` performs a three-way merge between the two latest snapshots and their common ancestor, creating a new merge commit that preserves the true history, including the fact that the work happened in parallel [1].\n- `rebase` takes the diff introduced by each commit on your branch and reapplies them one by one on top of the target branch, giving you a linear history where the work looks like it happened in series [1][4].\n- The end snapshot can be identical either way — rebasing just produces a cleaner, more readable history [1].\n- The classic guidance: **rebase local changes before pushing to clean up your work, but never rebase anything you've already pushed somewhere**, since rebasing rewrites history [2]. Merges don't have that problem because they add a commit rather than rewriting existing ones.\n\n**How to undo:**\n- If a rebase goes wrong mid-way: `git rebase --abort` returns your branch to its original state [4].\n- If you merged by mistake and the merge commit is only local: `git reset --hard HEAD~` moves the branch pointer back — but avoid this on shared history [5].",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Rebasing and rewriting history",
+          "headingPath": [
+            "Rebasing"
+          ],
+          "sourceFile": "Git/references/rebasing.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Branching-Rebasing",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 2,
+          "title": "Rebasing and rewriting history",
+          "headingPath": [
+            "Rebasing",
+            "Rebase vs. Merge"
+          ],
+          "sourceFile": "Git/references/rebasing.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Branching-Rebasing",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 3,
+          "title": "Advanced merging and conflict resolution",
+          "headingPath": [
+            "Advanced Merging",
+            "Other Types of Merges"
+          ],
+          "sourceFile": "Git/references/advanced-merging-and-conflicts.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Advanced-Merging",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 4,
+          "title": "Resolving conflicts during a rebase",
+          "headingPath": [
+            "`git rebase` manual (excerpt)",
+            "Description"
+          ],
+          "sourceFile": "Scenario-Based_Guide/references/resolving-conflicts-during-rebase.md",
+          "sourceUrl": "https://git-scm.com/docs/git-rebase",
+          "license": "GPL-2.0"
+        },
+        {
+          "n": 5,
+          "title": "Advanced merging and conflict resolution",
+          "headingPath": [
+            "Advanced Merging",
+            "Merge Conflicts",
+            "Checking Out Conflicts"
+          ],
+          "sourceFile": "Git/references/advanced-merging-and-conflicts.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Advanced-Merging",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 6,
+          "title": "Git & GitHub Notes (illustrated): pull, push, merge, rebase, cherry-pick, log",
+          "headingPath": [
+            "git push"
+          ],
+          "sourceFile": "Git/Git_Github Notes.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/Git_Github%20Notes.pdf",
+          "license": "Repository author"
+        }
+      ]
+    },
+    {
+      "id": "fetch-vs-pull",
+      "questions": [
+        "What's the difference between git fetch and git pull?",
+        "fetch vs pull",
+        "what does git pull do?"
+      ],
+      "answer": "**Situation:** You want to understand how `git fetch` and `git pull` differ when getting updates from a remote repository.\n\n**Commands:**\n```bash\ngit fetch origin        # download new data from the remote only\ngit merge origin/master # then merge it into your current branch yourself\n# — or, the combined equivalent —\ngit pull origin master  # fetch + merge in one step\n```\n\n**Why:** `git fetch` only downloads data from the remote project into your local repository — it doesn't merge it with your work or modify what you're currently working on, so you can inspect branches safely at any time [1]. `git pull`, by contrast, automatically fetches **and then merges** that remote branch into your current branch (it's equivalent to `git fetch` followed by `git merge`) [1][5]. Because `git pull` modifies your working branch directly, `git fetch` is the safer choice when you want to review changes before integrating them. Note that if your branch isn't set up to track a remote branch, `git pull` needs explicit arguments like `git pull origin master` [5].\n\n**How to undo:** If a `git pull` brought in a merge you didn't want yet and you haven't pushed, you can undo it with `git reset --hard HEAD~1` (or `git reset --hard <previous-commit-sha>`). A `git fetch` needs no undo — it only added data under your remote-tracking references (like `origin/master`) and left your branches untouched.",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Remotes and remote-tracking branches",
+          "headingPath": [
+            "Working with Remotes",
+            "Fetching and Pulling from Your Remotes"
+          ],
+          "sourceFile": "Git/references/remotes-and-tracking-branches.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 2,
+          "title": "Contributing to an open source project",
+          "headingPath": [
+            "Contributing to a project",
+            "Making a pull request"
+          ],
+          "sourceFile": "Scenario-Based_Guide/references/contributing-to-open-source.md",
+          "sourceUrl": "https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 3,
+          "title": "Pull requests and code review on GitHub",
+          "headingPath": [
+            "About code owners",
+            "CODEOWNERS file location"
+          ],
+          "sourceFile": "Git/references/pull-requests-and-code-review.md",
+          "sourceUrl": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 4,
+          "title": "Pull requests and code review on GitHub",
+          "headingPath": [
+            "Reviewing proposed changes in a pull request",
+            "Starting a review"
+          ],
+          "sourceFile": "Git/references/pull-requests-and-code-review.md",
+          "sourceUrl": "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/reviewing-proposed-changes-in-a-pull-request",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 5,
+          "title": "Git & GitHub Notes (illustrated): pull, push, merge, rebase, cherry-pick, log",
+          "headingPath": [
+            "git pull",
+            "When the current branch is master"
+          ],
+          "sourceFile": "Git/Git_Github Notes.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/Git_Github%20Notes.pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 6,
+          "title": "Submodules",
+          "headingPath": [
+            "Submodules",
+            "Starting with Submodules"
+          ],
+          "sourceFile": "Git/references/submodules.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Submodules",
+          "license": "CC BY-NC-SA 3.0"
+        }
+      ]
+    },
+    {
+      "id": "resolve-conflict",
+      "questions": [
+        "How do I resolve a merge conflict?",
+        "fix merge conflicts",
+        "what do the conflict markers mean and how do I fix them?"
+      ],
+      "answer": "**Situation:** Two branches changed the same lines, so Git paused the merge and marked the file with conflict markers — you need to pick the final content, stage it, and commit.\n\n**Commands:**\n```bash\ngit status                # list the files with conflicts (unmerged paths)\n# open the file in your editor, find <<<<<<< , edit, delete all conflict markers\ngit add styleguide.md     # stage the file to mark the conflict as resolved\ngit commit                # finish the merge\n```\n\nIf the conflict happened during a rebase instead of a merge:\n```bash\ngit rebase --continue      # after resolving and staging, keep going\ngit rebase --abort         # or: undo the rebase entirely\ngit rebase --skip          # or: drop the conflicting commit (rare) [3]\n```\n\nIf you want more context on how the conflict arose, re-checkout the file with base version shown:\n```bash\ngit checkout --conflict=diff3 hello.rb   # markers now show ours / base / theirs [4]\n```\nYou can also make this style permanent with the `merge.conflictStyle` configuration set to `diff3` or `zdiff3` [5].\n\n**Why:** When both sides edit the same area, Git can't pick one, so it inserts `<<<<<<<` (your side/HEAD), `=======`, and `>>>>>>>` (the other branch) markers [5][6]. Editing the file to your desired final text and running `git add` marks the conflict as resolved — staging is what tells Git the file is fixed, and `git commit` completes the merge [6][2]. During a rebase, Git pauses similarly and expects `git rebase --continue` once you've resolved [3].\n\nIf the conflict is simple and you'd rather not use the command line, GitHub has a web editor: open the pull request, click **Resolve conflicts**, delete the markers, then click **Mark as resolved** (if that button is disabled, you must resolve locally) [1].\n\n**How to undo:** If you haven't committed yet and want out of a merge, nothing in my sources covers aborting a plain merge — check https://git-scm.com/docs/git-merge. For a rebase, `git rebase --abort` returns your branch to its pre-rebase state [3].",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Resolving merge conflicts (on GitHub and locally)",
+          "headingPath": [
+            "Resolving a merge conflict on GitHub"
+          ],
+          "sourceFile": "Scenario-Based_Guide/references/resolving-conflicts-on-github.md",
+          "sourceUrl": "https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/resolving-a-merge-conflict-on-github",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 2,
+          "title": "Resolving merge conflicts (on GitHub and locally)",
+          "headingPath": [
+            "Resolving a merge conflict using the command line"
+          ],
+          "sourceFile": "Scenario-Based_Guide/references/resolving-conflicts-on-github.md",
+          "sourceUrl": "https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/resolving-a-merge-conflict-using-the-command-line",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 3,
+          "title": "Resolving conflicts during a rebase",
+          "headingPath": [
+            "Resolving merge conflicts after a Git rebase"
+          ],
+          "sourceFile": "Scenario-Based_Guide/references/resolving-conflicts-during-rebase.md",
+          "sourceUrl": "https://docs.github.com/en/get-started/using-git/resolving-merge-conflicts-after-a-git-rebase",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 4,
+          "title": "Advanced merging and conflict resolution",
+          "headingPath": [
+            "Advanced Merging",
+            "Merge Conflicts",
+            "Checking Out Conflicts"
+          ],
+          "sourceFile": "Git/references/advanced-merging-and-conflicts.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Advanced-Merging",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 5,
+          "title": "Advanced merging and conflict resolution",
+          "headingPath": [
+            "`git merge` manual (excerpt)",
+            "How conflicts are presented"
+          ],
+          "sourceFile": "Git/references/advanced-merging-and-conflicts.md",
+          "sourceUrl": "https://git-scm.com/docs/git-merge",
+          "license": "GPL-2.0"
+        },
+        {
+          "n": 6,
+          "title": "Branches and merging",
+          "headingPath": [
+            "Basic Branching and Merging",
+            "Basic Merge Conflicts"
+          ],
+          "sourceFile": "Git/references/branches-and-merging.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging",
+          "license": "CC BY-NC-SA 3.0"
+        }
+      ]
+    },
+    {
+      "id": "stash",
+      "questions": [
+        "How do I stash my changes?",
+        "save my work temporarily without committing",
+        "how do I use git stash and get my changes back?"
+      ],
+      "answer": "**Situation:** You have modified (and possibly staged) files that you want to set aside temporarily so you can switch branches or work on something else with a clean working directory.\n\n**Commands:**\n```bash\ngit stash                # save modified and staged changes temporarily\ngit stash list           # see the stack of stashes you've saved\ngit stash apply          # reapply the most recent stash (keeps it in the list)\ngit stash apply stash@{2}  # reapply a specific, older stash\ngit stash apply --index   # reapply, restoring staged files as staged\ngit stash pop            # apply the top stash and drop it from the list\ngit stash drop           # discard the top stash without applying it\ngit stash clear          # clear everything in your stash\n```\n\n**Why:** `git stash` temporarily stores your modified, tracked files so your working directory and staging area go back to a clean state — handy when Git won't let you switch branches because of uncommitted changes [4][5]. The stash works like a stack: `git stash list` shows it in stack order, and `git stash pop` writes the top of the stack back into your working directory [4]. If you use `git stash apply` instead of `pop`, the stash stays in the list so you can apply it again or apply an older one by naming it, like `git stash apply stash@{2}` [2]. Note that a plain `apply` won't restore your staged files as staged — add `--index` for that [2].\n\nTwo extras worth knowing:\n- `git stash --patch` lets you interactively choose which hunks to stash and which to keep [1].\n- `git stash branch <new branchname>` creates a new branch at the commit you stashed from, reapplies your work there, and drops the stash on success — a nice way to revisit stashed work without conflicts [1].\n\n**How to undo:** To get the changes back, run `git stash pop` (or `git stash apply --index` if you want staged files restaged and prefer to keep the stash). To throw a stash away permanently, use `git stash drop` (one stash) or `git stash clear` (all of them) [4][3].",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Stashing and cleaning",
+          "headingPath": [
+            "Stashing and Cleaning",
+            "Creative Stashing"
+          ],
+          "sourceFile": "Git/references/stashing-and-cleaning.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Stashing-and-Cleaning",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 2,
+          "title": "Stashing and cleaning",
+          "headingPath": [
+            "Stashing and Cleaning",
+            "Stashing Your Work"
+          ],
+          "sourceFile": "Git/references/stashing-and-cleaning.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Stashing-and-Cleaning",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 3,
+          "title": "Git GitHub 101",
+          "headingPath": [
+            "Git & GitHub 101",
+            "Working with Existing Projects on GitHub"
+          ],
+          "sourceFile": "Git/Git_GitHub_101.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/Git_GitHub_101.pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 4,
+          "title": "GIT CHEAT SHEET",
+          "headingPath": [
+            "Education"
+          ],
+          "sourceFile": "Git/git-cheat-sheet-education.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/git-cheat-sheet-education.pdf",
+          "license": "CC BY 4.0 (GitHub Education cheat sheet, github/training-kit)"
+        },
+        {
+          "n": 5,
+          "title": "Branches and merging",
+          "headingPath": [
+            "Basic Branching and Merging"
+          ],
+          "sourceFile": "Git/references/branches-and-merging.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 6,
+          "title": "Submodules",
+          "headingPath": [
+            "Submodules",
+            "Submodule Tips",
+            "Submodule Foreach"
+          ],
+          "sourceFile": "Git/references/submodules.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Submodules",
+          "license": "CC BY-NC-SA 3.0"
+        }
+      ]
+    },
+    {
+      "id": "squash-commits",
+      "questions": [
+        "How do I squash my commits into one?",
+        "combine my last few commits into one",
+        "squash commits before a pull request"
+      ],
+      "answer": "**Situation:** You've made several WIP commits on a branch and want to combine them into a single clean commit before opening a PR.\n\n**Commands:**\n```bash\ngit rebase -i HEAD~5        # rewrite the last 5 commits (adjust the number)\n# In the editor that opens:\n# pick a1b2c3d feat: add payment client\n# squash d4e5f6g fix: handle null response\n# squash h7i8j9k test: add tests\n# Save and exit — then edit the combined commit message in the second editor\n```\n\n**Why:** `git rebase -i` gives you a script of commits to replay from bottom to top — note the list is in the *opposite* order of `git log`, oldest first, because that's the order Git replays them [2]. Changing `pick` to `squash` melds that commit into the one before it, and Git then opens a second editor so you can merge the commit messages into one [1]. The `fixup` variant does the same but discards the squashed commit's message entirely [1].\n\n**How to undo:** Since a rebase rewrites history, you can recover with `git reflog` and a reset to the pre-rebase commit — which is exactly why you should only squash commits you haven't pushed to a shared branch yet; rewriting pushed commits confuses other developers by offering an alternate version of the same change [2].\n\n---\n\n**Alternative:** if your commits are on a PR branch, you don't have to rebase locally at all — someone with write access can use GitHub's **Squash and merge** button (or `gh pr merge 42 --squash`) to combine all the PR's commits into one on the default branch [3][5]. Just be aware that squashing loses the original SHAs and per-commit authorship details [3].",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Rebasing and rewriting history",
+          "headingPath": [
+            "Rewriting History",
+            "Squashing Commits"
+          ],
+          "sourceFile": "Git/references/rebasing.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 2,
+          "title": "Rebasing and rewriting history",
+          "headingPath": [
+            "Rewriting History",
+            "Changing Multiple Commit Messages"
+          ],
+          "sourceFile": "Git/references/rebasing.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 3,
+          "title": "Pull requests and code review on GitHub",
+          "headingPath": [
+            "About merge methods on GitHub",
+            "Squashing your merge commits"
+          ],
+          "sourceFile": "Git/references/pull-requests-and-code-review.md",
+          "sourceUrl": "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/about-merge-methods-on-github",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 4,
+          "title": "Git hooks",
+          "headingPath": [
+            "`githooks` manual (excerpt)",
+            "Description",
+            "pre-commit"
+          ],
+          "sourceFile": "Git/references/hooks.md",
+          "sourceUrl": "https://git-scm.com/docs/githooks",
+          "license": "GPL-2.0"
+        },
+        {
+          "n": 5,
+          "title": "Git & GitHub Real-World Scenarios",
+          "headingPath": [
+            "Scenario 08: Team Feature Branch Workflow"
+          ],
+          "sourceFile": "Scenario-Based_Guide/git_scenarios.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Scenario-Based_Guide/git_scenarios.pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 6,
+          "title": "Git hooks",
+          "headingPath": [
+            "Git Hooks",
+            "Client-Side Hooks",
+            "Committing-Workflow Hooks"
+          ],
+          "sourceFile": "Git/references/hooks.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks",
+          "license": "CC BY-NC-SA 3.0"
+        }
+      ]
+    },
+    {
+      "id": "rename-branch",
+      "questions": [
+        "How do I rename a branch?",
+        "rename a local and remote branch"
+      ],
+      "answer": "**Situation:** You want to rename a branch — but fair warning, my sources cover renaming a *remote* and working with branches, not the branch-rename command itself.\n\n**Commands:**\n\n```bash\n# Not covered in my sources — see the note below\n```\n\n**Why:** None of the material I have gives a command for renaming a branch. What I do have:\n\n- Renaming a **remote**: `git remote rename [old] [new]`, which also updates all the remote-tracking branch names (e.g. `pb/master` becomes `paul/master`) [2]\n- Switching branches: `git checkout [branch]` [4]\n- Deleting a branch once you're done with it: `git branch -d [branch]` [3]\n- Rulesets can control who may delete or **rename a tag** (or push to a branch), but that's GitHub permissions, not the rename command itself [5]\n\nSince the actual branch-rename command isn't in my sources, I don't want to guess at it. The official reference is here: https://git-scm.com/docs/git-branch\n\n**How to undo:** Not applicable here — I haven't given you a command to run. Once you check the docs above, note that a local rename only changes your copy; you'd still need to push the new branch name to the remote and update the old one there (the push/remote basics are covered in [1]).",
+      "sources": [
+        {
+          "n": 1,
+          "title": "GIT CHEAT SHEET",
+          "headingPath": [
+            "Education"
+          ],
+          "sourceFile": "Git/git-cheat-sheet-education.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/git-cheat-sheet-education.pdf",
+          "license": "CC BY 4.0 (GitHub Education cheat sheet, github/training-kit)"
+        },
+        {
+          "n": 2,
+          "title": "Remotes and remote-tracking branches",
+          "headingPath": [
+            "Working with Remotes",
+            "Renaming and Removing Remotes"
+          ],
+          "sourceFile": "Git/references/remotes-and-tracking-branches.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 3,
+          "title": "Branches and merging",
+          "headingPath": [
+            "Basic Branching and Merging",
+            "Basic Branching"
+          ],
+          "sourceFile": "Git/references/branches-and-merging.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 4,
+          "title": "Branches and merging",
+          "headingPath": [
+            "Branches in a Nutshell",
+            "Switching Branches"
+          ],
+          "sourceFile": "Git/references/branches-and-merging.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 5,
+          "title": "Branch protection rules and rulesets",
+          "headingPath": [
+            "About rulesets",
+            "About rulesets"
+          ],
+          "sourceFile": "Git/references/branch-protection-and-rulesets.md",
+          "sourceUrl": "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 6,
+          "title": "Resolving merge conflicts (on GitHub and locally)",
+          "headingPath": [
+            "Resolving a merge conflict using the command line",
+            "Competing line change merge conflicts"
+          ],
+          "sourceFile": "Scenario-Based_Guide/references/resolving-conflicts-on-github.md",
+          "sourceUrl": "https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/resolving-a-merge-conflict-using-the-command-line",
+          "license": "CC BY 4.0"
+        }
+      ]
+    },
+    {
+      "id": "delete-branch",
+      "questions": [
+        "How do I delete a branch locally and on GitHub?",
+        "delete a remote branch",
+        "remove a branch I no longer need"
+      ],
+      "answer": "**Situation:** You've finished with a branch (for example, `feature/auth` was merged into `main`) and want to clean it up both on your machine and on GitHub.\n\n**Commands:**\n```bash\ngit branch -d feature/auth            # delete the local branch\ngit push origin --delete feature/auth # delete the branch on GitHub (remote)\n```\n\n**Why:** `git branch -d` removes the local branch pointer — it's safe because Git refuses to delete a branch that hasn't been merged [3]. The remote equivalent is `git push origin --delete <branch>`, which tells the server (here `origin`, your GitHub remote) to remove its pointer to that branch [1][3]. Note that deleting the remote branch only removes the pointer; the server usually keeps the data until a garbage collection runs, so an accidental deletion is often recoverable [1].\n\nIf `-d` fails because the branch isn't merged, you can force it with `git branch -D` — but be careful, since that skips the safety check [3].\n\n**How to undo:** Local branch deletion isn't directly undoable, but you can recreate the branch at the same commit if you still know it: `git checkout -b feature/auth <commit-hash>`. For the remote branch, just push again: `git push -u origin feature/auth` [3].",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Remotes and remote-tracking branches",
+          "headingPath": [
+            "Remote Branches",
+            "Deleting Remote Branches"
+          ],
+          "sourceFile": "Git/references/remotes-and-tracking-branches.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Branching-Remote-Branches",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 2,
+          "title": "Resolving merge conflicts (on GitHub and locally)",
+          "headingPath": [
+            "Resolving a merge conflict using the command line"
+          ],
+          "sourceFile": "Scenario-Based_Guide/references/resolving-conflicts-on-github.md",
+          "sourceUrl": "https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/resolving-a-merge-conflict-using-the-command-line",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 3,
+          "title": "Git & GitHub Real-World Scenarios",
+          "headingPath": [
+            "Scenario 03: Working with Branches"
+          ],
+          "sourceFile": "Scenario-Based_Guide/git_scenarios.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Scenario-Based_Guide/git_scenarios.pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 4,
+          "title": "Resolving merge conflicts (on GitHub and locally)",
+          "headingPath": [
+            "Resolving a merge conflict on GitHub"
+          ],
+          "sourceFile": "Scenario-Based_Guide/references/resolving-conflicts-on-github.md",
+          "sourceUrl": "https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/resolving-a-merge-conflict-on-github",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 5,
+          "title": "Remotes and remote-tracking branches",
+          "headingPath": [
+            "Working with Remotes",
+            "Showing Your Remotes"
+          ],
+          "sourceFile": "Git/references/remotes-and-tracking-branches.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Basics-Working-with-Remotes",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 6,
+          "title": "Branches and merging",
+          "headingPath": [
+            "Basic Branching and Merging",
+            "Basic Branching"
+          ],
+          "sourceFile": "Git/references/branches-and-merging.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging",
+          "license": "CC BY-NC-SA 3.0"
+        }
+      ]
+    },
+    {
+      "id": "recover-lost-commits",
+      "questions": [
+        "How do I recover lost commits after git reset --hard?",
+        "get back a deleted branch",
+        "how do I use git reflog to recover work?"
+      ],
+      "answer": "**Situation:** You ran `git reset --hard` and moved your branch back, so the commits you had look gone — but Git recorded the move in the reflog, so they're still recoverable.\n\n**Commands:**\n```bash\ngit reflog                          # list every HEAD movement, newest first\n# abc1234 HEAD@{0}: reset: moving to HEAD~1\n# def5678 HEAD@{1}: commit: Fixed login bug\ngit checkout def5678                # jump back to that point, or:\ngit branch recovered-branch def5678 # keep the lost commits on a new branch\n```\n\n**Why:** Every action — commit, reset, checkout, merge — is recorded in the reflog, so even after a hard reset the old commit is still in your Git DB [2][4]. The reflog output shows you the SHA of each position; checking it out or branching from it restores the work [2][3]. Note that the `--hard` flag is the one genuinely destructive case, since it overwrites your working directory — but the committed content survives in the reflog [4].\n\n**How to undo / important limits:** The reflog only exists locally, so push your important branches once you've recovered. Entries for reachable commits are kept 90 days by default, but entries for **unreachable** commits (exactly this situation) expire after **30 days** (`gc.reflogExpireUnreachable`) — so act quickly [1][2].\n\n```bash\ngit push origin recovered-branch    # don't let the recovery sit only on your machine\n```",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Corrections to common Git & GitHub misconceptions",
+          "headingPath": [
+            "How long does the reflog keep lost commits?"
+          ],
+          "sourceFile": "kitty/ingest/corrections.md",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/kitty/ingest/corrections.md",
+          "license": "Kitty project (corrections; links official docs)"
+        },
+        {
+          "n": 2,
+          "title": "Git & GitHub Advanced Topics",
+          "headingPath": [],
+          "sourceFile": "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/git_missing_topics(other%20than%20101%2Cnotes%2Ccheatsheet).pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 3,
+          "title": "Git & GitHub Real-World Scenarios",
+          "headingPath": [
+            "Scenario 06: Undoing Mistakes"
+          ],
+          "sourceFile": "Scenario-Based_Guide/git_scenarios.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Scenario-Based_Guide/git_scenarios.pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 4,
+          "title": "Reset demystified: HEAD, index and working tree",
+          "headingPath": [
+            "Reset Demystified",
+            "The Role of Reset",
+            "Step 3: Updating the Working Directory (`--hard`)"
+          ],
+          "sourceFile": "Git/references/reset-demystified.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Reset-Demystified",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 5,
+          "title": "Corrections to common Git & GitHub misconceptions",
+          "headingPath": [
+            "Does pushing a tag create a GitHub release?"
+          ],
+          "sourceFile": "kitty/ingest/corrections.md",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/kitty/ingest/corrections.md",
+          "license": "Kitty project (corrections; links official docs)"
+        },
+        {
+          "n": 6,
+          "title": "Reset demystified: HEAD, index and working tree",
+          "headingPath": [
+            "Reset Demystified",
+            "Check It Out"
+          ],
+          "sourceFile": "Git/references/reset-demystified.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Reset-Demystified",
+          "license": "CC BY-NC-SA 3.0"
+        }
+      ]
+    },
+    {
+      "id": "revert-vs-reset",
+      "questions": [
+        "What's the difference between git revert and git reset?",
+        "revert vs reset",
+        "when should I use revert instead of reset?"
+      ],
+      "answer": "**Situation:** You want to understand when to use `git revert` versus `git reset` for undoing commits.\n\n**Commands:**\n```bash\ngit log --oneline          # find the commit you want to undo\ngit revert a3f1c2b --no-edit  # safe undo: adds a new inverse commit\ngit reset HEAD~            # local undo: moves the branch back (default --mixed)\n```\n\n**Why:**\n- `git revert` creates a **new commit that undoes a previous commit** — it never rewrites history, so it's safe on shared/public branches like `main` [3].\n- `git reset` **moves the branch HEAD points to**, effectively removing commits from the branch — it rewrites history, so it's dangerous on shared branches but fine for local-only cleanup before pushing [3][2].\n- Key behavioral difference: `reset` moves the branch that HEAD points to, while `checkout` moves HEAD itself [2][1]. And `reset --hard` will replace everything without checking for uncommitted changes, whereas `checkout` is working-directory safe [1].\n- Rule of thumb from the notes: use `revert` after pushing to remote, use `reset` locally before push — never `git reset --hard` on commits teammates have already pulled [3].\n\n**How to undo:**\n- If you reverted: `git revert <revert-commit-hash>` (revert the revert) [3].\n- If you reset: recover via the reflog [3].",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Reset demystified: HEAD, index and working tree",
+          "headingPath": [
+            "Reset Demystified",
+            "Check It Out"
+          ],
+          "sourceFile": "Git/references/reset-demystified.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Reset-Demystified",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 2,
+          "title": "Reset demystified: HEAD, index and working tree",
+          "headingPath": [
+            "Reset Demystified",
+            "The Role of Reset",
+            "Step 1: Move HEAD"
+          ],
+          "sourceFile": "Git/references/reset-demystified.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Reset-Demystified",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 3,
+          "title": "Git & GitHub Advanced Topics",
+          "headingPath": [
+            "03. git revert"
+          ],
+          "sourceFile": "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/git_missing_topics(other%20than%20101%2Cnotes%2Ccheatsheet).pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 4,
+          "title": "Rebasing and rewriting history",
+          "headingPath": [
+            "Rebasing"
+          ],
+          "sourceFile": "Git/references/rebasing.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Branching-Rebasing",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 5,
+          "title": "Stashing and cleaning",
+          "headingPath": [
+            "Stashing and Cleaning",
+            "Stashing Your Work"
+          ],
+          "sourceFile": "Git/references/stashing-and-cleaning.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Stashing-and-Cleaning",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 6,
+          "title": "Submodules",
+          "headingPath": [
+            "Submodules",
+            "Starting with Submodules"
+          ],
+          "sourceFile": "Git/references/submodules.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Submodules",
+          "license": "CC BY-NC-SA 3.0"
+        }
+      ]
+    },
+    {
+      "id": "gitignore-tracked",
+      "questions": [
+        "How do I stop tracking a file that is already committed?",
+        "I added a file to .gitignore but git still tracks it",
+        "remove a file from git but keep it locally"
+      ],
+      "answer": "**Situation:** A file is already committed and tracked by Git, and you want Git to stop tracking it (usually so a `.gitignore` rule will finally take effect) without deleting your local copy.\n\n**Commands:**\n```bash\n# Stop tracking the file but keep it on disk\ngit rm --cached secret.env\n\n# Make sure it stays ignored going forward\necho \"secret.env\" >> .gitignore\n\n# Record the change\ngit commit -m \"Stop tracking secret.env\"\n```\n\n**Why:** Adding a file to `.gitignore` does **not** stop tracking it if it was already committed — the ignore rules only apply to untracked files [2]. The `git rm --cached` step removes the file from Git's index while leaving the working copy alone, and then the follow-up commit records that removal [2].\n\n**How to undo:** If you ran the command but haven't committed yet, put the file back in the index with `git reset HEAD secret.env` (or `git restore --staged secret.env`). If you already committed it and want tracking back, re-add and commit the file again: `git add secret.env` then `git commit -m \"Track secret.env again\"`.",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Git Large File Storage (LFS)",
+          "headingPath": [
+            "Configuring Git Large File Storage"
+          ],
+          "sourceFile": "Git/references/git-lfs.md",
+          "sourceUrl": "https://docs.github.com/en/repositories/working-with-files/managing-large-files/configuring-git-large-file-storage",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 2,
+          "title": "Git & GitHub Advanced Topics",
+          "headingPath": [
+            "13. .gitignore Patterns"
+          ],
+          "sourceFile": "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/git_missing_topics(other%20than%20101%2Cnotes%2Ccheatsheet).pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 3,
+          "title": "Remotes and remote-tracking branches",
+          "headingPath": [
+            "Remote Branches",
+            "Tracking Branches"
+          ],
+          "sourceFile": "Git/references/remotes-and-tracking-branches.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Branching-Remote-Branches",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 4,
+          "title": "Rebasing and rewriting history",
+          "headingPath": [
+            "Rewriting History",
+            "Changing Multiple Commit Messages"
+          ],
+          "sourceFile": "Git/references/rebasing.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 5,
+          "title": "Git Large File Storage (LFS)",
+          "headingPath": [
+            "About Git Large File Storage"
+          ],
+          "sourceFile": "Git/references/git-lfs.md",
+          "sourceUrl": "https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-git-large-file-storage",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 6,
+          "title": "Signing commits and tags",
+          "headingPath": [
+            "About commit signature verification",
+            "GPG commit signature verification"
+          ],
+          "sourceFile": "Git/references/commit-signing.md",
+          "sourceUrl": "https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification",
+          "license": "CC BY 4.0"
+        }
+      ]
+    },
+    {
+      "id": "first-push",
+      "questions": [
+        "How do I push an existing project to a new GitHub repository?",
+        "upload my local project to GitHub",
+        "first push of a new repo to GitHub"
+      ],
+      "answer": "**Situation:** You have a project already on your computer and want to get it up onto a brand-new GitHub repository.\n\n**I'm not sure, and my sources don't cover this.** The material I have covers *forking* someone else's project and then *cloning* it [1], plus README/contributing files [3][4], contributor graphs [2] and GitHub Actions workflows [5][6] — but nothing about turning an existing local folder into a new GitHub repo. I won't guess at commands or flags for it.\n\nWhere to look instead (official docs):\n\n- Git docs for initialising a repo: https://git-scm.com/docs/git-init\n- Git docs for adding a remote: https://git-scm.com/docs/git-remote\n- Git docs for pushing: https://git-scm.com/docs/git-push\n- GitHub's own walkthrough: https://docs.github.com/en/migrations/importing-source-code/using-the-command-line-to-import-source-code/adding-locally-hosted-code-to-github\n\nOne thing I *can* point out from my sources: when you're ready to share the URL of your new repository, the page's **Code** button is where you copy the HTTPS, SSH or GitHub CLI URL [1] — that's the same URL you'd need for talking to the remote.\n\nIf you paste in the exact error or step you're stuck on, or if the repo is already open in your browser, I can look at that page with you.",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Contributing to an open source project",
+          "headingPath": [
+            "Contributing to a project",
+            "Creating your own copy of a project"
+          ],
+          "sourceFile": "Scenario-Based_Guide/references/contributing-to-open-source.md",
+          "sourceUrl": "https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 2,
+          "title": "Understanding an unfamiliar repository on GitHub",
+          "headingPath": [
+            "Viewing a project's contributors"
+          ],
+          "sourceFile": "Scenario-Based_Guide/references/understanding-an-unfamiliar-repo.md",
+          "sourceUrl": "https://docs.github.com/en/repositories/viewing-activity-and-data-for-your-repository/viewing-a-projects-contributors",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 3,
+          "title": "Contributing to an open source project",
+          "headingPath": [
+            "Setting guidelines for repository contributors"
+          ],
+          "sourceFile": "Scenario-Based_Guide/references/contributing-to-open-source.md",
+          "sourceUrl": "https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/setting-guidelines-for-repository-contributors",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 4,
+          "title": "Understanding an unfamiliar repository on GitHub",
+          "headingPath": [
+            "About the repository README file"
+          ],
+          "sourceFile": "Scenario-Based_Guide/references/understanding-an-unfamiliar-repo.md",
+          "sourceUrl": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 5,
+          "title": "GitHub Actions basics",
+          "headingPath": [
+            "Quickstart for GitHub Actions"
+          ],
+          "sourceFile": "Git/references/github-actions-basics.md",
+          "sourceUrl": "https://docs.github.com/en/actions/get-started/quickstart",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 6,
+          "title": "GitHub Actions basics",
+          "headingPath": [
+            "Quickstart for GitHub Actions",
+            "Creating your first workflow"
+          ],
+          "sourceFile": "Git/references/github-actions-basics.md",
+          "sourceUrl": "https://docs.github.com/en/actions/get-started/quickstart",
+          "license": "CC BY 4.0"
+        }
+      ]
+    },
+    {
+      "id": "ssh-key",
+      "questions": [
+        "How do I set up an SSH key for GitHub?",
+        "connect to GitHub with SSH",
+        "stop GitHub asking for my password every time I push"
+      ],
+      "answer": "**Situation:** This is a one-time setup on each machine so you can push to GitHub over SSH without typing a password or token every time.\n\n**Commands:**\n```bash\n# 1. Generate a new ed25519 key with your GitHub email\nssh-keygen -t ed25519 -C \"your_email@example.com\"\n#    Press Enter for the default location (~/.ssh/id_ed25519), then set a passphrase\n\n# 2. Start the agent and load your key\neval \"$(ssh-agent -s)\"\nssh-add ~/.ssh/id_ed25519\n\n# 3. Print your public key so you can copy it\ncat ~/.ssh/id_ed25519.pub\n\n# 4. Test the connection after adding the key on GitHub\nssh -T git@github.com\n#    Success looks like: \"Hi Krish6115! You have successfully authenticated.\"\n```\n\nThen in the browser: **GitHub → Settings → SSH and GPG keys → New SSH key → paste the output of `cat ~/.ssh/id_ed25519.pub`** [1][5].\n\n**Why:** GitHub removed password authentication for Git operations in August 2021, so you need either an SSH key or a Personal Access Token — SSH is preferred for daily use [1]. The agent holds your key in memory so you're not re-entering the passphrase on every operation; GitHub CLI can also find or generate a keypair for you if you prefer that route [2].\n\n**Clone and remotes:**\n```bash\n# Clone over SSH instead of HTTPS\ngit clone git@github.com:Krish6115/LeetCode.git\n\n# Or switch an existing HTTPS remote to SSH\ngit remote set-url origin git@github.com:Krish6115/LeetCode.git\n```\n\n**How to undo:** Remove the key from GitHub (Settings → SSH and GPG keys → Delete) and delete the local files:\n```bash\nssh-add -d ~/.ssh/id_ed25519   # remove it from the agent\nrm ~/.ssh/id_ed25519 ~/.ssh/id_ed25519.pub   # delete the keypair\n```\n\n**One caveat:** SSH covers Git operations over `git@github.com:...` remotes only — you still need a token or `gh auth login` for the GitHub CLI, the REST API, and HTTPS remotes. Also, a passphrase-protected key will prompt each time unless `ssh-agent` is caching it [4].",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Git & GitHub Advanced Topics",
+          "headingPath": [
+            "11. SSH Keys & Personal Access Tokens"
+          ],
+          "sourceFile": "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/git_missing_topics(other%20than%20101%2Cnotes%2Ccheatsheet).pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 2,
+          "title": "Authentication: HTTPS, SSH, tokens and credential storage",
+          "headingPath": [
+            "About authentication to GitHub",
+            "Authenticating with the command line",
+            "SSH"
+          ],
+          "sourceFile": "Git/references/authentication-ssh-and-tokens.md",
+          "sourceUrl": "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-authentication-to-github",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 3,
+          "title": "Authentication: HTTPS, SSH, tokens and credential storage",
+          "headingPath": [
+            "Caching your GitHub credentials in Git"
+          ],
+          "sourceFile": "Git/references/authentication-ssh-and-tokens.md",
+          "sourceUrl": "https://docs.github.com/en/get-started/git-basics/caching-your-github-credentials-in-git",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 4,
+          "title": "Corrections to common Git & GitHub misconceptions",
+          "headingPath": [
+            "After setting up SSH, do I never need a token again?"
+          ],
+          "sourceFile": "kitty/ingest/corrections.md",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/kitty/ingest/corrections.md",
+          "license": "Kitty project (corrections; links official docs)"
+        },
+        {
+          "n": 5,
+          "title": "Git & GitHub Real-World Scenarios",
+          "headingPath": [
+            "Scenario 01: First-Time Setup"
+          ],
+          "sourceFile": "Scenario-Based_Guide/git_scenarios.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Scenario-Based_Guide/git_scenarios.pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 6,
+          "title": "Signing commits and tags",
+          "headingPath": [
+            "About commit signature verification",
+            "SSH commit signature verification"
+          ],
+          "sourceFile": "Git/references/commit-signing.md",
+          "sourceUrl": "https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification",
+          "license": "CC BY 4.0"
+        }
+      ]
+    },
+    {
+      "id": "clone-vs-fork",
+      "questions": [
+        "What's the difference between forking and cloning?",
+        "fork vs clone"
+      ],
+      "answer": "**Situation:** You're contributing to someone else's public repo and want to understand why you both *fork* it on GitHub and *clone* it to your machine — they're two different steps that do two different jobs.\n\n**Commands:**\n```bash\ngit clone https://github.com/YOUR-USERNAME/Spoon-Knife   # clone YOUR fork to your machine\ngit remote add upstream git@github.com:OriginalOwner/original-repo.git  # track the original repo\ngit remote -v                                            # verify both remotes\n```\n\n**Why:**\n- **Fork** happens *on GitHub* — it creates a server-side copy of the original repo under your account (e.g., `https://github.com/Krish6115/original-repo`) [2]. You need this because you don't have write access to the original repo [2][6]. The original repo then becomes your `upstream` remote, while your fork is your `origin` [2][6].\n- **Clone** happens *on your local machine* — it copies a repository (usually your fork) to your computer so you can edit files locally [1][3]. After cloning your fork, you add the original repo as `upstream` so you can pull in later changes from the source project [2][6].\n\nIn short: **fork = server-side copy on GitHub** (gives you a place to push), **clone = local copy on your disk** (gives you files to edit). You typically do both: fork → clone your fork → add upstream → branch → commit → push to `origin` → open a PR against the original repo [2].\n\n**How to undo:**\n- To undo a clone, just delete the folder — `rm -r <directory_name>` [6]. No harm done to GitHub.\n- To undo an upstream remote: `git remote remove upstream` (not covered in my sources, but it's the standard inverse of `git remote add`; see https://git-scm.com/docs/git-remote).\n- To delete a fork on GitHub, you'd do it in your repo's Settings on the web (my sources don't cover this — see https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features).",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Contributing to an open source project",
+          "headingPath": [
+            "Contributing to a project",
+            "Cloning a fork to your computer"
+          ],
+          "sourceFile": "Scenario-Based_Guide/references/contributing-to-open-source.md",
+          "sourceUrl": "https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 2,
+          "title": "Git & GitHub Real-World Scenarios",
+          "headingPath": [
+            "Scenario 04: Contributing via Fork"
+          ],
+          "sourceFile": "Scenario-Based_Guide/git_scenarios.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Scenario-Based_Guide/git_scenarios.pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 3,
+          "title": "Updating a pull request after review",
+          "headingPath": [
+            "Committing changes to a pull request branch created from a fork"
+          ],
+          "sourceFile": "Scenario-Based_Guide/references/updating-a-pr-after-review.md",
+          "sourceUrl": "https://docs.github.com/en/pull-requests/how-tos/commit-changes/committing-changes-to-a-pull-request-branch-created-from-a-fork",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 4,
+          "title": "Git hooks",
+          "headingPath": [
+            "`githooks` manual (excerpt)",
+            "Description",
+            "commit-msg"
+          ],
+          "sourceFile": "Git/references/hooks.md",
+          "sourceUrl": "https://git-scm.com/docs/githooks",
+          "license": "GPL-2.0"
+        },
+        {
+          "n": 5,
+          "title": "Pull requests and code review on GitHub",
+          "headingPath": [
+            "About code owners",
+            "CODEOWNERS file location"
+          ],
+          "sourceFile": "Git/references/pull-requests-and-code-review.md",
+          "sourceUrl": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 6,
+          "title": "Git GitHub 101",
+          "headingPath": [],
+          "sourceFile": "Git/Git_GitHub_101.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/Git_GitHub_101.pdf",
+          "license": "Repository author"
+        }
+      ]
+    },
+    {
+      "id": "force-push",
+      "questions": [
+        "Is git push --force dangerous?",
+        "is it safe to force push?"
+      ],
+      "answer": "**Situation:** You're wondering whether `git push -f` is safe to use — it overwrites the remote branch with your local version, so the answer depends on whose history is on that remote.\n\n**Commands:**\n```bash\ngit push -u <remote> <branch>   # normal push after setting upstream\ngit push --force <remote> <branch>   # only when YOU must overwrite the remote\ngit reflog                      # recovery if a force push (or reset) cost you commits\n```\n\n**Why:**\n- `git push -f` forces a non-fast-forward update — it makes the remote branch match your local history, discarding any commits others pushed in the meantime [1]. Your notes even joke \"Just ignore and push!\" [1], but that's only safe when the branch is yours alone.\n- The danger is the same as `git reset` on shared history: it rewrites what everyone else sees. Once teammates have pulled the old commits, their clones and open pull requests can be broken or silently lose work — which is why the docs say never use destructive history-rewriting on commits teammates have already pulled [2][3].\n- Safe alternative on a shared branch: `git revert <hash>` adds an inverse commit instead of rewriting history, so it's safe after pushing [2][3].\n- Force-pushing *is* legitimate in two cases: your own branch nobody else touches, and history rewrites you intentionally performed — e.g. after purging a leaked secret, the GitHub docs have you run `git push --force --mirror origin` to overwrite the remote with the cleaned history [6].\n- If you force-push by accident, the old commits are usually recoverable with `git reflog` [3].\n\n**How to undo:** If you force-pushed and lost commits, find them in `git reflog`, then push the recovered state: `git push <remote> <branch>` (add `-f` only if the remote currently has the wrong history). If you wrecked a branch entirely, `git reflog` plus `git branch <name> <hash>` brings it back [3].",
+      "sources": [
+        {
+          "n": 1,
+          "title": "Git & GitHub Notes (illustrated): pull, push, merge, rebase, cherry-pick, log",
+          "headingPath": [
+            "git push"
+          ],
+          "sourceFile": "Git/Git_Github Notes.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/Git_Github%20Notes.pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 2,
+          "title": "Git & GitHub Advanced Topics",
+          "headingPath": [
+            "03. git revert"
+          ],
+          "sourceFile": "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Git/git_missing_topics(other%20than%20101%2Cnotes%2Ccheatsheet).pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 3,
+          "title": "Git & GitHub Real-World Scenarios",
+          "headingPath": [
+            "Scenario 06: Undoing Mistakes"
+          ],
+          "sourceFile": "Scenario-Based_Guide/git_scenarios.pdf",
+          "sourceUrl": "https://github.com/Krish6115/GitKitty/blob/main/Scenario-Based_Guide/git_scenarios.pdf",
+          "license": "Repository author"
+        },
+        {
+          "n": 4,
+          "title": "Branch protection rules and rulesets",
+          "headingPath": [
+            "About rulesets",
+            "About rulesets",
+            "Push rulesets"
+          ],
+          "sourceFile": "Git/references/branch-protection-and-rulesets.md",
+          "sourceUrl": "https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets",
+          "license": "CC BY 4.0"
+        },
+        {
+          "n": 5,
+          "title": "Remotes and remote-tracking branches",
+          "headingPath": [
+            "Remote Branches",
+            "Pushing"
+          ],
+          "sourceFile": "Git/references/remotes-and-tracking-branches.md",
+          "sourceUrl": "https://git-scm.com/book/en/v2/Git-Branching-Remote-Branches",
+          "license": "CC BY-NC-SA 3.0"
+        },
+        {
+          "n": 6,
+          "title": "Removing sensitive data (leaked secrets) from a repository",
+          "headingPath": [
+            "Removing sensitive data from a repository",
+            "Purging a file from your local repository's history using git-filter-repo"
+          ],
+          "sourceFile": "Scenario-Based_Guide/references/removing-sensitive-data.md",
+          "sourceUrl": "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository",
+          "license": "CC BY 4.0"
+        }
+      ]
+    }
+  ]
+}

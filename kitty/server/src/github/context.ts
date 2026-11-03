@@ -3,7 +3,8 @@ import { randomBytes } from 'node:crypto';
 import type { RepoInfo } from './client.js';
 import type { RankedFile } from './rank.js';
 
-export const CONTEXT_BUDGET_TOKENS = 40_000;
+/** Smaller context = faster first step; file excerpts carry enough to say what each file is for. */
+export const CONTEXT_BUDGET_TOKENS = 18_000;
 const estimateTokens = (s: string): number => Math.ceil(s.length / 4);
 
 export interface TourContextInput {
@@ -59,16 +60,16 @@ export function buildTourContext(input: TourContextInput, budgetTokens = CONTEXT
   }
   if (input.info.description) parts.push(`## Description\n${untrusted('description', input.info.description, nonce)}`);
   parts.push(`## Top-level layout\n${untrusted('layout', input.layout.join('\n'), nonce)}`);
-  if (input.readme) parts.push(`## README (${input.readme.path}, excerpt)\n${untrusted(input.readme.path, excerpt(input.readme.text, 300, 12_000), nonce)}`);
+  if (input.readme) parts.push(`## README (${input.readme.path}, excerpt)\n${untrusted(input.readme.path, excerpt(input.readme.text, 160, 6000), nonce)}`);
   if (input.contributing) {
-    parts.push(`## CONTRIBUTING (${input.contributing.path}, excerpt)\n${untrusted(input.contributing.path, excerpt(input.contributing.text, 200, 6000), nonce)}`);
+    parts.push(`## CONTRIBUTING (${input.contributing.path}, excerpt)\n${untrusted(input.contributing.path, excerpt(input.contributing.text, 100, 3000), nonce)}`);
   }
   parts.push('## Key files (ranked by heuristics; only these paths may be used as tour steps)');
 
   const includedPaths: string[] = [];
   let used = estimateTokens(parts.join('\n\n'));
   for (const { file, text } of input.files) {
-    const block = `### File: ${file.path}  (why picked: ${file.reasons.join(', ')})\n${untrusted(file.path, excerpt(text), nonce)}`;
+    const block = `### File: ${file.path}  (why picked: ${file.reasons.join(', ')})\n${untrusted(file.path, excerpt(text, 70, 2200), nonce)}`;
     const cost = estimateTokens(block);
     if (used + cost > budgetTokens) break;
     parts.push(block);

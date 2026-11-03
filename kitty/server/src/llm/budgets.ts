@@ -11,7 +11,8 @@ export interface CallBudget {
 }
 
 export const CALL_BUDGETS: Record<TaskKind, CallBudget> = {
-  tour: { maxTokens: 16_000, reasoningEffort: undefined, totalMs: 180_000 },
+  // low effort: at the default the model spent ~150s reasoning before writing a vite tour (live check 2026-11-03)
+  tour: { maxTokens: 10_000, reasoningEffort: 'low', totalMs: 150_000 },
   // low effort: first text ~4s vs 7-11s at default, similar tokens (live check 2026-11-02)
   tutor: { maxTokens: 6_000, reasoningEffort: 'low', totalMs: 90_000 },
   explain: { maxTokens: 1_500, reasoningEffort: 'none', totalMs: 45_000 },

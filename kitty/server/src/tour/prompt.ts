@@ -19,10 +19,10 @@ export function tourSystemPrompt(nonce: string, maxSteps: number, minSteps = MIN
     '',
     'OUTPUT RULES:',
     '- Reply with exactly one JSON object and nothing else: no Markdown fences, no comments, no text before or after.',
-    '- Shape: {"summary": string, "stack": string[], "steps": [{"path": string, "title": string, "what": string, "why_it_matters": string}], "how_to_run": string, "how_to_contribute": string, "good_first_issue_tips": string[]}',
+    '- Shape (write the keys in exactly this order, "steps" first, so the tour can start while you write): {"steps": [{"path": string, "title": string, "what": string, "why_it_matters": string}], "summary": string, "stack": string[], "how_to_run": string, "how_to_contribute": string, "good_first_issue_tips": string[]}',
     issue
       ? `- "steps": ${minSteps} to ${maxSteps} items, each a different file: the files most likely involved in fixing THE ISSUE, in the order to read them (where the behaviour lives first, then what calls it, then the test file to update). Skip files unrelated to the issue.`
-      : `- "steps": ${minSteps} to ${maxSteps} items, each a different file, ordered so a newcomer can read them in sequence (overview, entry point, core modules, then config, tests and CI).`,
+      : `- "steps": ${minSteps} to ${maxSteps} items, each a different file. Together they must give a newcomer a complete map of the repo, in reading order: 1) what it is (README), 2) how it is built and run (the main manifest), 3) the entry point, 4) the core modules, one per major area (do not spend two steps on the same folder unless it is the heart of the project), then 5) how it is tested and 6) CI or key config. Skip generated, vendored and trivial files.`,
     '- Every step "path" MUST be copied exactly from one of the "### File:" headings. Never invent paths.',
     issue
       ? '- "what": 1-3 sentences on what the file does. "why_it_matters": 1-2 sentences on how this file relates to the issue and what to look for in it (a function, a condition, a test case). If you are not sure a file is involved, say "may be involved".'

@@ -5,9 +5,9 @@ import { findDoc, issueHints, rankFiles, topLevelLayout } from '../github/rank.j
 import type { LruCache } from '../lib/lru.js';
 import { KittyError } from '../llm/errors.js';
 import type { ChatMessage, ChatResult, Provider, ReasoningEffort } from '../llm/types.js';
-import { validateTour } from './parse.js';
+import { completedSteps, validateTour } from './parse.js';
 import { repairMessages, tourMessages, type TourMode } from './prompt.js';
-import { ISSUE_MAX_STEPS, ISSUE_MIN_REQUESTED_STEPS, ISSUE_MIN_VALID_STEPS, MIN_REQUESTED_STEPS, MIN_VALID_STEPS, type TourResult } from './schema.js';
+import { ISSUE_MAX_STEPS, ISSUE_MIN_REQUESTED_STEPS, ISSUE_MIN_VALID_STEPS, MIN_REQUESTED_STEPS, MIN_VALID_STEPS, type TourResult, type TourStep } from './schema.js';
 
 export type TourStage = 'fetching' | 'ranking' | 'thinking' | 'writing' | 'repairing';
 export type OnProgress = (stage: TourStage, message: string) => void;
@@ -26,6 +26,28 @@ export interface TourRequest {
   issue?: number | undefined;
   signal?: AbortSignal;
   onProgress?: OnProgress;
+  /** Fired once GitHub data is in, before the model runs: enough for the client to open step 1 as soon as it streams. */
+  onStart?: (start: TourStart) => void;
+  /** Each step as soon as the model has finished writing it (path already checked against the repo). */
+  onStep?: (step: TourStep, index: number) => void;
+}
+
+export interface TourStart {
+  owner: string;
+  repo: string;
+  sha: string;
+  defaultBranch: string;
+  partial: boolean;
+  expectedSteps: number;
+  issue?: { number: number; title: string; url: string; labels: string[] };
+}
+
+/** How many steps a repo needs: small repos get a short tour, very large ones a longer one. */
+export function stepsFor(fileCount: number): number {
+  if (fileCount <= 40) return 5;
+  if (fileCount <= 400) return 7;
+  if (fileCount <= 4000) return 9;
+  return 12;
 }
 
 /** Run async tasks with limited concurrency, keeping input order. */
@@ -43,12 +65,17 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
 }
 
 /** Tours always stream so first-token / idle timeouts apply; the first content chunk switches the UI to "writing". */
-async function streamOnce(provider: Provider, messages: ChatMessage[], signal: AbortSignal | undefined, onFirst: () => void, effort?: ReasoningEffort): Promise<ChatResult> {
+async function streamOnce(provider: Provider, messages: ChatMessage[], signal: AbortSignal | undefined, onFirst: () => void, effort?: ReasoningEffort, onText?: (text: string) => void): Promise<ChatResult> {
   let first = true;
+  let text = '';
   for await (const ev of provider.stream({ kind: 'tour', messages, ...(signal ? { signal } : {}), ...(effort ? { reasoningEffort: effort } : {}) })) {
-    if (ev.type === 'delta' && first) {
-      first = false;
-      onFirst();
+    if (ev.type === 'delta') {
+      if (first) {
+        first = false;
+        onFirst();
+      }
+      text += ev.text;
+      onText?.(text);
     }
     if (ev.type === 'done') return ev.result;
   }
@@ -56,9 +83,9 @@ async function streamOnce(provider: Provider, messages: ChatMessage[], signal: A
 }
 
 /** One extra attempt when the provider drops the stream (seen live at ~60s); auth, quota and timeouts are not retried. */
-async function streamToResult(provider: Provider, messages: ChatMessage[], signal: AbortSignal | undefined, onFirst: () => void, onRetry: () => void, effort?: ReasoningEffort): Promise<ChatResult> {
+async function streamToResult(provider: Provider, messages: ChatMessage[], signal: AbortSignal | undefined, onFirst: () => void, onRetry: () => void, effort?: ReasoningEffort, onText?: (text: string) => void): Promise<ChatResult> {
   try {
-    return await streamOnce(provider, messages, signal, onFirst, effort);
+    return await streamOnce(provider, messages, signal, onFirst, effort, onText);
   } catch (e) {
     if (!(e instanceof KittyError) || !['upstream_error', 'upstream_unavailable'].includes(e.code) || signal?.aborted) throw e;
     onRetry();
@@ -71,7 +98,6 @@ export async function getTour(deps: TourServiceDeps, req: TourRequest): Promise<
   const { owner, repo, signal } = req;
   const progress: OnProgress = req.onProgress ?? (() => {});
   const mode: TourMode = req.issue ? 'issue' : 'repo';
-  const maxSteps = mode === 'issue' ? Math.min(deps.maxSteps, ISSUE_MAX_STEPS) : deps.maxSteps;
 
   progress('fetching', req.issue ? `Reading issue #${req.issue} and ${owner}/${repo}…` : `Fetching ${owner}/${repo} from GitHub…`);
   const info = await github.getRepo(owner, repo);
@@ -83,10 +109,13 @@ export async function getTour(deps: TourServiceDeps, req: TourRequest): Promise<
   if (hit) return { ...hit, meta: { ...hit.meta, cached: true } };
 
   const tree = await github.getTree(owner, repo, sha);
+  const fileCount = tree.tree.filter((e) => e.type === 'blob').length;
+  // the step count fits the repo; huge truncated trees count as very large
+  const maxSteps = mode === 'issue' ? Math.min(deps.maxSteps, ISSUE_MAX_STEPS) : Math.min(deps.maxSteps, stepsFor(tree.truncated ? 100_000 : fileCount));
   progress('ranking', issue ? 'Finding the files this issue touches…' : tree.truncated ? 'Large repo: ranking key files from a partial file list…' : 'Picking the key files…');
-  // issue walkthroughs read fewer files with low reasoning effort, so big repos finish inside the tour time cap
-  const ranked = rankFiles(tree.tree, issue ? 15 : 25, issue ? issueHints(issue.title, issue.body ?? '') : undefined);
-  const effort: ReasoningEffort | undefined = issue ? 'low' : undefined;
+  // ~2 candidates per step keeps the prompt small (fast) while leaving the model a real choice
+  const ranked = rankFiles(tree.tree, Math.min(25, maxSteps * 2 + 4), issue ? issueHints(issue.title, issue.body ?? '') : undefined);
+  const effort: ReasoningEffort | undefined = undefined; // the tour budget already uses low effort
   const readmePath = findDoc(tree.tree, 'readme');
   const contributingPath = findDoc(tree.tree, 'contributing');
   const [readme, contributing, ...bodies] = await mapLimit(
@@ -103,24 +132,37 @@ export async function getTour(deps: TourServiceDeps, req: TourRequest): Promise<
   const unreadableFiles = ranked.length - files.length;
   const ctx = buildTourContext({
     owner, repo, info, sha,
-    fileCount: tree.tree.filter((e) => e.type === 'blob').length,
+    fileCount,
     partial: tree.truncated,
     layout: topLevelLayout(tree.tree),
     readme: readmePath && readme ? { path: readmePath, text: readme } : undefined,
     contributing: contributingPath && contributing ? { path: contributingPath, text: contributing } : undefined,
     files,
     issue: issue ? { number: issue.number, title: issue.title, body: issue.body ?? '', labels: issue.labels } : undefined,
-  }, issue ? 20_000 : undefined);
+  }, issue ? 14_000 : undefined);
 
+  const issueMeta = issue ? { number: issue.number, title: issue.title, url: issue.html_url, labels: issue.labels } : undefined;
+  req.onStart?.({ owner, repo, sha, defaultBranch: info.default_branch, partial: tree.truncated, expectedSteps: maxSteps, ...(issueMeta ? { issue: issueMeta } : {}) });
   progress('thinking', 'Kitty is thinking…');
   const repoPaths = new Set(tree.tree.map((e) => e.path));
+  // stream steps out as they complete, so the cat can start walking on step 1
+  const sent = new Set<string>();
+  const onText = (text: string): void => {
+    if (!req.onStep) return;
+    for (const step of completedSteps(text)) {
+      if (sent.size >= maxSteps) return;
+      if (sent.has(step.path) || !repoPaths.has(step.path)) continue;
+      sent.add(step.path);
+      req.onStep(step, sent.size - 1);
+    }
+  };
   const onFirst = (): void => progress('writing', 'Kitty is writing the tour…');
   const onRetry = (): void => progress('thinking', 'The model connection dropped; retrying once…');
   // small repos may not have enough candidate files for the usual minimums
-  const minValid = Math.min(mode === 'issue' ? ISSUE_MIN_VALID_STEPS : MIN_VALID_STEPS, ctx.includedPaths.length);
-  const minSteps = Math.min(mode === 'issue' ? ISSUE_MIN_REQUESTED_STEPS : MIN_REQUESTED_STEPS, ctx.includedPaths.length);
+  const minValid = Math.min(mode === 'issue' ? ISSUE_MIN_VALID_STEPS : MIN_VALID_STEPS, maxSteps - 1, ctx.includedPaths.length);
+  const minSteps = Math.min(mode === 'issue' ? ISSUE_MIN_REQUESTED_STEPS : MIN_REQUESTED_STEPS, maxSteps, ctx.includedPaths.length);
   if (minValid === 0) throw new KittyError('invalid_model_output', 'This repository has no readable files to build a tour from.');
-  let result = await streamToResult(provider, tourMessages(ctx.text, ctx.nonce, maxSteps, minSteps, mode), signal, onFirst, onRetry, effort);
+  let result = await streamToResult(provider, tourMessages(ctx.text, ctx.nonce, maxSteps, minSteps, mode), signal, onFirst, onRetry, effort, onText);
   let usage = result.usage;
   let checked = validateTour(result.text, repoPaths, maxSteps, minValid);
   let repaired = false;
@@ -148,7 +190,7 @@ export async function getTour(deps: TourServiceDeps, req: TourRequest): Promise<
       contextTokens: ctx.approxTokens,
       unreadableFiles,
       defaultBranch: info.default_branch,
-      ...(issue ? { issue: { number: issue.number, title: issue.title, url: issue.html_url, labels: issue.labels } } : {}),
+      ...(issueMeta ? { issue: issueMeta } : {}),
     },
   };
   if (!info.private) cache.set(key, out);

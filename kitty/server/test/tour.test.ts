@@ -154,7 +154,7 @@ describe('small repos and dropped streams (from live checks)', () => {
     const provider = scripted([tourJson(['README.md', 'Git/a.pdf', 'Git/b.pdf'])]);
     const r = await getTour({ github: fakeGitHub(f), provider, cache: newCache(), maxSteps: 10 }, { owner: 'acme', repo: 'notes' });
     expect(r.tour.steps.map((s) => s.path)).toEqual(['README.md', 'Git/a.pdf', 'Git/b.pdf']);
-    expect(provider.requests[0]?.messages[0]?.content).toContain('"steps": 3 to 10 items');
+    expect(provider.requests[0]?.messages[0]?.content).toContain('"steps": 3 to 5 items') // a 3-file repo gets a short tour;
     expect(provider.requests[0]?.messages[1]?.content).toContain('(binary document: contents not shown)');
   });
 
@@ -171,7 +171,35 @@ describe('small repos and dropped streams (from live checks)', () => {
     };
     const stages: string[] = [];
     const r = await getTour({ github: fakeGitHub(fixtureRepo()), provider: flaky, cache: newCache(), maxSteps: 10 }, { owner: 'acme', repo: 'todo-api', onProgress: (s, m) => stages.push(`${s}:${m}`) });
-    expect(r.tour.steps).toHaveLength(6);
+    expect(r.tour.steps).toHaveLength(5); // the small fixture repo gets a 5-step tour
     expect(stages.some((s) => s.includes('retrying once'))).toBe(true);
+  });
+});
+
+describe('faster tours', () => {
+  it('fits the number of steps to the repo size', async () => {
+    const { stepsFor } = await import('../src/tour/service.js');
+    expect([10, 200, 2000, 50_000].map(stepsFor)).toEqual([5, 7, 9, 12]);
+  });
+
+  it('pulls finished steps out of a reply that is still streaming', async () => {
+    const { completedSteps } = await import('../src/tour/parse.js');
+    const partial = '{"steps": [{"path": "./README.md", "title": "Readme", "what": "w", "why_it_matters": "y"}, {"path": "src/a.ts", "title": "A", "wh';
+    expect(completedSteps(partial).map((s) => s.path)).toEqual(['README.md']);
+    expect(completedSteps('{"summary": "x"')).toEqual([]);
+    expect(completedSteps('{"steps": [{"path": "a", "title": "t {", "what": "w }", "why_it_matters": "y"}]}').map((s) => s.title)).toEqual(['t {']);
+  });
+
+  it('announces the tour, then each step as it streams, before the result', async () => {
+    const f = fixtureRepo();
+    const provider = createMockProvider();
+    const events: string[] = [];
+    const r = await getTour(
+      { github: fakeGitHub(f), provider, cache: newCache(), maxSteps: 12 },
+      { owner: f.owner, repo: f.repo, onStart: (s) => events.push(`start:${s.expectedSteps}`), onStep: (s, i) => events.push(`step${i}:${s.path}`) },
+    );
+    expect(events[0]).toBe('start:5');
+    expect(events.filter((e) => e.startsWith('step')).length).toBe(r.tour.steps.length);
+    expect(events[1]).toBe(`step0:${r.tour.steps[0]?.path}`);
   });
 });

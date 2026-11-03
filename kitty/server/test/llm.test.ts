@@ -70,8 +70,7 @@ describe('BharatCodeProvider (openai SDK, fake fetch)', () => {
     expect(r).toMatchObject({ text: 'pong', truncated: false, usage: { totalTokens: 8 } });
     expect(String(fetchImpl.mock.calls[0]?.[0])).toBe('https://bc.test/v1/chat/completions');
     expect(bodies[0]).toMatchObject({ model: 'qwen-3.8-27b', stream: true, max_tokens: 1500, reasoning_effort: 'none' });
-    expect(bodies[1]).toMatchObject({ max_tokens: 16000 });
-    expect(bodies[1]).not.toHaveProperty('reasoning_effort');
+    expect(bodies[1]).toMatchObject({ max_tokens: 10000, reasoning_effort: 'low' });
     expect(bodies[2]).toMatchObject({ max_tokens: 6000, reasoning_effort: 'low' });
   });
 

@@ -33,6 +33,8 @@ export function tourRoute(env: Env, limiter: RateLimiter, deps: RouteDeps = {}):
             issue: body.data.issue,
             signal: c.req.raw.signal,
             onProgress: (stage, message) => void sendEvent(stream, 'progress', { stage, message }),
+            onStart: (start) => void sendEvent(stream, 'start', start),
+            onStep: (step, index) => void sendEvent(stream, 'step', { index, step }),
           },
         );
         await sendEvent(stream, 'result', result);

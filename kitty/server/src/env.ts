@@ -11,7 +11,7 @@ export const EnvSchema = z.object({
   LLM_FIRST_TOKEN_MS: z.coerce.number().int().positive().default(60_000),
   LLM_IDLE_MS: z.coerce.number().int().positive().default(30_000),
   TOUR_CACHE_TTL_MIN: z.coerce.number().int().positive().default(360),
-  TOUR_MAX_STEPS: z.coerce.number().int().min(4).max(15).default(10),
+  TOUR_MAX_STEPS: z.coerce.number().int().min(4).max(15).default(12),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

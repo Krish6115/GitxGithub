@@ -1,6 +1,6 @@
 // Extract and validate the model's tour JSON. Invalid step paths are dropped, not trusted.
 import { z } from 'zod';
-import { MIN_VALID_STEPS, TourSchema, type Tour } from './schema.js';
+import { MIN_VALID_STEPS, TourSchema, TourStepSchema, type Tour, type TourStep } from './schema.js';
 
 /** Pull the first balanced JSON object out of a reply (tolerates code fences and stray prose). */
 export function extractJsonObject(text: string): unknown {
@@ -59,4 +59,46 @@ export function validateTour(text: string, repoPaths: Set<string>, maxSteps: num
     return { ok: false, error: `only ${steps.length} steps use real file paths (need at least ${minValid}); invalid: ${dropped.join(', ') || 'none'}` };
   }
   return { ok: true, tour: { ...parsed.data, steps: steps.slice(0, maxSteps) }, dropped };
+}
+
+/**
+ * Steps that are already complete in a partial (still streaming) tour reply, so the tour can start before the
+ * model finishes. Only fully closed step objects inside the "steps" array are returned.
+ */
+export function completedSteps(partial: string): TourStep[] {
+  const key = partial.indexOf('"steps"');
+  if (key < 0) return [];
+  const open = partial.indexOf('[', key);
+  if (open < 0) return [];
+  const out: TourStep[] = [];
+  let depth = 0;
+  let start = -1;
+  let inString = false;
+  let escaped = false;
+  for (let i = open + 1; i < partial.length; i++) {
+    const ch = partial[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === '\\') escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === '{') {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (ch === '}') {
+      depth--;
+      if (depth === 0 && start >= 0) {
+        try {
+          const step = TourStepSchema.safeParse(JSON.parse(partial.slice(start, i + 1)));
+          if (step.success) out.push({ ...step.data, path: normalisePath(step.data.path) });
+        } catch {
+          /* not valid JSON yet */
+        }
+        start = -1;
+      }
+    } else if (ch === ']' && depth === 0) break;
+  }
+  return out;
 }

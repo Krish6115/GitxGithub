@@ -19,6 +19,8 @@ export type ChatMessage =
       unverifiedFlags?: string[];
       truncated?: boolean;
       error?: string;
+      /** A saved, reviewed answer to a common question (served instantly, no tokens). */
+      instant?: boolean;
       /** Something the answer asked Kitty to do (open a repo, explain an issue, find issues...). */
       action?: import('./actions').KittyAction;
       /** Results of a find_issues action. */

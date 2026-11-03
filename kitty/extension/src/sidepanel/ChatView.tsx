@@ -148,7 +148,7 @@ export function ChatView() {
             void runOnPage(action);
           }
         }
-        else if (event === 'done') updateLast((m) => ({ ...m, status: 'done', unverifiedFlags: d.unverifiedFlags as string[], truncated: Boolean(d.truncated) }));
+        else if (event === 'done') updateLast((m) => ({ ...m, status: 'done', unverifiedFlags: d.unverifiedFlags as string[], truncated: Boolean(d.truncated), ...(d.instant ? { instant: true } : {}) }));
         else if (event === 'error') updateLast((m) => ({ ...m, status: 'error', error: errorText(String(d.code), String(d.message)) }));
       }, abort.signal);
       updateLast((m) => (m.status === 'streaming' ? { ...m, status: 'error', error: 'The answer ended unexpectedly.' } : m));
@@ -199,6 +199,7 @@ export function ChatView() {
                 </div>
               )}
               {m.status === 'error' && <p class="error">{m.error}</p>}
+              {m.instant && <p class="muted small" data-kitty="instant" title="A common question with a saved, checked answer from Kitty's sources">⚡ Saved answer, instant</p>}
               {m.status === 'stopped' && <p class="muted small">Stopped.</p>}
               {m.truncated && <p class="muted small">The answer hit its length limit and may be incomplete.</p>}
               {m.unverifiedFlags && m.unverifiedFlags.length > 0 && (

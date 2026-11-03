@@ -5,6 +5,8 @@ export interface TourStep {
   title: string;
   what: string;
   why_it_matters: string;
+  /** Kitty's own placeholder note; the model's explanation replaces it as it streams in. */
+  draft?: boolean;
 }
 
 export interface Tour {
@@ -63,12 +65,14 @@ export interface TourStart {
   partial: boolean;
   expectedSteps: number;
   issue?: { number: number; title: string; url: string; labels: string[] };
+  /** Repo tours: all steps, planned by Kitty, ready at once (their notes improve as the model writes). */
+  draft?: TourStep[];
 }
 
-/** A tour that is still streaming, with its first step. */
-export function streamingState(start: TourStart, first: TourStep, login?: string): TourState {
+/** A tour that is still streaming: Kitty's planned steps, or the first step the model wrote. */
+export function streamingState(start: TourStart, steps: TourStep[], login?: string): TourState {
   const result: TourResult = {
-    tour: { summary: '', stack: [], steps: [first], how_to_run: '', how_to_contribute: '', good_first_issue_tips: [] },
+    tour: { summary: '', stack: [], steps, how_to_run: '', how_to_contribute: '', good_first_issue_tips: [] },
     meta: {
       owner: start.owner, repo: start.repo, sha: start.sha, partial: start.partial, cached: false, provider: '',
       repaired: false, droppedSteps: [], unreadableFiles: 0, defaultBranch: start.defaultBranch,
@@ -78,10 +82,13 @@ export function streamingState(start: TourStart, first: TourStep, login?: string
   return { ...startState(result, login), streaming: true, expectedSteps: start.expectedSteps };
 }
 
-/** Add a newly streamed step (ignored if it is a different tour or the step is already there). */
-export function appendStep(s: TourState, step: TourStep): TourState {
-  if (!s.streaming || s.steps.some((x) => x.path === step.path)) return s;
-  const steps = [...s.steps, step];
+/** A newly streamed step: replaces the planned placeholder for the same file, or is added at the end. */
+export function upsertStep(s: TourState, step: TourStep): TourState {
+  if (!s.streaming) return s;
+  const i = s.steps.findIndex((x) => x.path === step.path);
+  if (i >= 0 && !s.steps[i]?.draft) return s;
+  const clean: TourStep = { path: step.path, title: step.title, what: step.what, why_it_matters: step.why_it_matters };
+  const steps = i >= 0 ? s.steps.map((x, j) => (j === i ? clean : x)) : [...s.steps, clean];
   return { ...s, steps, result: { ...s.result, tour: { ...s.result.tour, steps } } };
 }
 

@@ -3,7 +3,7 @@ import { ApiError, postJson, postStream } from '../shared/api';
 import { API_PATHS, EXPLAIN_PORT, SIDEPANEL_TAB_KEY, TOUR_PORT, type ApiMessage, type ExplainPortEvent, type ExplainPortRequest, type ExplainSelectionMessage, type OpenChatMessage, type TourPortEvent, type TourPortRequest } from '../shared/messages';
 import { getSettings } from '../shared/settings';
 import { readSse } from '../shared/sse';
-import { appendStep, finishState, streamingState, TOUR_STATE_KEY, type TourResult, type TourStart, type TourState, type TourStep } from '../shared/tour';
+import { finishState, streamingState, upsertStep, TOUR_STATE_KEY, type TourResult, type TourStart, type TourState, type TourStep } from '../shared/tour';
 
 chrome.runtime.onInstalled.addListener((details) => {
   void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
@@ -42,14 +42,20 @@ async function runTour(req: TourPortRequest, send: (e: TourPortEvent) => void, s
   for await (const ev of readSse(res.body)) {
     if (ev.event === 'start') {
       start = JSON.parse(ev.data) as TourStart;
-    } else if (ev.event === 'step' && start) {
-      const { index, step } = JSON.parse(ev.data) as { index: number; step: TourStep };
-      if (index === 0) {
-        await chrome.storage.session.set({ [TOUR_STATE_KEY]: streamingState(start, step, req.login) });
+      // repo tours arrive with every step planned: open step 1 right away
+      if (start.draft?.length) {
+        await chrome.storage.session.set({ [TOUR_STATE_KEY]: streamingState(start, start.draft.map((d) => ({ ...d, draft: true })), req.login) });
         send({ type: 'first-step' });
-      } else {
-        const cur = await loadTour();
-        if (cur?.streaming && cur.sha === start.sha) await chrome.storage.session.set({ [TOUR_STATE_KEY]: appendStep(cur, step) });
+      }
+    } else if (ev.event === 'step' && start) {
+      const { step } = JSON.parse(ev.data) as { index: number; step: TourStep };
+      const cur = await loadTour();
+      if (cur?.streaming && cur.sha === start.sha) {
+        await chrome.storage.session.set({ [TOUR_STATE_KEY]: upsertStep(cur, step) });
+      } else if (!start.draft?.length) {
+        // issue walkthroughs: the first step the model writes opens the tour
+        await chrome.storage.session.set({ [TOUR_STATE_KEY]: streamingState(start, [step], req.login) });
+        send({ type: 'first-step' });
       }
     } else if (ev.event === 'progress') {
       const p = JSON.parse(ev.data) as { stage: string; message: string };

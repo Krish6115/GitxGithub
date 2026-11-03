@@ -113,7 +113,8 @@ export function KittyApp() {
             <a href="#" data-kitty="show-commands" onClick={(e) => { e.preventDefault(); askAboutStep(n); }}>Show them</a>
           </p>
         )}
-        {t.tour.streaming && n === total - 1 && <p class="hint thinking" data-kitty="writing-next">Kitty is writing the next step</p>}
+        {t.tour.streaming && step.draft && <p class="hint thinking" data-kitty="writing-step">Kitty is writing a fuller explanation</p>}
+        {t.tour.streaming && !step.draft && n === total - 1 && <p class="hint thinking" data-kitty="writing-next">Kitty is writing the next step</p>}
         {chatHint && <p class="hint">Click the Kitty icon in the toolbar to open the chat.</p>}
       </div>
     ) : (

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { pathFromUrl, repoFromUrl, stepUrl } from './github-page';
 import { errorText } from './messages';
 import { readSse } from './sse';
-import { appendStep, finishState, startState, streamingState, syncToPath, tourContext, withIndex, type TourResult } from './tour';
+import { finishState, upsertStep, startState, streamingState, syncToPath, tourContext, withIndex, type TourResult } from './tour';
 
 const SHA = 'abcdef0123456789abcdef0123456789abcdef01';
 const ref = { owner: 'honojs', repo: 'hono' };
@@ -96,14 +96,20 @@ describe('streaming tours', () => {
   const step = (path: string) => ({ path, title: path, what: 'w', why_it_matters: 'y' });
 
   it('opens on step 1 and appends steps as they arrive', () => {
-    let s = streamingState(start, step('README.md'));
+    let s = streamingState(start, [step('README.md')]);
     expect(s).toMatchObject({ streaming: true, expectedSteps: 7, currentIndex: 0 });
-    s = appendStep(appendStep(s, step('src/index.ts')), step('src/index.ts'));
+    s = upsertStep(upsertStep(s, step('src/index.ts')), { ...step('src/index.ts'), title: 'again' });
     expect(s.steps.map((x) => x.path)).toEqual(['README.md', 'src/index.ts']);
+    expect(s.steps[1]?.title).toBe('src/index.ts'); // a written step is not overwritten
+  });
+
+  it("replaces Kitty's planned placeholder when the model's explanation arrives", () => {
+    const s = upsertStep(streamingState(start, [{ ...step('README.md'), title: 'Start with the README', draft: true }, { ...step('src/a.ts'), draft: true }]), { ...step('src/a.ts'), title: 'Router core' });
+    expect(s.steps.map((x) => [x.title, Boolean(x.draft)])).toEqual([['Start with the README', true], ['Router core', false]]);
   });
 
   it('keeps the user on the step they are reading when the final tour arrives', () => {
-    const s = withIndex(appendStep(streamingState(start, step('README.md')), step('src/index.ts')), 1);
+    const s = withIndex(upsertStep(streamingState(start, [step('README.md')]), step('src/index.ts')), 1);
     const done = finishState(s, result);
     expect(done.streaming).toBeUndefined();
     expect(done.steps[done.currentIndex]?.path).toBe('src/index.ts');

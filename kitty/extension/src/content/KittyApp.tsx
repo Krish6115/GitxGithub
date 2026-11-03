@@ -67,7 +67,9 @@ export function KittyApp() {
   const loading = t.phase.kind === 'loading';
   const vp = viewport();
   // During a tour the cat walks to the highlighted file header; otherwise it rests bottom-right.
-  const cat = useCatMotion(box ? besideBox(box, vp) : null, loading);
+  // anything Kitty is showing counts as "in use": a moved cat only walks home after a minute of nothing
+  const busy = menuOpen || panel !== 'none' || t.phase.kind !== 'idle' || Boolean(t.tour && t.onTourRepo);
+  const cat = useCatMotion(box ? besideBox(box, vp) : null, loading, busy);
   // Near the top the bubble goes under the cat, so the container is anchored by its top edge instead of its bottom.
   const below = cat.pos.y < 280;
   const anchor = below

@@ -46,8 +46,16 @@ export const viewport = (): Viewport => ({ width: document.documentElement.clien
 export interface SavedHome {
   right: number;
   bottom: number;
+  /** When the user last used Kitty there (ms); after RETURN_HOME_MS without use the cat walks back to its corner. */
+  at?: number;
 }
 export const HOME_KEY = 'kitty:home';
+/** A cat moved out of its corner walks back home after this long without being used. */
+export const RETURN_HOME_MS = 60_000;
+
+/** Time to walk back: the cat was moved, nobody has used it for a minute, and it isn't busy (bubble, tour, drag). */
+export const shouldReturnHome = (saved: SavedHome | null, lastUse: number, now: number, busy: boolean): boolean =>
+  Boolean(saved) && !busy && now - lastUse >= RETURN_HOME_MS;
 
 /** Keep the cat fully on screen. */
 export const clampToViewport = (p: Point, vp: Viewport, margin = 4): Point => ({

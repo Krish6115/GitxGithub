@@ -17,6 +17,8 @@ import {
   type CatMode,
   type Point,
   type SavedHome,
+  RETURN_HOME_MS,
+  shouldReturnHome,
 } from './cat-motion';
 import type { Frame } from './sprite-sheet';
 
@@ -38,8 +40,11 @@ export interface CatMotion {
   consumeDrag: () => boolean;
 }
 
-/** `target` null = go to the resting spot. `thinking` plays the think loop; the cat waves hello on arrival and when thinking ends. */
-export function useCatMotion(target: Point | null, thinking: boolean): CatMotion {
+/**
+ * `target` null = go to the resting spot. `thinking` plays the think loop; the cat waves hello on arrival and when
+ * thinking ends. `busy` (a bubble or tour is showing) counts as using Kitty, so a moved cat stays where it is.
+ */
+export function useCatMotion(target: Point | null, thinking: boolean, busy = false): CatMotion {
   const [vp, setVp] = useState(viewport);
   const [saved, setSaved] = useState<SavedHome | null>(null);
   const [pos, setPos] = useState<Point>(() => restingPosition(viewport(), null));
@@ -56,11 +61,15 @@ export function useCatMotion(target: Point | null, thinking: boolean): CatMotion
   const [swing, setSwing] = useState(0);
   const [fast, setFast] = useState(false);
   const dragged = useRef(false);
+  const lastUse = useRef(Date.now());
 
   useEffect(() => {
     void chrome.storage.local.get(HOME_KEY).then((r) => {
       const h = r[HOME_KEY] as SavedHome | undefined;
       if (!h || !Number.isFinite(h.right) || !Number.isFinite(h.bottom)) return;
+      // moved a while ago and not used since: start back in the corner
+      if (h.at !== undefined && Date.now() - h.at >= RETURN_HOME_MS) return void chrome.storage.local.remove(HOME_KEY);
+      lastUse.current = h.at ?? Date.now();
       // start at the saved spot instead of walking there from the corner
       const p = restingPosition(viewport(), h);
       walk.current = { from: p, start: 0, ms: 0 };
@@ -97,6 +106,27 @@ export function useCatMotion(target: Point | null, thinking: boolean): CatMotion
     setPos(dest);
   }, [dest.x, dest.y, held]);
 
+  // Using Kitty (a bubble or tour on screen) keeps it where it was put; when that ends, the minute starts again.
+  useEffect(() => {
+    lastUse.current = Date.now();
+    if (!busy && saved) void chrome.storage.local.set({ [HOME_KEY]: { ...saved, at: lastUse.current } });
+  }, [busy]);
+
+  // Not used for a minute: walk back to the bottom-right corner (and forget the spot).
+  const returnCheck = useRef({ saved, busy: busy || held || target !== null });
+  returnCheck.current = { saved, busy: busy || held || target !== null };
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const { saved: s, busy: b } = returnCheck.current;
+      if (b) lastUse.current = Date.now();
+      else if (shouldReturnHome(s, lastUse.current, Date.now(), b)) {
+        setSaved(null);
+        void chrome.storage.local.remove(HOME_KEY);
+      }
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
   // Animation clock + idle detection (page activity wakes the cat).
   useEffect(() => {
     if (reducedMotion()) return;
@@ -117,6 +147,7 @@ export function useCatMotion(target: Point | null, thinking: boolean): CatMotion
   /** Pick the cat up: it follows the pointer, swings with the motion and is dropped where the pointer is released. */
   const onPointerDown = (e: PointerEvent): void => {
     if (e.button !== 0) return;
+    lastUse.current = Date.now();
     const el = e.currentTarget as HTMLElement;
     const start = { x: e.clientX, y: e.clientY };
     const grab = { x: e.clientX - pos.x, y: e.clientY - pos.y };
@@ -152,7 +183,8 @@ export function useCatMotion(target: Point | null, thinking: boolean): CatMotion
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
       if (!moving) return;
-      const home = toSavedHome(current, viewport());
+      lastUse.current = Date.now();
+      const home: SavedHome = { ...toSavedHome(current, viewport()), at: lastUse.current };
       walk.current = { from: current, start: 0, ms: 0 };
       setHeld(false);
       setSwing(0);

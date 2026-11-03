@@ -83,3 +83,14 @@ describe('dragging the cat', () => {
     expect(clampToViewport({ x: -50, y: 5000 }, vp)).toEqual({ x: 4, y: 800 - CAT_SIZE - 4 });
   });
 });
+
+describe('walking back home', () => {
+  const saved = { right: 500, bottom: 300, at: 0 };
+  it('returns to the corner after a minute without use, unless Kitty is busy', async () => {
+    const { shouldReturnHome, RETURN_HOME_MS } = await import('./cat-motion');
+    expect(shouldReturnHome(saved, 0, RETURN_HOME_MS - 1, false)).toBe(false);
+    expect(shouldReturnHome(saved, 0, RETURN_HOME_MS, false)).toBe(true);
+    expect(shouldReturnHome(saved, 0, RETURN_HOME_MS * 5, true)).toBe(false); // a bubble or tour is showing
+    expect(shouldReturnHome(null, 0, RETURN_HOME_MS * 5, false)).toBe(false); // already home
+  });
+});

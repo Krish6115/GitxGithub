@@ -19,6 +19,9 @@ export interface ChatRequest {
   reasoningEffort?: ReasoningEffort;
   temperature?: number;
   signal?: AbortSignal;
+  /** Per-request limits (ms), tighter than the defaults: give up sooner when the model is busy. */
+  firstTokenMs?: number;
+  totalMs?: number;
 }
 
 export interface Usage {

@@ -53,3 +53,41 @@ describe('instant answers', () => {
     expect(events[2]).toMatchObject({ type: 'done', instant: true, usage: null });
   });
 });
+
+describe('when the model is slow or busy', () => {
+  const stalled = (): import('../src/llm/types.js').Provider => ({
+    name: 'bharatcode',
+    chat: async () => { throw new Error('unused'); },
+    // eslint-disable-next-line require-yield
+    async *stream() {
+      const { KittyError } = await import('../src/llm/errors.js');
+      throw new KittyError('timeout', 'no first token');
+    },
+  });
+  const run = async (q: string, provider = stalled()) => {
+    const events: TutorEvent[] = [];
+    for await (const ev of streamTutor({ provider, retrieve: () => [], faq }, { question: q, history: [] })) events.push(ev);
+    return events;
+  };
+
+  it('answers greetings and thanks instantly without the model', async () => {
+    const { smallTalk } = await import('../src/tutor/service.js');
+    expect(smallTalk('hi')).toMatch(/I'm Kitty/);
+    expect(smallTalk('Hello Kitty!')).toMatch(/I'm Kitty/);
+    expect(smallTalk('thanks!')).toMatch(/welcome/);
+    expect(smallTalk('hi, how do I rebase?')).toBeNull();
+    const ev = await run('hi');
+    expect(ev.at(-1)).toMatchObject({ type: 'done', instant: true });
+  });
+
+  it("falls back to the closest saved answer when the model doesn't answer", async () => {
+    const ev = await run('what is the difference between fetch and pull in this repo?');
+    const text = ev.filter((e) => e.type === 'delta').map((e) => (e as { text: string }).text).join('');
+    expect(text).toMatch(/model is busy right now/);
+    expect(text).toContain('answer for fetch-vs-pull');
+  });
+
+  it('says plainly that the model is busy when there is no saved answer close enough', async () => {
+    await expect(run('How do I configure git submodules recursively?')).rejects.toMatchObject({ code: 'timeout', message: expect.stringMatching(/busy/) });
+  });
+});

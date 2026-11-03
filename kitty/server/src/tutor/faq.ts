@@ -37,6 +37,8 @@ const CONTEXTUAL = /\b(this|these|here|above|page|step|tour|take me|show me|find
 
 export interface FaqMatcher {
   match(question: string, history: TutorTurn[]): FaqEntry | null;
+  /** Looser: the closest saved answer, for when the model is down (shown as "a saved answer to a similar question"). */
+  closest(question: string): FaqEntry | null;
   size: number;
 }
 
@@ -57,6 +59,14 @@ export function createFaqMatcher(entries: FaqEntry[]): FaqMatcher {
   };
   return {
     size: entries.length,
+    closest(question) {
+      const best = search.search(question)[0];
+      if (!best) return null;
+      const words = new Set(contentWords(question));
+      const target = contentWords(String(best['text']));
+      const overlap = target.filter((w) => words.has(w)).length / Math.max(1, target.length);
+      return best.score >= 4 && overlap >= 0.4 ? (entries[best['entry'] as number] ?? null) : null;
+    },
     match(question, history) {
       if (history.length > 0 || CONTEXTUAL.test(question) || question.length > 220) return null;
       const hits = search.search(question);

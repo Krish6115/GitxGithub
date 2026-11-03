@@ -50,7 +50,7 @@ export function formatSources(chunks: RetrievedChunk[]): string {
 export function formatPage(page: PageContext, nonce: string): string {
   const head = `URL: ${page.url}\nTitle: ${page.title}\nPage type: ${page.pageType}`;
   const sel = page.selection ? `\n\nSelected by the user:\n${untrusted('selection', page.selection, nonce)}` : '';
-  const body = page.text ? `\n\nVisible content${page.truncated ? ' (cut)' : ''}:\n${untrusted('page', page.text, nonce)}` : '';
+  const body = page.text ? `\n\nVisible content${page.truncated ? ' (cut)' : ''}:\n${untrusted('page', page.text.slice(0, 3500), nonce)}` : '';
   return `${untrusted('page-meta', head, nonce)}${sel}${body}`;
 }
 

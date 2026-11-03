@@ -52,7 +52,11 @@ export function createBharatCodeProvider(cfg: BharatCodeConfig): Provider {
 
   async function* stream(req: ChatRequest): AsyncGenerator<StreamEvent> {
     const budget = CALL_BUDGETS[req.kind];
-    const timeouts: StreamTimeouts = { firstTokenMs: cfg.firstTokenMs, idleMs: cfg.idleMs, totalMs: cfg.totalMsOverride ?? budget.totalMs };
+    const timeouts: StreamTimeouts = {
+      firstTokenMs: Math.min(cfg.firstTokenMs, req.firstTokenMs ?? Infinity),
+      idleMs: cfg.idleMs,
+      totalMs: Math.min(cfg.totalMsOverride ?? budget.totalMs, req.totalMs ?? Infinity),
+    };
     const effort = req.reasoningEffort ?? budget.reasoningEffort;
     const wd = createWatchdog(timeouts, req.signal);
     let text = '';

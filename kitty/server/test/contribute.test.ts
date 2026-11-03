@@ -194,3 +194,20 @@ describe('contributor routes', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('chat actions', () => {
+  it('reads one valid ACTION line from an answer and ignores invented or broken ones', async () => {
+    const { parseAction } = await import('../src/tutor/actions.js');
+    expect(parseAction('Sure, looking now.\nACTION: {"type":"find_issues","query":"docker"}')).toEqual({ type: 'find_issues', query: 'docker' });
+    expect(parseAction('ACTION: {"type":"fix_issue","repo":"cli/cli","number":42}')).toMatchObject({ number: 42 });
+    expect(parseAction('ACTION: {"type":"rm_rf","repo":"cli/cli"}')).toBeNull();
+    expect(parseAction('ACTION: {"type":"tour","repo":"not a repo"}')).toBeNull();
+    expect(parseAction('A normal answer about git rebase.')).toBeNull();
+  });
+
+  it('builds beginner-friendly search queries', async () => {
+    const { issueSearchQuery } = await import('../src/github/issues.js');
+    expect(issueSearchQuery('docker "compose"')).toBe('docker compose is:issue is:open no:assignee label:"good first issue"');
+    expect(issueSearchQuery('docs', 'cli/cli')).toBe('docs repo:cli/cli is:issue is:open no:assignee');
+  });
+});

@@ -84,6 +84,8 @@ export interface GitHubClient {
   getIssue(owner: string, repo: string, n: number): Promise<Issue>;
   /** Open, unassigned issues (and PRs, which callers filter out), most recently updated first; optionally with one label. */
   listOpenIssues(owner: string, repo: string, label?: string): Promise<Issue[]>;
+  /** GitHub issue search (https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests). */
+  searchIssues(q: string): Promise<Issue[]>;
   getPull(owner: string, repo: string, n: number): Promise<Pull>;
   getPullFiles(owner: string, repo: string, n: number): Promise<PullFile[]>;
   getPullCommits(owner: string, repo: string, n: number): Promise<PullCommit[]>;
@@ -124,6 +126,7 @@ export function createGitHubClient(opts: GitHubClientOptions = {}): GitHubClient
     getIssue: (o, r, n) => getJson(`/repos/${o}/${r}/issues/${n}`, IssueSchema),
     listOpenIssues: (o, r, label) =>
       getJson(`/repos/${o}/${r}/issues?state=open&assignee=none&sort=updated&per_page=100${label ? `&labels=${encodeURIComponent(label)}` : ''}`, z.array(IssueSchema)),
+    searchIssues: async (q) => (await getJson(`/search/issues?q=${encodeURIComponent(q)}&sort=updated&order=desc&per_page=50`, z.object({ items: z.array(IssueSchema) }))).items,
     getPull: (o, r, n) => getJson(`/repos/${o}/${r}/pulls/${n}`, PullSchema),
     getPullFiles: (o, r, n) => getJson(`/repos/${o}/${r}/pulls/${n}/files?per_page=100`, z.array(PullFileSchema)),
     getPullCommits: (o, r, n) => getJson(`/repos/${o}/${r}/pulls/${n}/commits?per_page=100`, z.array(PullCommitSchema)),

@@ -4,7 +4,7 @@ import { Hono, type Context } from 'hono';
 import { z } from 'zod';
 import type { Env } from '../env.js';
 import { createGitHubClient } from '../github/client.js';
-import { rankBeginnerIssues, type BeginnerIssues } from '../github/issues.js';
+import { issueSearchQuery, rankBeginnerIssues, type BeginnerIssues } from '../github/issues.js';
 import { runPreflight } from '../github/preflight.js';
 import { LruCache } from '../lib/lru.js';
 import { clientIp, type RateLimiter } from '../lib/rate-limit.js';
@@ -13,6 +13,7 @@ import type { RouteDeps } from './common.js';
 
 const name = z.string().regex(/^[A-Za-z0-9_.-]{1,100}$/);
 const IssuesRequest = z.object({ owner: name, repo: name });
+const SearchRequest = z.object({ query: z.string().trim().min(1).max(120), repo: z.string().regex(/^[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}$/).optional() });
 const BEGINNER_LABELS = ['good first issue', 'help wanted'];
 const PreflightRequest = z.object({ owner: name, repo: name, pr: z.number().int().positive().max(100_000_000) });
 
@@ -49,6 +50,24 @@ export function contributeRoute(env: Env, limiter: RateLimiter, deps: RouteDeps 
       const seen = new Set<number>();
       const all = lists.flat().filter((i) => !seen.has(i.number) && seen.add(i.number));
       const result = rankBeginnerIssues(all);
+      issueCache.set(key, result);
+      return c.json(result);
+    } catch (e) {
+      return fail(c, e);
+    }
+  });
+
+  // "find me an issue that uses docker": GitHub issue search, ranked for newcomers (chat action find_issues)
+  route.post('/search-issues', async (c) => {
+    const body = SearchRequest.safeParse(await c.req.json().catch(() => null));
+    if (!body.success) return c.json({ code: 'bad_request', message: 'Expected {"query": string, "repo"?: "owner/name"}.' }, 400);
+    const key = `search:${body.data.repo ?? '*'}:${body.data.query}`.toLowerCase();
+    const hit = issueCache.get(key);
+    if (hit) return c.json(hit);
+    const github = setup(c);
+    if (github instanceof Response) return github;
+    try {
+      const result = rankBeginnerIssues(await github.searchIssues(issueSearchQuery(body.data.query, body.data.repo)));
       issueCache.set(key, result);
       return c.json(result);
     } catch (e) {

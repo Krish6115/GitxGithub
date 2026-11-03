@@ -2,6 +2,8 @@
 import type { Issue } from './client.js';
 
 export interface BeginnerIssue {
+  /** owner/name, from the issue URL */
+  repo: string;
   number: number;
   title: string;
   url: string;
@@ -60,6 +62,7 @@ export function scoreIssue(issue: Issue, now: number): BeginnerIssue | null {
     score -= 2;
   }
   return {
+    repo: /github\.com\/([^/]+\/[^/]+)\/issues\//.exec(issue.html_url)?.[1] ?? '',
     number: issue.number,
     title: issue.title,
     url: issue.html_url,
@@ -78,4 +81,12 @@ export function rankBeginnerIssues(issues: Issue[], now = Date.now(), limit = 5)
   const pool = labeled.length > 0 ? labeled : scored.filter((i) => !i.labels.some((l) => AVOID.test(l)));
   pool.sort((a, b) => b.score - a.score || Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
   return { issues: pool.slice(0, limit), labeled: labeled.length > 0 };
+}
+
+/** Search query for beginner-friendly open issues about `topic`, in one repo or across GitHub. */
+export function issueSearchQuery(topic: string, repo?: string): string {
+  const words = topic.replace(/["\\]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 100);
+  return repo
+    ? `${words} repo:${repo} is:issue is:open no:assignee`
+    : `${words} is:issue is:open no:assignee label:"good first issue"`;
 }

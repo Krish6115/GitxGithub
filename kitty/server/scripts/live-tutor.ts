@@ -49,7 +49,7 @@ for (const [i, c] of CASES.entries()) {
     for await (const ev of streamTutor({ provider, retrieve: (q, k) => retrieve(q, k) }, { question: c.q, history })) {
       if (ev.type === 'sources') { sources = ev.sources.length; weak = ev.weak; }
       else if (ev.type === 'delta') { first ??= performance.now() - t0; answer += ev.text; }
-      else unverified = ev.unverifiedFlags;
+      else if (ev.type === 'done') unverified = ev.unverifiedFlags;
     }
     answers[i] = answer;
     const u = calls[0];

@@ -3,6 +3,7 @@ import type { ChatMessage } from '../llm/types.js';
 import type { RetrievedChunk } from '../rag/retrieve.js';
 import { randomBytes } from 'node:crypto';
 import { untrusted } from '../github/context.js';
+import { ACTIONS_PROMPT } from './actions.js';
 import type { PageContext, TourContext, TutorTurn } from './history.js';
 
 export const TUTOR_SYSTEM_PROMPT = [
@@ -24,6 +25,8 @@ export const TUTOR_SYSTEM_PROMPT = [
   '- Do not cite PAGE or TOUR in brackets (never write "[PAGE]", "[TOUR]", "[tour]" or "[page]"); just say "on this page" or "in this step". Bracketed numbers are only for SOURCES.',
   '- When the user asks about "this page", "this file", "this PR" or "here", answer from PAGE. Git commands you suggest must still come from SOURCES.',
   '- For questions about the page itself a short plain answer is fine; skip the Situation/Commands/Why/How to undo format when there are no commands to give.',
+  '',
+  ACTIONS_PROMPT,
   '',
   'ANSWER FORMAT (scenario first, Markdown):',
   '**Situation:** one or two sentences restating what the learner is trying to do.',

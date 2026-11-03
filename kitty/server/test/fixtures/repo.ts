@@ -77,6 +77,7 @@ export function fakeGitHub(f: FixtureRepo): GitHubClient & { calls: { repo: numb
       return issue;
     },
     listOpenIssues: async () => f.issues ?? [],
+    searchIssues: async () => f.issues ?? [],
     getPull: async () => {
       throw new KittyError('github_not_found', 'not in fixture');
     },

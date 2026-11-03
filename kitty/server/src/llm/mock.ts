@@ -27,6 +27,10 @@ function mockTour(prompt: string): string {
 
 /** Scenario-format answer citing the first sources in the prompt (tests and offline UI work). */
 function mockTutor(prompt: string): string {
+  // "find me an issue about X": answer with a find_issues action, like the real model does
+  const ask = /QUESTION: (.*)$/s.exec(prompt)?.[1] ?? '';
+  const find = /\bfind\b.*\bissues?\b.*\b(?:about|with|using|uses|for|on)\s+([\w .+#-]{2,40})/i.exec(ask);
+  if (find?.[1]) return `Looking for beginner-friendly ${find[1].trim()} issues (mock answer).\nACTION: ${JSON.stringify({ type: 'find_issues', query: find[1].trim() })}`;
   const titles = [...prompt.matchAll(/^\[(\d+)\] (.+)$/gm)].slice(0, 2).map((m) => ({ n: m[1] ?? '1', title: m[2] ?? '' }));
   if (titles.length === 0 || prompt.includes('NOTE: no closely relevant sources')) {
     return "I'm not sure, and my sources don't cover this. See the official docs: https://git-scm.com/docs (mock answer).";

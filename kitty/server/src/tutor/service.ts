@@ -5,6 +5,7 @@ import type { RetrievedChunk } from '../rag/retrieve.js';
 import { isShortQuestion, searchText, trimHistory, type TutorRequest } from './history.js';
 import { tutorMessages } from './prompt.js';
 import { unverifiedFlags } from './verify-flags.js';
+import { parseAction, type KittyAction } from './actions.js';
 
 /** Below this top BM25 score the sources are treated as not relevant (calibrated: off-topic <= ~31, eval questions >= ~124). */
 export const WEAK_SCORE = 20;
@@ -21,6 +22,7 @@ export interface TutorSource {
 export type TutorEvent =
   | { type: 'sources'; sources: TutorSource[]; weak: boolean }
   | { type: 'delta'; text: string }
+  | { type: 'action'; action: KittyAction }
   | { type: 'done'; usage: Usage | null; truncated: boolean; unverifiedFlags: string[] };
 
 export interface TutorDeps {
@@ -49,6 +51,8 @@ export async function* streamTutor(deps: TutorDeps, req: TutorRequest, signal?: 
       answer += ev.text;
       yield ev;
     } else {
+      const action = parseAction(answer);
+      if (action) yield { type: 'action', action };
       yield { type: 'done', usage: ev.result.usage, truncated: ev.result.truncated, unverifiedFlags: unverifiedFlags(answer, chunks.map((c) => c.text)) };
     }
   }

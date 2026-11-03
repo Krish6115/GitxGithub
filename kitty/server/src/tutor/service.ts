@@ -6,6 +6,7 @@ import { isShortQuestion, searchText, trimHistory, type TutorRequest } from './h
 import { tutorMessages } from './prompt.js';
 import { unverifiedFlags } from './verify-flags.js';
 import { parseAction, type KittyAction } from './actions.js';
+import type { FaqMatcher } from './faq.js';
 
 /** Below this top BM25 score the sources are treated as not relevant (calibrated: off-topic <= ~31, eval questions >= ~124). */
 export const WEAK_SCORE = 20;
@@ -23,15 +24,25 @@ export type TutorEvent =
   | { type: 'sources'; sources: TutorSource[]; weak: boolean }
   | { type: 'delta'; text: string }
   | { type: 'action'; action: KittyAction }
-  | { type: 'done'; usage: Usage | null; truncated: boolean; unverifiedFlags: string[] };
+  /** `instant`: a saved, reviewed answer to a common question (no model call). */
+  | { type: 'done'; usage: Usage | null; truncated: boolean; unverifiedFlags: string[]; instant?: boolean };
 
 export interface TutorDeps {
   provider: Provider;
   retrieve: (query: string, k: number) => RetrievedChunk[];
+  /** Saved answers to common questions; a clear match is answered instantly. */
+  faq?: FaqMatcher;
 }
 
 export async function* streamTutor(deps: TutorDeps, req: TutorRequest, signal?: AbortSignal): AsyncGenerator<TutorEvent> {
   const history = trimHistory(req.history);
+  const saved = deps.faq?.match(req.question, history);
+  if (saved) {
+    yield { type: 'sources', weak: false, sources: saved.sources };
+    yield { type: 'delta', text: saved.answer };
+    yield { type: 'done', usage: null, truncated: false, unverifiedFlags: [], instant: true };
+    return;
+  }
   const chunks = deps.retrieve(searchText(req.question, history), 6);
   const weak = (chunks[0]?.score ?? 0) < WEAK_SCORE;
   yield {

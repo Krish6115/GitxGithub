@@ -5,11 +5,14 @@ import type { Env } from '../env.js';
 import type { RateLimiter } from '../lib/rate-limit.js';
 import { retrieve as defaultRetrieve, type RetrievedChunk } from '../rag/retrieve.js';
 import { TutorRequestSchema } from '../tutor/history.js';
+import { getFaqMatcher, type FaqMatcher } from '../tutor/faq.js';
 import { streamTutor } from '../tutor/service.js';
 import { guard, sendEvent, withPings, type RouteDeps } from './common.js';
 
 export interface TutorRouteDeps extends RouteDeps {
   retrieve?: (query: string, k: number) => RetrievedChunk[];
+  /** Saved instant answers (defaults to data/faq.json; tests pass their own or none). */
+  faq?: FaqMatcher | null;
 }
 
 export function tutorRoute(env: Env, limiter: RateLimiter, deps: TutorRouteDeps = {}): Hono {
@@ -20,10 +23,11 @@ export function tutorRoute(env: Env, limiter: RateLimiter, deps: TutorRouteDeps 
     const g = guard(c, env, limiter, deps);
     if (g instanceof Response) return g;
     const retrieve = deps.retrieve ?? ((q: string, k: number) => defaultRetrieve(q, k));
+    const faq = deps.faq === undefined ? getFaqMatcher() : deps.faq;
 
     return streamSSE(c, (stream) =>
       withPings(stream, deps.keepAliveMs ?? 10_000, async () => {
-        for await (const ev of streamTutor({ provider: g.provider, retrieve }, body.data, c.req.raw.signal)) {
+        for await (const ev of streamTutor({ provider: g.provider, retrieve, ...(faq ? { faq } : {}) }, body.data, c.req.raw.signal)) {
           if (ev.type === 'delta') await sendEvent(stream, 'delta', { text: ev.text });
           else await sendEvent(stream, ev.type, ev);
         }

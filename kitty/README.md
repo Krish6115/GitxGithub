@@ -13,7 +13,7 @@ Kitty is a pixel cat that lives on **github.com** (Chrome extension) and turns G
 
 ## Install
 
-1. Download `kitty-extension-v0.4.0.zip` from the [latest release](https://github.com/Krish6115/GitKitty/releases/latest) and unzip it.
+1. Download `kitty-extension-v0.5.0.zip` from the [latest release](https://github.com/Krish6115/GitKitty/releases/latest) and unzip it.
 2. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and pick the folder.
 3. The welcome screen checks the server connection. Open any repo and click the cat.
 

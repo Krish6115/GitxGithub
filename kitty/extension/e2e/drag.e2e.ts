@@ -41,6 +41,13 @@ export async function dragE2E(): Promise<void> {
   await page.locator('#kitty-root button.cat').click();
   if (!(await state()).menu) throw new Error('click no longer opens the menu');
   log('click still opens the menu');
+  // left alone for a minute (menu closed), the cat walks back to its corner
+  await page.locator('#kitty-root button.cat').click();
+  await page.mouse.move(200, 400);
+  await page.waitForTimeout(64_000);
+  const back = await state();
+  log(`after a minute unused: ${back.x},${back.y} (start was ${start.x},${start.y})`);
+  if (Math.abs(back.x - start.x) > 10 || Math.abs(back.y - start.y) > 10) throw new Error('the cat did not walk back home');
   await page.screenshot({ path: join(OUT_DIR, 'drag-dropped.png') });
   await ctx.close();
 }

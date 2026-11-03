@@ -25,6 +25,21 @@ async function activePageContext(): Promise<PageContext | null> {
 
 type Assistant = Extract<ChatMessage, { role: 'assistant' }>;
 
+/** "Kitty is thinking (12s)", and after 15s an honest note that the AI model is slow right now. */
+function Thinking() {
+  const [s, setS] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setS((x) => x + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <>
+      <p class="thinking">Kitty is thinking{s >= 3 ? ` (${s}s)` : ''}</p>
+      {s >= 15 && <p class="muted small" data-kitty="slow">The AI model is slow right now. Kitty gives up after about 45 seconds and tells you.</p>}
+    </>
+  );
+}
+
 /** Send the active tab to the action's page; the cat there picks the action up and runs it. */
 async function runOnPage(action: PageAction): Promise<void> {
   const url = actionUrl(action);
@@ -175,7 +190,7 @@ export function ChatView() {
             <div key={i} class="msg user">{m.about && <span class="about">📍 {m.about}</span>}{m.content}</div>
           ) : (
             <div key={i} class="msg kitty" data-status={m.status}>
-              {m.content ? <Markdown text={stripAction(m.content)} sources={m.sources} /> : m.status === 'streaming' && <p class="thinking">Kitty is thinking</p>}
+              {m.content ? <Markdown text={stripAction(m.content)} sources={m.sources} /> : m.status === 'streaming' && <Thinking />}
               {m.action && (
                 <div class="action-card" data-kitty="action">
                   <p>🐾 {actionLabel(m.action)}{m.action.type !== 'find_issues' && ': Kitty is taking you there.'}</p>

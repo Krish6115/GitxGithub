@@ -33,6 +33,7 @@ export function errorText(code: string, fallback: string): string {
     case 'github_not_found':
       return 'Kitty could not find this repository (private repos need a GitHub token).';
     case 'timeout':
+      return `${fallback || 'The AI model did not answer in time.'} Try again in a minute.`;
     case 'upstream_unavailable':
     case 'reasoning_budget_exhausted':
     case 'invalid_model_output':

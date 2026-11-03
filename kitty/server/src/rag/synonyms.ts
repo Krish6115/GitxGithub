@@ -21,6 +21,7 @@ const SYNONYMS: Synonym[] = [
   { when: /\bssh\b|\bkeys?\b/, add: 'ssh key ssh-keygen' },
   { when: /\bci\b|\bpipelines?\b|\bworkflows?\b|continuous integration|\bautomat/, add: 'actions workflow' },
   { when: /\bignor/, add: '.gitignore' },
+  { when: /\b(some|part|parts|only a few|certain|specific) (of )?(the |my )?(changes|lines|edits|hunks)\b|\bpartial(ly)? (commit|stag)|\bhunks?\b|\badd -p\b/, add: 'interactive staging patch hunk' },
   { when: /\b(sync|update|catch up|behind|out of date)\b.*\bfork|\bfork\b.*\b(sync|update|behind)|\bupstream\b/, add: 'upstream fork fetch sync' },
   { when: /\b(large|big|huge|binary) files?\b/, add: 'lfs large file storage' },
   { when: /\b(two|multiple|several) branches\b.*\b(once|same time|simultaneous)|\bworktrees?\b/, add: 'worktree' },

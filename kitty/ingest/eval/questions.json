@@ -213,5 +213,235 @@
       "kitty/ingest/corrections.md",
       "Git/references/authentication-ssh-and-tokens.md"
     ]
+  },
+  {
+    "id": "undo-pushed-commit",
+    "question": "I already pushed a bad commit to main. How do I undo it safely without rewriting history?",
+    "expected": [
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Git/references/reset-demystified.md",
+      "Git/Git_GitHub_101.pdf",
+      "Git/Git_Github Notes.pdf"
+    ]
+  },
+  {
+    "id": "discard-local-changes",
+    "question": "how do i throw away all my local changes to a file",
+    "expected": [
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Git/references/reset-demystified.md",
+      "Git/git-cheat-sheet-education.pdf",
+      "Git/Git_Github Notes.pdf",
+      "Git/Git_GitHub_101.pdf"
+    ]
+  },
+  {
+    "id": "unstage-file",
+    "question": "I ran git add on the wrong file, how do I unstage it?",
+    "expected": [
+      "Git/references/reset-demystified.md",
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Git/git-cheat-sheet-education.pdf",
+      "Git/references/interactive-staging.md",
+      "Git/Git_GitHub_101.pdf"
+    ]
+  },
+  {
+    "id": "change-last-message",
+    "question": "typo in my last commit message, how to fix it",
+    "expected": [
+      "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Git/references/rebasing.md"
+    ]
+  },
+  {
+    "id": "rename-branch",
+    "question": "How do I rename a branch, locally and on GitHub?",
+    "expected": [
+      "Git/references/branches-and-merging.md",
+      "Git/references/remotes-and-tracking-branches.md",
+      "Git/Git_Github Notes.pdf",
+      "Git/Git_GitHub_101.pdf"
+    ]
+  },
+  {
+    "id": "delete-remote-branch",
+    "question": "delete a branch on the remote",
+    "expected": [
+      "Git/references/remotes-and-tracking-branches.md",
+      "Git/references/branches-and-merging.md",
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Git/Git_GitHub_101.pdf"
+    ]
+  },
+  {
+    "id": "push-new-branch",
+    "question": "git push says the current branch has no upstream branch. What does that mean?",
+    "expected": [
+      "Git/references/remotes-and-tracking-branches.md",
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Git/Git_GitHub_101.pdf",
+      "Git/Git_Github Notes.pdf"
+    ]
+  },
+  {
+    "id": "fetch-vs-pull",
+    "question": "difference between fetch and pull",
+    "expected": [
+      "Git/references/remotes-and-tracking-branches.md",
+      "Git/Git_Github Notes.pdf",
+      "Git/Git_GitHub_101.pdf",
+      "Git/git-cheat-sheet-education.pdf"
+    ]
+  },
+  {
+    "id": "ignore-tracked-file",
+    "question": "I added a file to .gitignore but git still tracks it",
+    "expected": [
+      "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+      "Git/references/stashing-and-cleaning.md"
+    ]
+  },
+  {
+    "id": "revert-vs-reset",
+    "question": "When should I use git revert instead of git reset?",
+    "expected": [
+      "Git/references/reset-demystified.md",
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Git/Git_Github Notes.pdf",
+      "Git/Git_GitHub_101.pdf"
+    ]
+  },
+  {
+    "id": "reflog-lost-commits",
+    "question": "I did a git reset --hard and lost my commits. Can I get them back?",
+    "expected": [
+      "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+      "Git/references/reset-demystified.md",
+      "Git/references/git-internals.md",
+      "Scenario-Based_Guide/git_scenarios.pdf"
+    ]
+  },
+  {
+    "id": "cherry-pick-commit",
+    "question": "copy one commit from another branch into mine",
+    "expected": [
+      "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Git/references/rebasing.md"
+    ]
+  },
+  {
+    "id": "abort-merge",
+    "question": "I'm in the middle of a merge with conflicts and want to cancel it",
+    "expected": [
+      "Git/references/advanced-merging-and-conflicts.md",
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Scenario-Based_Guide/references/resolving-conflicts-during-rebase.md"
+    ]
+  },
+  {
+    "id": "first-push",
+    "question": "How do I upload my existing project folder to a new GitHub repository?",
+    "expected": [
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Git/Git_GitHub_101.pdf",
+      "Git/Git_Github Notes.pdf"
+    ]
+  },
+  {
+    "id": "clone-vs-fork",
+    "question": "What's the difference between cloning and forking?",
+    "expected": [
+      "Scenario-Based_Guide/references/contributing-to-open-source.md",
+      "Git/Git_GitHub_101.pdf",
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Git/Git_Github Notes.pdf"
+    ]
+  },
+  {
+    "id": "first-contribution",
+    "question": "I want to make my first open source contribution, where do I start?",
+    "expected": [
+      "Scenario-Based_Guide/references/contributing-to-open-source.md",
+      "Scenario-Based_Guide/git_scenarios.pdf",
+      "Git/references/pull-requests-and-code-review.md",
+      "Scenario-Based_Guide/references/understanding-an-unfamiliar-repo.md"
+    ]
+  },
+  {
+    "id": "force-push-safely",
+    "question": "is git push --force dangerous? what should I use instead",
+    "expected": [
+      "Scenario-Based_Guide/references/updating-a-pr-after-review.md",
+      "Git/references/rebasing.md",
+      "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+      "Scenario-Based_Guide/git_scenarios.pdf"
+    ]
+  },
+  {
+    "id": "bisect-regression",
+    "question": "Something broke between two releases, how do I find which commit caused it?",
+    "expected": [
+      "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+      "Scenario-Based_Guide/git_scenarios.pdf"
+    ]
+  },
+  {
+    "id": "blame-line",
+    "question": "who changed this line and when",
+    "expected": [
+      "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+      "Scenario-Based_Guide/git_scenarios.pdf"
+    ]
+  },
+  {
+    "id": "stash-pop",
+    "question": "how do I get my stashed changes back",
+    "expected": [
+      "Git/references/stashing-and-cleaning.md",
+      "Git/Git_GitHub_101.pdf",
+      "Scenario-Based_Guide/git_scenarios.pdf"
+    ]
+  },
+  {
+    "id": "clean-untracked",
+    "question": "remove all untracked files from my working directory",
+    "expected": [
+      "Git/references/stashing-and-cleaning.md"
+    ]
+  },
+  {
+    "id": "partial-staging",
+    "question": "commit only some of the changes in a file",
+    "expected": [
+      "Git/references/interactive-staging.md"
+    ]
+  },
+  {
+    "id": "github-actions-ci",
+    "question": "How do I run my tests automatically on every pull request?",
+    "expected": [
+      "Git/references/github-actions-basics.md",
+      "Git/references/branch-protection-and-rulesets.md"
+    ]
+  },
+  {
+    "id": "pr-template",
+    "question": "how to add a pull request template to my repo",
+    "expected": [
+      "Git/references/issues-and-templates.md",
+      "Git/references/pull-requests-and-code-review.md"
+    ]
+  },
+  {
+    "id": "detached-head",
+    "question": "git says I'm in detached HEAD state, what does that mean?",
+    "expected": [
+      "Git/references/git-internals.md",
+      "Git/git_missing_topics(other than 101,notes,cheatsheet).pdf",
+      "Git/references/branches-and-merging.md"
+    ]
   }
 ]

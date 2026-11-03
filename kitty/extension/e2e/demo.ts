@@ -1,5 +1,5 @@
 // Records the README demo: GitHub on the left, Kitty's side panel on the right (like Chrome with the panel open).
-// Frames go to e2e/out/demo-v2/ with a manifest; scripts/make-demo-gif.py turns them into docs/kitty-demo.gif.
+// Frames go to e2e/out/demo-v2/ with a manifest; scripts/make-promo-video.py turns them into docs/kitty-promo.mp4 and .gif.
 // Usage: start the server with the real model (LLM_PROVIDER=bharatcode npm run dev -w server), then
 //        npx tsx e2e/demo.ts
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';

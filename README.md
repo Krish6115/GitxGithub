@@ -9,7 +9,9 @@
 [![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=for-the-badge)](CONTRIBUTING.md)
 
-<img src="docs/kitty-demo.gif" alt="Kitty touring a repository in seconds, answering a common Git question instantly, finding a Docker issue and explaining it on the page, and pre-flight checking a pull request" width="820">
+<a href="docs/kitty-promo.mp4"><img src="docs/kitty-promo.gif" alt="GitKitty promo: Kitty touring a repository in seconds, answering a common Git question instantly, finding a Docker issue and explaining it on the page, and pre-flight checking a pull request" width="820"></a>
+
+<sub>▶ <a href="docs/kitty-promo.mp4">Watch the full-quality video (MP4)</a></sub>
 
 </div>
 

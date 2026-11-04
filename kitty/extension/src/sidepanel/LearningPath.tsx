@@ -1,7 +1,9 @@
 // "Your Git path" card in the chat: skills explored so far, the next one to learn, and a 3-question quiz.
 // Progress lives only in this browser (chrome.storage.local) and is never sent to the server.
 import { useEffect, useState } from 'preact/hooks';
-import { explored, nextSkill, quizFor, recordTopics, SKILLS, SKILLS_KEY, type Progress } from '../shared/skills';
+import { explored, nextSkill, recordTopics, SKILLS, SKILLS_KEY, type Progress } from '../shared/skills';
+import { answer, dueSkills, gitHealth, nextQuiz, REVIEW_KEY, type Review } from '../shared/review';
+import { QuizCard, useLocal } from './QuizCard';
 
 export function useSkills(): { progress: Progress; reset: () => void } {
   const [progress, setProgress] = useState<Progress>({});
@@ -17,26 +19,29 @@ export function useSkills(): { progress: Progress; reset: () => void } {
 }
 
 function Quiz({ progress, onDone }: { progress: Progress; onDone: () => void }) {
-  const [items] = useState(() => quizFor(progress));
-  const [picked, setPicked] = useState<Record<number, string>>({});
-  const right = items.filter((x, i) => picked[i] === x.answer).length;
-  const finished = Object.keys(picked).length === items.length;
+  const [review, setReview] = useLocal<Review>(REVIEW_KEY, {});
+  const [items] = useState(() => nextQuiz(progress, review));
+  const [results, setResults] = useState<Record<number, boolean>>({});
+  const right = Object.values(results).filter(Boolean).length;
+  const finished = Object.keys(results).length === items.length;
+  let latest = review;
   return (
     <div class="quiz" data-kitty="quiz">
+      {items.some((x) => x.review) && <p class="small muted">🔁 Includes questions due for review.</p>}
       {items.map((x, i) => (
-        <div key={x.skill.id} class="quiz-q">
-          <p><strong>{i + 1}. {x.skill.quiz.q}</strong></p>
-          {x.choices.map((c) => {
-            const chosen = picked[i];
-            const cls = chosen === undefined ? '' : c === x.answer ? 'right' : c === chosen ? 'wrong' : '';
-            return (
-              <button key={c} class={`choice ${cls}`} disabled={chosen !== undefined} onClick={() => setPicked((p) => ({ ...p, [i]: c }))}>{c}</button>
-            );
-          })}
-          {picked[i] !== undefined && <p class="small muted">{picked[i] === x.answer ? '✅ ' : '❌ '}{x.skill.quiz.why}</p>}
-        </div>
+        <QuizCard
+          key={x.skill.id}
+          skill={x.skill}
+          choices={x.choices}
+          label={`${i + 1}. `}
+          onAnswer={(ok) => {
+            latest = answer(latest, x.skill.id, ok);
+            setReview(latest);
+            setResults((r) => ({ ...r, [i]: ok }));
+          }}
+        />
       ))}
-      {finished && <p><strong>{right} of {items.length} right.</strong> {right === items.length ? 'Nice! 🐾' : 'Ask Kitty about the ones you missed.'}</p>}
+      {finished && <p><strong>{right} of {items.length} right.</strong> {right === items.length ? 'Nice! 🐾' : 'Missed ones come back tomorrow.'} Git health: {gitHealth(progress, latest)}/100</p>}
       <div class="row"><button class="ghost small" onClick={onDone}>{finished ? 'Done' : 'Close quiz'}</button></div>
     </div>
   );
@@ -45,11 +50,13 @@ function Quiz({ progress, onDone }: { progress: Progress; onDone: () => void }) 
 export function LearningPath({ onAsk }: { onAsk: (question: string) => void }) {
   const { progress, reset } = useSkills();
   const [quiz, setQuiz] = useState(false);
+  const [review] = useLocal<Review>(REVIEW_KEY, {});
+  const due = dueSkills(review).length;
   const done = explored(progress);
   const next = nextSkill(progress);
   return (
     <details class="learning-path" data-kitty="learning-path" open={done.length > 0 ? undefined : true}>
-      <summary>🎓 Your Git path · {done.length} of {SKILLS.length} skills explored</summary>
+      <summary>🎓 Your Git path · {done.length} of {SKILLS.length} skills explored · health {gitHealth(progress, review)}/100</summary>
       <div class="path-bar" aria-hidden="true"><span style={{ width: `${Math.round((done.length / SKILLS.length) * 100)}%` }} /></div>
       {next ? (
         <p>
@@ -64,8 +71,9 @@ export function LearningPath({ onAsk }: { onAsk: (question: string) => void }) {
         <Quiz progress={progress} onDone={() => setQuiz(false)} />
       ) : (
         <div class="row">
-          <button class="ghost small" data-kitty="quiz-me" onClick={() => setQuiz(true)}>Quiz me (3 questions)</button>
-          {done.length > 0 && <button class="ghost small" onClick={reset}>Reset</button>}
+          <button class="ghost small" data-kitty="quiz-me" onClick={() => setQuiz(true)}>{due ? `Review quiz (${due} due)` : 'Quiz me (3 questions)'}</button>
+          <button class="ghost small" onClick={() => void chrome.storage.session.set({ 'kitty:sidepanel-tab': 'learn' })}>Open lessons</button>
+          {done.length > 0 && <button class="ghost small" onClick={() => { reset(); void chrome.storage.local.remove(REVIEW_KEY); }}>Reset</button>}
         </div>
       )}
       <p class="small muted">Kept only in this browser.</p>

@@ -74,17 +74,3 @@ export function nextSkill(p: Progress): Skill | null {
 }
 
 export const explored = (p: Progress): Skill[] => SKILLS.filter((s) => (p[s.id] ?? 0) > 0);
-
-/** Three questions: from explored skills first (least-asked first), topped up from the start of the path. */
-export function quizFor(p: Progress, rand: () => number = Math.random, n = 3): { skill: Skill; choices: string[]; answer: string }[] {
-  const pool = explored(p).sort((a, b) => (p[a.id] ?? 0) - (p[b.id] ?? 0));
-  for (const s of SKILLS) if (pool.length < n && !pool.includes(s)) pool.push(s);
-  return pool.slice(0, n).map((skill) => {
-    const choices = [...skill.quiz.choices];
-    for (let i = choices.length - 1; i > 0; i--) {
-      const j = Math.floor(rand() * (i + 1));
-      [choices[i], choices[j]] = [choices[j] as string, choices[i] as string];
-    }
-    return { skill, choices, answer: skill.quiz.choices[0] };
-  });
-}

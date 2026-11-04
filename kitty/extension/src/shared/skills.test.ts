@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { explored, nextSkill, quizFor, recordTopics, SKILLS, topicsOf } from './skills';
+import { explored, nextSkill, recordTopics, SKILLS, topicsOf } from './skills';
 
 describe('Git path', () => {
   it('has a consistent path: unique ids, known prerequisites, four different choices', () => {
@@ -27,14 +27,5 @@ describe('Git path', () => {
     expect(explored(p).map((s) => s.id)).toEqual(['basics', 'commit']);
     const all = Object.fromEntries(SKILLS.map((s) => [s.id, 1]));
     expect(nextSkill(all)).toBeNull();
-  });
-
-  it('builds a 3-question quiz from explored skills, with the right answer among the choices', () => {
-    const q = quizFor({ stash: 2, rebase: 1 }, () => 0.3);
-    expect(q.map((x) => x.skill.id)).toEqual(['rebase', 'stash', 'basics']);
-    for (const x of q) {
-      expect(x.choices).toContain(x.answer);
-      expect(x.choices).toHaveLength(4);
-    }
   });
 });

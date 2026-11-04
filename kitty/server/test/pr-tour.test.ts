@@ -83,3 +83,12 @@ describe('getPrTour', () => {
     expect(r.meta.described).toBe(0);
   });
 });
+
+describe('PR tour file kinds', () => {
+  it('tells data files from build config', () => {
+    expect(prKind('kitty/ingest/eval/questions.json')).toBe('data');
+    expect(prKind('package.json')).toBe('config');
+    expect(prKind('kitty/server/tsconfig.build.json')).toBe('config');
+    expect(prKind('vite.config.ts')).toBe('config');
+  });
+});

@@ -7,7 +7,7 @@ import type { GitHubClient } from '../github/client.js';
 import { KittyError } from '../llm/errors.js';
 import { streamWithEarlyRetry } from '../llm/early-retry.js';
 import type { ChatMessage, Provider, Usage } from '../llm/types.js';
-import { annotationText, extractFailure, failedJob } from './extract.js';
+import { annotationText, extractFailure, failedJob, onlyExitCode } from './extract.js';
 
 const name = z.string().regex(/^[A-Za-z0-9_.-]{1,100}$/);
 export const CiRequestSchema = z.object({
@@ -53,6 +53,17 @@ export function ciMessages(input: { workflow: string; job: string; step?: string
   ];
 }
 
+/** When only GitHub's "exit code" note is readable (no token for the log). */
+export function noLogAnswer(job: string, step: string | undefined, jobUrl: string | null): string {
+  return [
+    `**What failed:** the job **${job}**${step ? `, in the step **${step}**` : ''}. GitHub only reports that the step exited with an error code.`,
+    '',
+    '**Why Kitty can\'t say more:** GitHub only shows the full CI log to signed-in callers. Add a GitHub token in Kitty settings (read-only access is enough) and ask again, and Kitty will read the log and explain the exact error.',
+    '',
+    `**Meanwhile:** ${jobUrl ? `open the [job log](${jobUrl}), ` : 'open the job log, '}expand the failed step and look for the first red line: that is usually the real error. Select it and choose "Ask Kitty".`,
+  ].join('\n');
+}
+
 export async function* streamCiExplain(deps: { github: GitHubClient; provider: Provider }, req: CiRequest, signal?: AbortSignal): AsyncGenerator<CiEvent> {
   const { github } = deps;
   const [run, jobs] = await Promise.all([github.getRun(req.owner, req.repo, req.run), github.getRunJobs(req.owner, req.repo, req.run)]);
@@ -71,9 +82,17 @@ export async function* streamCiExplain(deps: { github: GitHubClient; provider: P
     headline = f.headline;
   } else {
     from = 'annotations';
-    excerpt = annotationText(await github.getAnnotations(req.owner, req.repo, failed.job.id).catch(() => []));
+    const annotations = await github.getAnnotations(req.owner, req.repo, failed.job.id).catch(() => []);
+    excerpt = annotationText(annotations);
     headline = excerpt.split('\n')[0] ?? '';
-    if (!excerpt) excerpt = '(no annotations; the log needs a GitHub token)';
+    const title = `${failed.job.name}${failed.step ? ` › ${failed.step}` : ''}`;
+    if (onlyExitCode(annotations)) {
+      // GitHub only says "exit code 1": the model could only guess, so say what is known and spend no tokens
+      yield { type: 'meta', kind: 'ci', risk: null, truncated: false, title, jobUrl: failed.job.html_url, from, headline };
+      yield { type: 'delta', text: noLogAnswer(failed.job.name, failed.step, failed.job.html_url) };
+      yield { type: 'done', usage: null, truncated: false, unverifiedFlags: [] };
+      return;
+    }
   }
   const workflow = run.name ?? run.path;
   yield { type: 'meta', kind: 'ci', risk: null, truncated: false, title: `${failed.job.name}${failed.step ? ` › ${failed.step}` : ''}`, jobUrl: failed.job.html_url, from, headline };

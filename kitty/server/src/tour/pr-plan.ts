@@ -6,11 +6,13 @@ import type { PlannedStep } from '../github/plan.js';
 
 export const PR_MAX_STEPS = 10;
 
-type Kind = 'code' | 'test' | 'config' | 'ci' | 'docs';
+type Kind = 'code' | 'test' | 'data' | 'config' | 'ci' | 'docs';
 const TEST = /(^|\/)(tests?|__tests__|spec|specs)\/|[._-](test|spec)\.[a-z]+$|_test\.(go|py)$|(^|\/)test_[^/]+\.py$/i;
 const DOCS = /\.(md|mdx|rst|txt|adoc)$|(^|\/)docs?\//i;
 const CI = /^\.github\/|(^|\/)\.gitlab-ci\.yml$|(^|\/)(azure-pipelines|\.travis|\.circleci)/i;
-const CONFIG = /\.(json|ya?ml|toml|ini|cfg|lock|config\.\w+)$|(^|\/)(dockerfile|makefile|\.env\.example|\.gitignore|\.editorconfig)$/i;
+/** Build, tooling and dependency files (by name); other JSON/YAML/CSV files are data. */
+const CONFIG = /(^|\/)(package\.json|tsconfig[\w.-]*\.json|pyproject\.toml|setup\.(py|cfg)|requirements[\w.-]*\.txt|cargo\.toml|go\.mod|pom\.xml|build\.gradle(\.kts)?|gemfile|composer\.json|dockerfile|docker-compose\.ya?ml|compose\.ya?ml|makefile|\.env\.example|\.gitignore|\.gitattributes|\.editorconfig|\.npmrc|\.nvmrc|\.eslintrc[\w.]*|\.prettierrc[\w.]*|[\w.-]+\.config\.\w+|vercel\.json|netlify\.toml)$/i;
+const DATA = /\.(json|ya?ml|toml|csv|tsv|xml|ini|cfg)$/i;
 const SKIP = /(^|\/)(package-lock\.json|yarn\.lock|pnpm-lock\.yaml|cargo\.lock|poetry\.lock|go\.sum|composer\.lock|gemfile\.lock|uv\.lock)$|\.(png|jpe?g|gif|webp|ico|svg|woff2?|ttf|zip|gz|pdf|exe|dll|so|bin|min\.js|map)$/i;
 
 export function prKind(path: string): Kind {
@@ -18,10 +20,11 @@ export function prKind(path: string): Kind {
   if (CI.test(path)) return 'ci';
   if (DOCS.test(path)) return 'docs';
   if (CONFIG.test(path)) return 'config';
+  if (DATA.test(path)) return 'data';
   return 'code';
 }
 
-const ORDER: Record<Kind, number> = { code: 0, test: 1, config: 2, ci: 3, docs: 4 };
+const ORDER: Record<Kind, number> = { code: 0, test: 1, data: 2, config: 3, ci: 4, docs: 5 };
 const dir = (p: string): string => (p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : '.');
 
 /** The files a PR tour visits (deleted, binary and lock files are skipped), and the ones left out. */
@@ -51,6 +54,7 @@ export function draftPrStep(f: PullFile): PlannedStep {
   const why: Record<Kind, string> = {
     code: 'Part of the main change: read the diff to see what behaviour changes.',
     test: 'Tests show what the change is meant to do, and what must keep working.',
+    data: 'Data, fixtures or settings changed: check the values are right and complete.',
     config: 'Configuration or dependencies changed: check it is needed and nothing unrelated slipped in.',
     ci: 'CI or repo automation changed: these affect every future pull request.',
     docs: 'Documentation for the change: check it matches what the code now does.',

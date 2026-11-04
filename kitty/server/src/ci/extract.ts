@@ -71,10 +71,16 @@ export function failedJob(jobs: WorkflowJob[], jobId?: number): { job: WorkflowJ
   return step ? { job, step } : { job };
 }
 
-/** Annotations as text, when there is no log (no token): failures first, generic exit-code notes last. */
+/** Only GitHub's generic "exit code" note, no real error: the full log (a token) is needed to say more. */
+export const onlyExitCode = (annotations: Annotation[]): boolean =>
+  !annotations.some((a) => a.annotation_level !== 'notice' && !/Process completed with exit code/.test(a.message));
+
+/** Annotations as text, when there is no log (no token): failures first, generic exit-code notes after, notices dropped. */
 export function annotationText(annotations: Annotation[]): string {
   const rank = (a: Annotation): number => (/Process completed with exit code/.test(a.message) ? 2 : a.annotation_level === 'failure' ? 0 : 1);
-  return [...annotations]
+  return annotations
+    .filter((a) => a.annotation_level !== 'notice') // runner notices ("ubuntu-latest will migrate…") are never the failure
+    .sort((a, b) => rank(a) - rank(b))
     .sort((a, b) => rank(a) - rank(b))
     .slice(0, 10)
     .map((a) => `${a.annotation_level.toUpperCase()}${a.path && a.path !== '.github' ? ` ${a.path}${a.start_line ? `:${a.start_line}` : ''}` : ''}: ${a.title ? `${a.title}: ` : ''}${a.message}`)

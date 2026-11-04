@@ -109,3 +109,24 @@ describe('streamCiExplain', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('CI without a log', () => {
+  const jobs = [job({ id: 2, name: 'Main', conclusion: 'failure', steps: [{ name: 'Run pnpm run check', number: 5, conclusion: 'failure' }] })];
+  const exitOnly = [
+    { path: '.github', start_line: null, annotation_level: 'failure', message: 'Process completed with exit code 1.', title: null },
+    { path: '.github', start_line: null, annotation_level: 'notice', message: 'The ubuntu-latest label will migrate.', title: null },
+  ];
+
+  it('drops runner notices from the annotations', () => {
+    expect(annotationText(exitOnly)).toBe('FAILURE: Process completed with exit code 1.');
+  });
+
+  it('answers without the model when GitHub only reports an exit code', async () => {
+    const provider = scripted('should not be called');
+    const evs = await collect(streamCiExplain({ github: fakeGitHub(fixtureRepo({ ci: { run, jobs, log: null, annotations: exitOnly } })), provider }, { owner: 'acme', repo: 'todo-api', run: 7 }));
+    expect(provider.reqs).toHaveLength(0);
+    expect(evs[0]).toMatchObject({ type: 'meta', title: 'Main › Run pnpm run check', from: 'annotations' });
+    expect((evs[1] as { text: string }).text).toContain('Add a GitHub token in Kitty settings');
+    expect(evs.at(-1)).toMatchObject({ type: 'done', usage: null });
+  });
+});

@@ -16,7 +16,7 @@ export const css = `
   button.ghost { background: transparent !important; color: var(--fg) !important; border-color: var(--line) !important; font-weight: 400 !important; }
   button:disabled { opacity: 0.5; cursor: default; }
   .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
-  .context-pack { margin: 10px 0 6px; padding: 8px; border: 1px dashed var(--border); border-radius: 8px; }
+  .context-pack { margin: 10px 0 6px; padding: 8px; border: 1px dashed var(--line); border-radius: 8px; }
   .badge { background: #dafbe1; color: #1a7f37; border: 1px solid var(--accent); border-radius: 8px; padding: 4px 8px; font-size: 12px; }
   .stack { display: flex; flex-wrap: wrap; gap: 4px; } .stack span { border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; font-size: 12px; }
   .steps { padding-left: 20px; margin: 0; } .steps li { margin: 4px 0; }

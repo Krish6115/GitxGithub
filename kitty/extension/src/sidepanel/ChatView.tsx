@@ -1,54 +1,17 @@
 // "Ask Kitty" tutor chat: streamed answers with numbered sources, unverified-flag notes, stop and new chat.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ApiError, postJson, postStream } from '../shared/api';
-import { actionLabel, actionUrl, PENDING_ACTION_KEY, stripAction, type KittyAction, type PageAction, type PendingAction } from '../shared/actions';
+import { actionLabel, stripAction, type KittyAction, type PageAction } from '../shared/actions';
 import type { BeginnerIssues } from '../shared/contribute';
 import { CHAT_KEY, sourceLabel, toHistory, trimChat, type ChatMessage, type ChatSource } from '../shared/chat';
 import { CHAT_DRAFT_KEY, errorText } from '../shared/messages';
 import { Markdown } from '../shared/Markdown';
-import { pageLabel, READ_PAGE_KEY, type PageContext, type PageContextRequest } from '../shared/page-context';
+import { pageLabel, READ_PAGE_KEY, type PageContext } from '../shared/page-context';
 import { CHAT_FOCUS_KEY, TOUR_STATE_KEY, tourContext, type ChatFocus, type TourState } from '../shared/tour';
 import { TourPanel } from './TourView';
-
-/** Ask the content script in the active tab what's on screen (null when it isn't a GitHub page). */
-async function activePageContext(): Promise<PageContext | null> {
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-    if (tab?.id === undefined) return null;
-    const msg: PageContextRequest = { type: 'get-page-context' };
-    const ctx = (await chrome.tabs.sendMessage(tab.id, msg)) as PageContext | undefined;
-    return ctx?.url ? ctx : null;
-  } catch {
-    return null; // no Kitty content script there (not github.com, or the tab is still loading)
-  }
-}
+import { activePageContext, runOnPage, Thinking } from './chat-helpers';
 
 type Assistant = Extract<ChatMessage, { role: 'assistant' }>;
-
-/** "Kitty is thinking (12s)", and after 15s an honest note that the AI model is slow right now. */
-function Thinking() {
-  const [s, setS] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setS((x) => x + 1), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return (
-    <>
-      <p class="thinking">Kitty is thinking{s >= 3 ? ` (${s}s)` : ''}</p>
-      {s >= 15 && <p class="muted small" data-kitty="slow">The AI model is slow right now. Kitty gives up after about 45 seconds and tells you.</p>}
-    </>
-  );
-}
-
-/** Send the active tab to the action's page; the cat there picks the action up and runs it. */
-async function runOnPage(action: PageAction): Promise<void> {
-  const url = actionUrl(action);
-  const pending: PendingAction = { action, url, at: Date.now() };
-  await chrome.storage.session.set({ [PENDING_ACTION_KEY]: pending });
-  const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-  if (tab?.id !== undefined) await chrome.tabs.update(tab.id, { url });
-  else await chrome.tabs.create({ url });
-}
 
 export function ChatView() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -151,6 +114,7 @@ export function ChatView() {
       await postStream('/tutor', { question: q, history, ...pageBody, ...(tourCtx ? { tour: tourCtx } : {}) }, (event, data) => {
         const d = data as Record<string, unknown>;
         if (event === 'sources') updateLast((m) => ({ ...m, sources: d.sources as ChatSource[] }));
+        else if (event === 'files') updateLast((m) => ({ ...m, files: { repo: String(d.repo), files: d.files as { path: string; url: string }[] } }));
         else if (event === 'delta') updateLast((m) => ({ ...m, content: m.content + String(d.text ?? '') }));
         else if (event === 'action') {
           const action = d.action as KittyAction;
@@ -190,6 +154,14 @@ export function ChatView() {
             <div key={i} class="msg user">{m.about && <span class="about">📍 {m.about}</span>}{m.content}</div>
           ) : (
             <div key={i} class="msg kitty" data-status={m.status}>
+              {m.files && (
+                <p class="small muted" data-kitty="repo-files">
+                  📂 Read from {m.files.repo}:{' '}
+                  {m.files.files.map((f, j) => (
+                    <span key={f.path}>{j > 0 && ', '}<a href={f.url} target="_blank" rel="noopener noreferrer"><code>{f.path}</code></a></span>
+                  ))}
+                </p>
+              )}
               {m.content ? <Markdown text={stripAction(m.content)} sources={m.sources} /> : m.status === 'streaming' && <Thinking />}
               {m.action && (
                 <div class="action-card" data-kitty="action">

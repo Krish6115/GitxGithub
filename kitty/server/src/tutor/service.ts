@@ -8,6 +8,7 @@ import { tutorMessages } from './prompt.js';
 import { unverifiedFlags } from './verify-flags.js';
 import { parseAction, type KittyAction } from './actions.js';
 import type { FaqMatcher } from './faq.js';
+import { isRepoCodeQuestion, repoOf, type RepoFiles } from '../github/repo-files.js';
 
 /** Below this top BM25 score the sources are treated as not relevant (calibrated: off-topic <= ~31, eval questions >= ~124). */
 export const WEAK_SCORE = 20;
@@ -25,6 +26,8 @@ export type TutorEvent =
   | { type: 'sources'; sources: TutorSource[]; weak: boolean }
   | { type: 'delta'; text: string }
   | { type: 'action'; action: KittyAction }
+  /** Repo files Kitty read to answer a question about the code. */
+  | { type: 'files'; repo: string; files: { path: string; url: string }[] }
   /** `instant`: a saved, reviewed answer to a common question (no model call). */
   | { type: 'done'; usage: Usage | null; truncated: boolean; unverifiedFlags: string[]; instant?: boolean };
 
@@ -45,6 +48,23 @@ export interface TutorDeps {
   retrieve: (query: string, k: number) => RetrievedChunk[];
   /** Saved answers to common questions; a clear match is answered instantly. */
   faq?: FaqMatcher;
+  /** Finds repo files for questions about the code on screen (needs GitHub). */
+  repoFiles?: (owner: string, repo: string, question: string) => Promise<RepoFiles | null>;
+}
+
+/** Repo lookups must not hold the answer up for long. */
+export const REPO_FILES_MS = 8_000;
+
+async function lookUpRepoFiles(deps: TutorDeps, req: TutorRequest): Promise<RepoFiles | null> {
+  const ref = repoOf(req.page?.url) ?? repoOf(req.tour?.repo);
+  if (!deps.repoFiles || !ref || !isRepoCodeQuestion(req.question)) return null;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<null>((resolve) => (timer = setTimeout(() => resolve(null), REPO_FILES_MS)));
+  try {
+    return await Promise.race([deps.repoFiles(ref.owner, ref.repo, req.question).catch(() => null), timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function* streamTutor(deps: TutorDeps, req: TutorRequest, signal?: AbortSignal): AsyncGenerator<TutorEvent> {
@@ -64,7 +84,8 @@ export async function* streamTutor(deps: TutorDeps, req: TutorRequest, signal?: 
     return;
   }
   // questions about the open page need the page, not six Git references: a lighter prompt answers sooner
-  const aboutPage = Boolean(req.page) && /(this|here|page|file|repo|repository|project|explain|summar\w*|overview|about)/i.test(req.question);
+  const repoFiles = await lookUpRepoFiles(deps, req);
+  const aboutPage = Boolean(repoFiles) || Boolean(req.page) &&/(this|here|page|file|repo|repository|project|explain|summar\w*|overview|about)/i.test(req.question);
   const chunks = deps.retrieve(searchText(req.question, history), aboutPage ? 3 : 6);
   const weak = (chunks[0]?.score ?? 0) < WEAK_SCORE;
   yield {
@@ -72,9 +93,10 @@ export async function* streamTutor(deps: TutorDeps, req: TutorRequest, signal?: 
     weak,
     sources: chunks.map((c, i) => ({ n: i + 1, title: c.title, headingPath: c.headingPath, sourceFile: c.sourceFile, sourceUrl: c.sourceUrl, license: c.license })),
   };
+  if (repoFiles) yield { type: 'files', repo: repoFiles.repo, files: repoFiles.files.map((f) => ({ path: f.path, url: f.url })) };
   const request = {
     kind: 'tutor' as const,
-    messages: tutorMessages(req.question, history, chunks, weak, req.page, undefined, req.tour),
+    messages: tutorMessages(req.question, history, chunks, weak, req.page, undefined, req.tour, repoFiles),
     ...(isShortQuestion(req.question) || aboutPage ? { reasoningEffort: 'none' as const } : {}),
     firstTokenMs: FIRST_TOKEN_MS,
     totalMs: TUTOR_DEADLINE_MS + 45_000,

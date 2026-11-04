@@ -68,6 +68,9 @@ export type PullFile = z.infer<typeof PullFileSchema>;
 export const PullCommitSchema = z.object({ sha: z.string(), commit: z.object({ message: z.string() }), parents: z.array(z.object({ sha: z.string() })).default([]) });
 export type PullCommit = z.infer<typeof PullCommitSchema>;
 
+export const CodeHitSchema = z.object({ path: z.string(), html_url: z.string() });
+export type CodeHit = z.infer<typeof CodeHitSchema>;
+
 export interface GitHubClientOptions {
   token?: string | undefined;
   fetchImpl?: typeof fetch;
@@ -89,6 +92,8 @@ export interface GitHubClient {
   getPull(owner: string, repo: string, n: number): Promise<Pull>;
   getPullFiles(owner: string, repo: string, n: number): Promise<PullFile[]>;
   getPullCommits(owner: string, repo: string, n: number): Promise<PullCommit[]>;
+  /** Code search in one repo (GitHub requires a token for this endpoint). */
+  searchCode(owner: string, repo: string, terms: string): Promise<CodeHit[]>;
 }
 
 const NAME = /^[A-Za-z0-9_.-]{1,100}$/;
@@ -130,6 +135,8 @@ export function createGitHubClient(opts: GitHubClientOptions = {}): GitHubClient
     getPull: (o, r, n) => getJson(`/repos/${o}/${r}/pulls/${n}`, PullSchema),
     getPullFiles: (o, r, n) => getJson(`/repos/${o}/${r}/pulls/${n}/files?per_page=100`, z.array(PullFileSchema)),
     getPullCommits: (o, r, n) => getJson(`/repos/${o}/${r}/pulls/${n}/commits?per_page=100`, z.array(PullCommitSchema)),
+    searchCode: async (o, r, terms) =>
+      (await getJson(`/search/code?q=${encodeURIComponent(`${terms} repo:${o}/${r}`)}&per_page=10`, z.object({ items: z.array(CodeHitSchema) }))).items,
     async getText(o, r, sha, path, maxChars) {
       let res = await doFetch(`${raw}/${o}/${r}/${sha}/${enc(path)}`, {
         headers: { 'User-Agent': 'kitty-gitxgithub', ...(opts.token ? { Authorization: `Bearer ${opts.token}` } : {}) },

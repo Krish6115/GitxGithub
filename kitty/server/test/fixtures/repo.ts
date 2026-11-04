@@ -1,6 +1,6 @@
 // Fixture repos for tour tests: an in-memory GitHub (client + fetch) that never touches the network.
 import { KittyError } from '../../src/llm/errors.js';
-import type { GitHubClient, Issue, RepoInfo, TreeEntry } from '../../src/github/client.js';
+import type { GitHubClient, Issue, Pull, PullCommit, PullFile, RepoInfo, TreeEntry } from '../../src/github/client.js';
 
 export interface FixtureRepo {
   owner: string;
@@ -10,6 +10,7 @@ export interface FixtureRepo {
   truncated: boolean;
   files: Record<string, string>;
   issues?: Issue[];
+  pull?: { pull: Pull; files: PullFile[]; commits: PullCommit[] };
 }
 
 export const INJECTION_README = [
@@ -59,8 +60,8 @@ export function treeOf(f: FixtureRepo): TreeEntry[] {
 }
 
 /** In-memory GitHubClient with call counters. */
-export function fakeGitHub(f: FixtureRepo): GitHubClient & { calls: { repo: number; sha: number; tree: number; text: number } } {
-  const calls = { repo: 0, sha: 0, tree: 0, text: 0 };
+export function fakeGitHub(f: FixtureRepo): GitHubClient & { calls: { repo: number; sha: number; tree: number; text: number; search: number } } {
+  const calls = { repo: 0, sha: 0, tree: 0, text: 0, search: 0 };
   return {
     calls,
     getRepo: async () => (calls.repo++, f.info),
@@ -79,10 +80,18 @@ export function fakeGitHub(f: FixtureRepo): GitHubClient & { calls: { repo: numb
     listOpenIssues: async () => f.issues ?? [],
     searchIssues: async () => f.issues ?? [],
     getPull: async () => {
-      throw new KittyError('github_not_found', 'not in fixture');
+      if (!f.pull) throw new KittyError('github_not_found', 'not in fixture');
+      return f.pull.pull;
     },
-    getPullFiles: async () => [],
-    getPullCommits: async () => [],
+    getPullFiles: async () => f.pull?.files ?? [],
+    getPullCommits: async () => f.pull?.commits ?? [],
+    searchCode: async (_o, _r, terms) => {
+      calls.search++;
+      const words = terms.toLowerCase().split(/\s+/).filter(Boolean);
+      return Object.entries(f.files)
+        .filter(([, t]) => words.some((w) => t.toLowerCase().includes(w)))
+        .map(([path]) => ({ path, html_url: `https://github.com/${f.owner}/${f.repo}/blob/${f.sha}/${path}` }));
+    },
   };
 }
 

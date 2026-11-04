@@ -23,6 +23,8 @@ export type ChatMessage =
       instant?: boolean;
       /** Something the answer asked Kitty to do (open a repo, explain an issue, find issues...). */
       action?: import('./actions').KittyAction;
+      /** Repo files Kitty read to answer a question about the code. */
+      files?: { repo: string; files: { path: string; url: string }[] };
       /** Results of a find_issues action. */
       found?: { status: 'loading' | 'done' | 'error'; issues?: import('./contribute').BeginnerIssue[]; labeled?: boolean; error?: string };
     };

@@ -1,6 +1,6 @@
 // Fixture repos for tour tests: an in-memory GitHub (client + fetch) that never touches the network.
 import { KittyError } from '../../src/llm/errors.js';
-import type { GitHubClient, Issue, Pull, PullCommit, PullFile, RepoInfo, TreeEntry } from '../../src/github/client.js';
+import type { Annotation, GitHubClient, Issue, Pull, PullCommit, PullFile, RepoInfo, TreeEntry, WorkflowJob, WorkflowRun } from '../../src/github/client.js';
 
 export interface FixtureRepo {
   owner: string;
@@ -11,6 +11,7 @@ export interface FixtureRepo {
   files: Record<string, string>;
   issues?: Issue[];
   pull?: { pull: Pull; files: PullFile[]; commits: PullCommit[] };
+  ci?: { run: WorkflowRun; jobs: WorkflowJob[]; log: string | null; annotations: Annotation[] };
 }
 
 export const INJECTION_README = [
@@ -85,6 +86,13 @@ export function fakeGitHub(f: FixtureRepo): GitHubClient & { calls: { repo: numb
     },
     getPullFiles: async () => f.pull?.files ?? [],
     getPullCommits: async () => f.pull?.commits ?? [],
+    getRun: async () => {
+      if (!f.ci) throw new KittyError('github_not_found', 'not in fixture');
+      return f.ci.run;
+    },
+    getRunJobs: async () => f.ci?.jobs ?? [],
+    getJobLog: async () => f.ci?.log ?? null,
+    getAnnotations: async () => f.ci?.annotations ?? [],
     searchCode: async (_o, _r, terms) => {
       calls.search++;
       const words = terms.toLowerCase().split(/\s+/).filter(Boolean);

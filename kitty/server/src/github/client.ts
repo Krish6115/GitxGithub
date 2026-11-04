@@ -71,6 +71,35 @@ export type PullCommit = z.infer<typeof PullCommitSchema>;
 export const CodeHitSchema = z.object({ path: z.string(), html_url: z.string() });
 export type CodeHit = z.infer<typeof CodeHitSchema>;
 
+export const WorkflowRunSchema = z.object({
+  id: z.number(),
+  name: z.string().nullable().default(null),
+  display_title: z.string().default(''),
+  status: z.string().nullable().default(null),
+  conclusion: z.string().nullable().default(null),
+  head_branch: z.string().nullable().default(null),
+  event: z.string().default(''),
+  html_url: z.string(),
+  path: z.string().default(''),
+});
+export type WorkflowRun = z.infer<typeof WorkflowRunSchema>;
+export const WorkflowJobSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  conclusion: z.string().nullable().default(null),
+  html_url: z.string().nullable().default(null),
+  steps: z.array(z.object({ name: z.string(), number: z.number(), conclusion: z.string().nullable().default(null) })).default([]),
+});
+export type WorkflowJob = z.infer<typeof WorkflowJobSchema>;
+export const AnnotationSchema = z.object({
+  path: z.string().default(''),
+  start_line: z.number().nullable().default(null),
+  annotation_level: z.string().default('failure'),
+  message: z.string().default(''),
+  title: z.string().nullable().default(null),
+});
+export type Annotation = z.infer<typeof AnnotationSchema>;
+
 export interface GitHubClientOptions {
   token?: string | undefined;
   fetchImpl?: typeof fetch;
@@ -94,6 +123,12 @@ export interface GitHubClient {
   getPullCommits(owner: string, repo: string, n: number): Promise<PullCommit[]>;
   /** Code search in one repo (GitHub requires a token for this endpoint). */
   searchCode(owner: string, repo: string, terms: string): Promise<CodeHit[]>;
+  getRun(owner: string, repo: string, run: number): Promise<WorkflowRun>;
+  getRunJobs(owner: string, repo: string, run: number): Promise<WorkflowJob[]>;
+  /** A job's plain-text log (GitHub requires a token), cut to the last `maxChars`; null when unavailable. */
+  getJobLog(owner: string, repo: string, job: number, maxChars: number): Promise<string | null>;
+  /** Error and warning annotations on a job's check run (readable without a token on public repos). */
+  getAnnotations(owner: string, repo: string, job: number): Promise<Annotation[]>;
 }
 
 const NAME = /^[A-Za-z0-9_.-]{1,100}$/;
@@ -137,6 +172,16 @@ export function createGitHubClient(opts: GitHubClientOptions = {}): GitHubClient
     getPullCommits: (o, r, n) => getJson(`/repos/${o}/${r}/pulls/${n}/commits?per_page=100`, z.array(PullCommitSchema)),
     searchCode: async (o, r, terms) =>
       (await getJson(`/search/code?q=${encodeURIComponent(`${terms} repo:${o}/${r}`)}&per_page=10`, z.object({ items: z.array(CodeHitSchema) }))).items,
+    getRun: (o, r, run) => getJson(`/repos/${o}/${r}/actions/runs/${run}`, WorkflowRunSchema),
+    getRunJobs: async (o, r, run) => (await getJson(`/repos/${o}/${r}/actions/runs/${run}/jobs?per_page=100`, z.object({ jobs: z.array(WorkflowJobSchema) }))).jobs,
+    getAnnotations: (o, r, job) => getJson(`/repos/${o}/${r}/check-runs/${job}/annotations?per_page=50`, z.array(AnnotationSchema)),
+    async getJobLog(o, r, job, maxChars) {
+      if (!opts.token) return null; // GitHub only serves logs to signed-in callers
+      const res = await doFetch(`${api}/repos/${o}/${r}/actions/jobs/${job}/logs`, { headers });
+      if (!res.ok) return null;
+      const text = await res.text();
+      return text.length > maxChars ? text.slice(-maxChars) : text;
+    },
     async getText(o, r, sha, path, maxChars) {
       let res = await doFetch(`${raw}/${o}/${r}/${sha}/${enc(path)}`, {
         headers: { 'User-Agent': 'kitty-gitxgithub', ...(opts.token ? { Authorization: `Bearer ${opts.token}` } : {}) },

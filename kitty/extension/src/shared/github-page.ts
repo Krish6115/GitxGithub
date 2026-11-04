@@ -65,3 +65,11 @@ export const pullNumberFromUrl = (href: string): number | null => numberAt(href,
 /** The signed-in GitHub user, read from github.com's own <meta name="user-login"> (empty when signed out). */
 export const signedInLogin = (doc: Document = document): string | undefined =>
   doc.querySelector<HTMLMetaElement>('meta[name="user-login"]')?.content?.trim() || undefined;
+
+/** The run (and job) in /<owner>/<repo>/actions/runs/<run>[/job/<job>] URLs, else null. */
+export function actionsRunFromUrl(href: string): { run: number; job?: number } | null {
+  if (!repoFromUrl(href)) return null;
+  const [, , a, b, run, c, job] = new URL(href).pathname.split('/').filter(Boolean);
+  if (a !== 'actions' || b !== 'runs' || !run || !/^\d{1,15}$/.test(run)) return null;
+  return c === 'job' && job && /^\d{1,15}$/.test(job) ? { run: Number(run), job: Number(job) } : { run: Number(run) };
+}

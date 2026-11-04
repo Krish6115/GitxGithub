@@ -7,9 +7,9 @@ import { useCatMotion } from './useCatMotion';
 import { useTour } from './useTour';
 import { IssuesView, PreflightView } from './ContributeViews';
 import { useApi } from './useApi';
-import { requestExplain } from './useExplain';
+import { requestCiExplain, requestExplain } from './useExplain';
 import { issueText, usePendingAction } from './usePendingAction';
-import { issueNumberFromUrl, pullNumberFromUrl } from '../shared/github-page';
+import { actionsRunFromUrl, issueNumberFromUrl, pullNumberFromUrl } from '../shared/github-page';
 import type { BeginnerIssues, PreflightResult } from '../shared/contribute';
 import { CHAT_FOCUS_KEY, type ChatFocus } from '../shared/tour';
 
@@ -43,6 +43,7 @@ export function KittyApp() {
   const preflightApi = useApi<PreflightResult>('/preflight');
   const issueNo = issueNumberFromUrl(t.href);
   const prNo = pullNumberFromUrl(t.href);
+  const ciRun = actionsRunFromUrl(t.href);
   useEffect(() => setPanel((p) => (p === 'preflight' ? 'none' : p)), [prNo]);
   const startTour = (issue?: number): void => {
     setMenuOpen(false);
@@ -162,7 +163,9 @@ export function KittyApp() {
     );
     bubble = (
       <div class="bubble menu">
-        {t.repo && issueNo ? (
+        {t.repo && ciRun ? (
+          <p>Hi! Want me to explain why this <strong>CI run</strong> failed and how to fix it?</p>
+        ) : t.repo && issueNo ? (
           <p>Hi! Want help fixing <strong>issue #{issueNo}</strong>? I'll walk you through the files to change and give you the exact git commands.</p>
         ) : t.repo && prNo ? (
           <p>Hi! Want me to check <strong>PR #{prNo}</strong> for what maintainers usually send back?</p>
@@ -172,6 +175,11 @@ export function KittyApp() {
           <p>Hi! Open a repository page for a tour, or ask me anything about Git.</p>
         )}
         <div class="row">
+          {t.repo && ciRun && (
+            <button data-kitty="ci-explain" onClick={() => { setMenuOpen(false); if (t.repo) requestCiExplain({ owner: t.repo.owner, repo: t.repo.repo, ...ciRun }); }}>
+              Why did this fail?
+            </button>
+          )}
           {t.repo && issueNo && <button data-kitty="fix-this-issue" onClick={() => startTour(issueNo)}>Help me fix this issue</button>}
           {t.repo && prNo && (
             <button
@@ -185,8 +193,8 @@ export function KittyApp() {
               Check my PR
             </button>
           )}
-          {t.repo && <button class={issueNo || prNo ? 'ghost' : ''} data-kitty="start-tour" onClick={() => startTour()}>Tour this repo</button>}
-          {t.repo && !issueNo && !prNo && (
+          {t.repo && <button class={issueNo || prNo || ciRun ? 'ghost' : ''} data-kitty="start-tour" onClick={() => startTour()}>Tour this repo</button>}
+          {t.repo && !issueNo && !prNo && !ciRun && (
             <button
               class="ghost"
               data-kitty="find-issues"

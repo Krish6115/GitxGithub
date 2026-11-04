@@ -2,7 +2,7 @@
 // service worker, and answers right-click menu requests.
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import type { ChatSource } from '../shared/chat';
-import { errorText, EXPLAIN_PORT, type ExplainPortEvent, type ExplainSelectionMessage } from '../shared/messages';
+import { errorText, EXPLAIN_PORT, type CiTarget, type ExplainPortEvent, type ExplainSelectionMessage } from '../shared/messages';
 import { pageTypeFromUrl } from '../shared/page-type';
 import { getSettings } from '../shared/settings';
 import { isEditable, shouldOffer, type Rect } from './selection';
@@ -10,7 +10,10 @@ import { isEditable, shouldOffer, type Rect } from './selection';
 export interface Explanation {
   text: string;
   rect: Rect | null;
-  kind?: 'command' | 'diff' | 'prose' | 'code';
+  kind?: 'command' | 'diff' | 'prose' | 'code' | 'ci';
+  /** CI runs: the job and step that failed. */
+  title?: string;
+  ci?: CiTarget;
   risk?: 'safe' | 'rewrites_history' | 'can_lose_work' | null;
   selectionCut?: boolean;
   sources: ChatSource[];
@@ -32,6 +35,9 @@ function visibleEnd(range: Range): Rect {
 /** In-page requests to explain some text (kept inside the content script; the page itself can't trigger it). */
 const explainRequests = new Set<(text: string) => void>();
 export const requestExplain = (text: string): void => explainRequests.forEach((f) => f(text));
+const ciRequests = new Set<(ci: CiTarget) => void>();
+/** "Why did this fail?" on a GitHub Actions run page. */
+export const requestCiExplain = (ci: CiTarget): void => ciRequests.forEach((f) => f(ci));
 
 export function useExplain(hostId: string) {
   const [offer, setOffer] = useState<{ text: string; rect: Rect } | null>(null);
@@ -81,28 +87,33 @@ export function useExplain(hostId: string) {
     setCurrent(null);
   }, []);
 
-  const explain = useCallback((text: string, rect: Rect | null) => {
+  const explain = useCallback((text: string, rect: Rect | null, ci?: CiTarget) => {
     portRef.current?.disconnect();
     setOffer(null);
     const port = chrome.runtime.connect({ name: EXPLAIN_PORT });
     portRef.current = port;
-    setCurrent({ text, rect, sources: [], answer: '', status: 'streaming', unverifiedFlags: [] });
+    setCurrent({ text, rect, sources: [], answer: '', status: 'streaming', unverifiedFlags: [], ...(ci ? { ci, kind: 'ci' as const } : {}) });
     const update = (f: (e: Explanation) => Explanation): void => setCurrent((c) => (c ? f(c) : c));
     port.onMessage.addListener((e: ExplainPortEvent) => {
-      if (e.type === 'meta') update((c) => ({ ...c, kind: e.kind, risk: e.risk, selectionCut: e.truncated }));
+      if (e.type === 'meta') update((c) => ({ ...c, kind: e.kind, risk: e.risk, selectionCut: e.truncated, ...(e.title ? { title: e.title } : {}) }));
       else if (e.type === 'sources') update((c) => ({ ...c, sources: e.sources }));
       else if (e.type === 'delta') update((c) => ({ ...c, answer: c.answer + e.text }));
       else if (e.type === 'done') update((c) => ({ ...c, status: 'done', unverifiedFlags: e.unverifiedFlags }));
       else update((c) => ({ ...c, status: 'error', error: errorText(e.code, e.message) }));
     });
-    port.postMessage({ type: 'start', text, page: { url: location.href, pageType: pageTypeFromUrl(location.href) } });
+    port.postMessage({ type: 'start', text, page: { url: location.href, pageType: pageTypeFromUrl(location.href) }, ...(ci ? { ci } : {}) });
   }, []);
 
   // Other parts of Kitty (e.g. a chat action "explain this issue") can ask for an explanation directly.
   useEffect(() => {
     const onRequest = (text: string): void => explain(text.trim(), null);
+    const onCi = (ci: CiTarget): void => explain(`CI run ${ci.run}`, null, ci);
     explainRequests.add(onRequest);
-    return () => void explainRequests.delete(onRequest);
+    ciRequests.add(onCi);
+    return () => {
+      explainRequests.delete(onRequest);
+      ciRequests.delete(onCi);
+    };
   }, [explain]);
 
   // Right-click menu: explain the selection the browser reports (use the live selection's position when it matches).

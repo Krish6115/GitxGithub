@@ -134,7 +134,7 @@ chrome.runtime.onConnect.addListener((port) => {
         abort.abort();
       }
     };
-    postStream('/explain', { text: msg.text, page: msg.page }, (event, data) => {
+    postStream(msg.ci ? '/ci-explain' : '/explain', msg.ci ?? { text: msg.text, page: msg.page }, (event, data) => {
       if (event === 'meta' || event === 'sources' || event === 'delta' || event === 'done' || event === 'error') send({ type: event, ...(data as object) } as ExplainPortEvent);
     }, abort.signal).catch((e: unknown) => {
       if (!abort.signal.aborted) send({ type: 'error', code: e instanceof ApiError ? e.code : 'network', message: e instanceof Error ? e.message : 'Request failed.' });

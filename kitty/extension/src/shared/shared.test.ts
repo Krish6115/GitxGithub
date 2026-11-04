@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pathFromUrl, repoFromUrl, stepUrl } from './github-page';
+import { actionsRunFromUrl, pathFromUrl, repoFromUrl, stepUrl } from './github-page';
 import { errorText } from './messages';
 import { readSse } from './sse';
 import { finishState, upsertStep, startState, streamingState, syncToPath, tourContext, withIndex, type TourResult } from './tour';
@@ -114,5 +114,14 @@ describe('streaming tours', () => {
     expect(done.streaming).toBeUndefined();
     expect(done.steps[done.currentIndex]?.path).toBe('src/index.ts');
     expect(finishState(null, result).currentIndex).toBe(0);
+  });
+});
+
+describe('actionsRunFromUrl', () => {
+  it('reads the run and job from Actions URLs', () => {
+    expect(actionsRunFromUrl('https://github.com/acme/app/actions/runs/123')).toEqual({ run: 123 });
+    expect(actionsRunFromUrl('https://github.com/acme/app/actions/runs/123/job/456?pr=9')).toEqual({ run: 123, job: 456 });
+    expect(actionsRunFromUrl('https://github.com/acme/app/actions')).toBeNull();
+    expect(actionsRunFromUrl('https://github.com/acme/app/pull/1')).toBeNull();
   });
 });

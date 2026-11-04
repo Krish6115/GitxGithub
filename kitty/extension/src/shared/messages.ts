@@ -50,9 +50,11 @@ export const SIDEPANEL_TAB_KEY = 'kitty:sidepanel-tab';
 export type OpenChatMessage = { type: 'open-chat' };
 
 export const EXPLAIN_PORT = 'kitty-explain';
-export type ExplainPortRequest = { type: 'start'; text: string; page: { url: string; pageType: string } };
+/** `ci`: explain why that GitHub Actions run failed instead of the text. */
+export type CiTarget = { owner: string; repo: string; run: number; job?: number };
+export type ExplainPortRequest = { type: 'start'; text: string; page: { url: string; pageType: string }; ci?: CiTarget };
 export type ExplainPortEvent =
-  | { type: 'meta'; kind: 'command' | 'diff' | 'prose' | 'code'; risk: 'safe' | 'rewrites_history' | 'can_lose_work' | null; truncated: boolean }
+  | { type: 'meta'; kind: 'command' | 'diff' | 'prose' | 'code' | 'ci'; risk: 'safe' | 'rewrites_history' | 'can_lose_work' | null; truncated: boolean; title?: string }
   | { type: 'sources'; sources: import('./chat').ChatSource[] }
   | { type: 'delta'; text: string }
   | { type: 'done'; unverifiedFlags: string[]; truncated: boolean }

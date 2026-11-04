@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import type { Env } from './env.js';
 import { createRateLimiter } from './lib/rate-limit.js';
 import { healthRoute } from './routes/health.js';
+import { ciRoute } from './routes/ci.js';
 import { contributeRoute } from './routes/contribute.js';
 import { explainRoute } from './routes/explain.js';
 import { tourRoute } from './routes/tour.js';
@@ -28,5 +29,6 @@ export function createApp(env: Env, deps: AppDeps = {}): Hono {
   app.route('/', tutorRoute(env, limiter, deps));
   app.route('/', explainRoute(env, limiter, deps));
   app.route('/', contributeRoute(env, limiter, deps));
+  app.route('/', ciRoute(env, limiter, deps));
   return app;
 }

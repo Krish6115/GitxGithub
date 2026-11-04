@@ -10,7 +10,7 @@ const RISK: Record<string, { label: string; cls: string }> = {
   rewrites_history: { label: 'Rewrites history', cls: 'risk-rewrite' },
   can_lose_work: { label: 'Can lose work', cls: 'risk-danger' },
 };
-const KIND: Record<string, string> = { command: 'Command', diff: 'Diff', prose: 'Text', code: 'Code' };
+const KIND: Record<string, string> = { command: 'Command', diff: 'Diff', prose: 'Text', code: 'Code', ci: 'Failed CI' };
 // Preact 11 does not add "px" to numeric style values, so positions are passed as strings.
 const px = (p: { top: number; left: number }) => ({ top: `${Math.round(p.top)}px`, left: `${Math.round(p.left)}px` });
 
@@ -21,7 +21,9 @@ export function ExplainUI({ hostId }: { hostId: string }) {
 
   const followUp = (): void => {
     if (!current) return;
-    const draft = `About this ${current.kind === 'command' ? 'command' : 'selection'}: ${current.text.slice(0, 600)}\n\nMy question: `;
+    const draft = current.kind === 'ci'
+      ? `My CI failed (${current.title ?? 'GitHub Actions'}). Kitty said: ${current.answer.slice(0, 600)}\n\nMy question: `
+      : `About this ${current.kind === 'command' ? 'command' : 'selection'}: ${current.text.slice(0, 600)}\n\nMy question: `;
     void chrome.storage.session.set({ [CHAT_DRAFT_KEY]: draft });
     void chrome.runtime.sendMessage({ type: 'open-chat' });
   };
@@ -43,11 +45,12 @@ export function ExplainUI({ hostId }: { hostId: string }) {
         <div class="bubble explain" data-kitty="explain" role="dialog" aria-label="Kitty explains" style={px(bubblePosition(current.rect, vp))}>
           <div class="meta">
             {current.kind && <span>{KIND[current.kind]}</span>}
+            {current.title && <span data-kitty="ci-title">{current.title}</span>}
             {current.risk && <span class={`risk ${RISK[current.risk]?.cls ?? ''}`} data-kitty="risk">{RISK[current.risk]?.label}</span>}
             {current.selectionCut && <span>first 4000 characters</span>}
           </div>
           <div class="explain-body">
-            {current.answer ? <Markdown text={current.answer} sources={current.sources} /> : current.status === 'streaming' && <p class="thinking">Kitty is reading</p>}
+            {current.answer ? <Markdown text={current.answer} sources={current.sources} /> : current.status === 'streaming' && <p class="thinking">{current.kind === 'ci' ? 'Kitty is reading the CI log' : 'Kitty is reading'}</p>}
             {current.status === 'error' && <p class="error">{current.error}</p>}
             {current.unverifiedFlags.length > 0 && (
               <p class="warn">⚠ Not verified in Kitty's sources: {current.unverifiedFlags.map((f) => <code key={f}>{f}</code>)}</p>

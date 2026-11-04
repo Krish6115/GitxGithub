@@ -16,6 +16,7 @@ npm run e2e -w extension -- all  # or: cat | tour | chat | explain
 | `onboarding` | The welcome tab opens on install; Test connection reaches the server; finishing shows the normal tabs. Option: `--server URL`. |
 | `tour` | Start a tour from the cat menu; Next/Next/Back across file pages; browser back button; leave and resume. Option: `--repo owner/name`. |
 | `chat` | Cat menu "Ask Kitty" opens the side panel chat tab; a question streams an answer with citations. Option: `--question "..."`. |
+| `features` | "Why did this fail?" on a failed CI run (`--run owner/repo/actions/runs/N`); a PR tour at the head commit; the context pack; the PR draft; the learning-path quiz. |
 | `explain` | Selecting a git command shows the pill; the explanation streams; "Ask a follow-up"; the right-click path (simulated: Chrome's native menu can't be automated); Esc closes. |
 
 **Browser:** branded Chrome no longer loads unpacked extensions from the command line, so a Playwright Chromium is used.

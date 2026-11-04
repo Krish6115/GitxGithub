@@ -51,6 +51,11 @@ function mockTutor(prompt: string): string {
 function answer(req: ChatRequest): string {
   const lastUser = [...req.messages].reverse().find((m) => m.role === 'user')?.content ?? '';
   if (req.kind === 'tour') return mockTour(lastUser);
+  const system = req.messages[0]?.content ?? '';
+  if (system.startsWith('You write pull request descriptions')) {
+    return JSON.stringify({ title: 'Mock PR title (no model was called)', description: '## What\nMock description: the real model writes this from your diff.\n\n## Why\n…\n\n## How I tested it\nDescribe how you tested this.', commit_message: 'Mock commit subject\n\nMock body line.' });
+  }
+  if (system.startsWith("You turn a learner's question")) return 'NONE';
   if (req.kind === 'explain') {
     const label = /RISK LABEL \(computed by Kitty, use it as given\): ([^:\n]+)/.exec(lastUser)?.[1];
     return `${label ? `**${label}.** ` : ''}Mock explanation: Kitty would explain the selected text here (no model was called).`;

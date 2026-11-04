@@ -57,21 +57,24 @@ flowchart LR
     SP["Side panel<br/>tour overview, chat, settings"]
   end
   subgraph Server["Kitty server (Hono)"]
-    T["/tour"]
+    T["/tour<br/>(repo, issue or PR)"]
     Q["/tutor"]
-    X["/explain"]
+    X["/explain, /ci-explain"]
+    P["/preflight, /draft-pr"]
     R["Retriever<br/>MiniSearch BM25 over<br/>PDFs + references"]
   end
   GH["GitHub REST API"]
   BC["BharatCode<br/>qwen-3.8-27b"]
-  CS --> SW --> T & X
+  CS --> SW --> T & X & P
   SP --> Q
-  T --> GH
+  T & P & X --> GH
+  Q --> GH
   Q --> R
   X --> R
-  T & Q & X --> BC
+  T & Q & X & P --> BC
 ```
 
+- **GitHub token (optional, recommended):** set `GITHUB_TOKEN` on the server (a fine-grained, read-only token) or add your own in Kitty settings. It raises GitHub's rate limits and unlocks two things GitHub only serves to signed-in callers: code search for "where is X handled?" questions, and full CI logs for "Why did this fail?" (without it Kitty can only see GitHub's short summary).
 - **Grounded answers:** the PDFs and `*/references/` are chunked into a prebuilt index (`server/data/index.json`). The tutor answers from the best-matching chunks and must cite them.
 - **Safe by design:** API keys never ship in the extension. Repository and page text is treated as untrusted, so a README that tries to instruct the model is ignored. Answers stream with timeouts and retry on transient failures.
 

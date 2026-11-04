@@ -10,6 +10,7 @@ import { streamTutor } from '../tutor/service.js';
 import { guard, sendEvent, withPings, type RouteDeps } from './common.js';
 import { createGitHubClient } from '../github/client.js';
 import { findRepoFiles } from '../github/repo-files.js';
+import { rewriteQuery } from '../rag/rewrite.js';
 
 export interface TutorRouteDeps extends RouteDeps {
   retrieve?: (query: string, k: number) => RetrievedChunk[];
@@ -32,7 +33,7 @@ export function tutorRoute(env: Env, limiter: RateLimiter, deps: TutorRouteDeps 
 
     return streamSSE(c, (stream) =>
       withPings(stream, deps.keepAliveMs ?? 10_000, async () => {
-        for await (const ev of streamTutor({ provider: g.provider, retrieve, repoFiles, ...(faq ? { faq } : {}) }, body.data, c.req.raw.signal)) {
+        for await (const ev of streamTutor({ provider: g.provider, retrieve, repoFiles, rewrite: (q, s) => rewriteQuery(g.provider, q, s), ...(faq ? { faq } : {}) }, body.data, c.req.raw.signal)) {
           if (ev.type === 'delta') await sendEvent(stream, 'delta', { text: ev.text });
           else await sendEvent(stream, ev.type, ev);
         }

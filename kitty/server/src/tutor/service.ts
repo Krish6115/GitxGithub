@@ -9,6 +9,7 @@ import { unverifiedFlags } from './verify-flags.js';
 import { parseAction, type KittyAction } from './actions.js';
 import type { FaqMatcher } from './faq.js';
 import { isRepoCodeQuestion, repoOf, type RepoFiles } from '../github/repo-files.js';
+import { worthRewriting } from '../rag/rewrite.js';
 
 /** Below this top BM25 score the sources are treated as not relevant (calibrated: off-topic <= ~31, eval questions >= ~124). */
 export const WEAK_SCORE = 20;
@@ -50,6 +51,8 @@ export interface TutorDeps {
   faq?: FaqMatcher;
   /** Finds repo files for questions about the code on screen (needs GitHub). */
   repoFiles?: (owner: string, repo: string, question: string) => Promise<RepoFiles | null>;
+  /** Turns a question into Git search terms when the first search finds nothing close (one small model call). */
+  rewrite?: (question: string, signal?: AbortSignal) => Promise<string | null>;
 }
 
 /** Repo lookups must not hold the answer up for long. */
@@ -85,8 +88,15 @@ export async function* streamTutor(deps: TutorDeps, req: TutorRequest, signal?: 
   }
   // questions about the open page need the page, not six Git references: a lighter prompt answers sooner
   const repoFiles = await lookUpRepoFiles(deps, req);
-  const aboutPage = Boolean(repoFiles) || Boolean(req.page) &&/(this|here|page|file|repo|repository|project|explain|summar\w*|overview|about)/i.test(req.question);
-  const chunks = deps.retrieve(searchText(req.question, history), aboutPage ? 3 : 6);
+  const aboutPage = Boolean(repoFiles) || (Boolean(req.page) && /(this|here|page|file|repo|repository|project|explain|summar\w*|overview|about)/i.test(req.question));
+  const k = aboutPage ? 3 : 6;
+  let chunks = deps.retrieve(searchText(req.question, history), k);
+  // plain-English questions the keyword search misses: ask the model for Git terms and search again
+  if ((chunks[0]?.score ?? 0) < WEAK_SCORE && !aboutPage && deps.rewrite && worthRewriting(req.question)) {
+    const terms = await deps.rewrite(req.question, signal);
+    const better = terms ? deps.retrieve(`${terms} ${req.question}`, k) : [];
+    if ((better[0]?.score ?? 0) > (chunks[0]?.score ?? 0)) chunks = better;
+  }
   const weak = (chunks[0]?.score ?? 0) < WEAK_SCORE;
   yield {
     type: 'sources',

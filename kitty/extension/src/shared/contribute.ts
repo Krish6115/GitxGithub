@@ -104,4 +104,16 @@ export interface PreflightResult {
   url: string;
   checks: PreflightCheck[];
   counts: Record<CheckStatus, number>;
+  conflict?: ConflictRescue;
+}
+export interface RescueStep {
+  title: string;
+  commands: string[];
+  note?: string;
+}
+/** Mirror of the server's merge-conflict rescue. */
+export interface ConflictRescue {
+  likelyFiles: string[];
+  steps: RescueStep[];
+  undo: RescueStep;
 }

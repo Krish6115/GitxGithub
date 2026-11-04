@@ -113,8 +113,8 @@ const pull = (over: Partial<Pull> = {}): Pull => ({
   commits: 1,
   maintainer_can_modify: true,
   user: { login: 'newbie' },
-  head: { ref: 'fix/42-empty-db', repo: { full_name: 'newbie/todo-api' } },
-  base: { ref: 'main', repo: { full_name: 'acme/todo-api' } },
+  head: { ref: 'fix/42-empty-db', sha: '', repo: { full_name: 'newbie/todo-api' } },
+  base: { ref: 'main', sha: '', repo: { full_name: 'acme/todo-api' } },
   ...over,
 });
 const files = (...names: string[]): PullFile[] => names.map((filename) => ({ filename, status: 'modified', additions: 5, deletions: 1 }));
@@ -139,7 +139,7 @@ describe('PR pre-flight check', () => {
   });
 
   it('uses origin when the branch is in the same repo', () => {
-    const c = byId(run({ pull: pull({ mergeable_state: 'behind', head: { ref: 'x', repo: { full_name: 'acme/todo-api' } } }) }), 'up-to-date');
+    const c = byId(run({ pull: pull({ mergeable_state: 'behind', head: { ref: 'x', sha: '', repo: { full_name: 'acme/todo-api' } } }) }), 'up-to-date');
     expect(c?.commands?.[0]).toBe('git fetch origin');
   });
 

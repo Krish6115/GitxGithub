@@ -1,6 +1,6 @@
 // On-page bubbles for contributors: good first issues (with "Help me fix this") and the PR pre-flight checklist.
 import { useState } from 'preact/hooks';
-import type { BeginnerIssues, CheckStatus, PreflightCheck, PreflightResult } from '../shared/contribute';
+import type { BeginnerIssues, CheckStatus, ConflictRescue, PreflightCheck, PreflightResult, RescueStep } from '../shared/contribute';
 import { CHAT_DRAFT_KEY } from '../shared/messages';
 import type { ApiState } from './useApi';
 
@@ -91,6 +91,34 @@ function CheckItem({ check, onHint }: { check: PreflightCheck; onHint: () => voi
   );
 }
 
+function Step({ step, n }: { step: RescueStep; n?: number }) {
+  const commands = step.commands.join('\n');
+  return (
+    <li class="check">
+      <div class="check-title"><strong>{n !== undefined ? `${n}. ` : ''}{step.title}</strong></div>
+      <div class="code">
+        <pre><code>{commands}</code></pre>
+        <CopyButton text={commands} />
+      </div>
+      {step.note && <p class="why">{step.note}</p>}
+    </li>
+  );
+}
+
+/** Step-by-step help for a PR with merge conflicts. */
+function ConflictView({ rescue }: { rescue: ConflictRescue }) {
+  return (
+    <details class="conflict" data-kitty="conflict-rescue" open>
+      <summary><strong>🧩 Merge-conflict rescue</strong></summary>
+      {rescue.likelyFiles.length > 0 && (
+        <p>Likely conflicts (changed on both sides): {rescue.likelyFiles.map((f) => <code key={f}>{f} </code>)}</p>
+      )}
+      <ul class="checks">{rescue.steps.map((s, i) => <Step key={s.title} step={s} n={i + 1} />)}</ul>
+      <ul class="checks"><Step step={rescue.undo} /></ul>
+    </details>
+  );
+}
+
 export function PreflightView({ state, onClose, onHint }: { state: ApiState<PreflightResult>; onClose: () => void; onHint: () => void }) {
   if (state.kind !== 'done') {
     return <div class="bubble panel" data-kitty="preflight"><Status state={state} loading="Kitty is checking this pull request…" onClose={onClose} /></div>;
@@ -109,6 +137,7 @@ export function PreflightView({ state, onClose, onHint }: { state: ApiState<Pref
       <p class="meta">{summary || 'Nothing to report.'}</p>
       {r.counts.fail === 0 && r.counts.warn === 0 && <p>Looks ready for review. 🎉</p>}
       <ul class="checks">{todo.map((c) => <CheckItem key={c.id} check={c} onHint={onHint} />)}</ul>
+      {r.conflict && <ConflictView rescue={r.conflict} />}
       {passed.length > 0 && (
         <details>
           <summary>{passed.length} passed</summary>

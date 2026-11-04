@@ -144,6 +144,8 @@ button.ghost:hover:not(:disabled) { background: rgb(175 184 193 / 0.2); }
 .issue-list button { padding: 2px 10px; font-size: 12px; }
 .checks { list-style: none; margin: 6px 0; padding: 0; }
 .check { margin: 0 0 10px; padding: 0 0 8px; border-bottom: 1px solid rgb(127 127 127 / 0.2); }
+.conflict { margin: 8px 0; padding: 6px 8px; border: 1px solid rgb(207 34 46 / 0.35); border-radius: 8px; }
+.conflict summary { cursor: pointer; margin-bottom: 4px; }
 .check:last-child { border-bottom: 0; }
 .check p { margin: 2px 0 4px; }
 .check .code { position: relative; margin: 4px 0; }

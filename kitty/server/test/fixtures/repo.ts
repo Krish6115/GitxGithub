@@ -11,6 +11,7 @@ export interface FixtureRepo {
   files: Record<string, string>;
   issues?: Issue[];
   pull?: { pull: Pull; files: PullFile[]; commits: PullCommit[] };
+  compare?: Record<string, { merge_base_commit: { sha: string }; files: { filename: string }[] }>;
   ci?: { run: WorkflowRun; jobs: WorkflowJob[]; log: string | null; annotations: Annotation[] };
 }
 
@@ -86,6 +87,11 @@ export function fakeGitHub(f: FixtureRepo): GitHubClient & { calls: { repo: numb
     },
     getPullFiles: async () => f.pull?.files ?? [],
     getPullCommits: async () => f.pull?.commits ?? [],
+    compare: async (_o, _r, base, head) => {
+      const c = f.compare?.[`${base}...${head}`];
+      if (!c) throw new KittyError('github_not_found', 'not in fixture');
+      return c;
+    },
     getRun: async () => {
       if (!f.ci) throw new KittyError('github_not_found', 'not in fixture');
       return f.ci.run;

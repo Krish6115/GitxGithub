@@ -42,7 +42,7 @@ export const IssueSchema = z.object({
 });
 export type Issue = z.infer<typeof IssueSchema>;
 
-const RefSchema = z.object({ ref: z.string(), repo: z.object({ full_name: z.string() }).nullable() });
+const RefSchema = z.object({ ref: z.string(), sha: z.string().default(''), repo: z.object({ full_name: z.string() }).nullable() });
 export const PullSchema = z.object({
   number: z.number(),
   title: z.string(),
@@ -70,6 +70,12 @@ export type PullCommit = z.infer<typeof PullCommitSchema>;
 
 export const CodeHitSchema = z.object({ path: z.string(), html_url: z.string() });
 export type CodeHit = z.infer<typeof CodeHitSchema>;
+
+export const CompareSchema = z.object({
+  merge_base_commit: z.object({ sha: z.string() }),
+  files: z.array(z.object({ filename: z.string() })).default([]),
+});
+export type Compare = z.infer<typeof CompareSchema>;
 
 export const WorkflowRunSchema = z.object({
   id: z.number(),
@@ -123,6 +129,8 @@ export interface GitHubClient {
   getPullCommits(owner: string, repo: string, n: number): Promise<PullCommit[]>;
   /** Code search in one repo (GitHub requires a token for this endpoint). */
   searchCode(owner: string, repo: string, terms: string): Promise<CodeHit[]>;
+  /** GET /compare/{base}...{head}: merge base and changed files. */
+  compare(owner: string, repo: string, base: string, head: string): Promise<Compare>;
   getRun(owner: string, repo: string, run: number): Promise<WorkflowRun>;
   getRunJobs(owner: string, repo: string, run: number): Promise<WorkflowJob[]>;
   /** A job's plain-text log (GitHub requires a token), cut to the last `maxChars`; null when unavailable. */
@@ -172,6 +180,7 @@ export function createGitHubClient(opts: GitHubClientOptions = {}): GitHubClient
     getPullCommits: (o, r, n) => getJson(`/repos/${o}/${r}/pulls/${n}/commits?per_page=100`, z.array(PullCommitSchema)),
     searchCode: async (o, r, terms) =>
       (await getJson(`/search/code?q=${encodeURIComponent(`${terms} repo:${o}/${r}`)}&per_page=10`, z.object({ items: z.array(CodeHitSchema) }))).items,
+    compare: (o, r, base, head) => getJson(`/repos/${o}/${r}/compare/${encodeURIComponent(base)}...${encodeURIComponent(head)}?per_page=300`, CompareSchema),
     getRun: (o, r, run) => getJson(`/repos/${o}/${r}/actions/runs/${run}`, WorkflowRunSchema),
     getRunJobs: async (o, r, run) => (await getJson(`/repos/${o}/${r}/actions/runs/${run}/jobs?per_page=100`, z.object({ jobs: z.array(WorkflowJobSchema) }))).jobs,
     getAnnotations: (o, r, job) => getJson(`/repos/${o}/${r}/check-runs/${job}/annotations?per_page=50`, z.array(AnnotationSchema)),

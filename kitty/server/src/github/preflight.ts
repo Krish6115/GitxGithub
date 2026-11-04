@@ -1,5 +1,6 @@
 // PR pre-flight check: what maintainers commonly bounce a pull request for, checked with plain rules (no model).
 import type { GitHubClient, Pull, PullCommit, PullFile } from './client.js';
+import { likelyConflicts, rescueSteps, type ConflictRescue } from './conflicts.js';
 
 export type CheckStatus = 'pass' | 'warn' | 'fail' | 'info';
 
@@ -18,6 +19,8 @@ export interface PreflightResult {
   url: string;
   checks: PreflightCheck[];
   counts: Record<CheckStatus, number>;
+  /** Step-by-step help when the PR has merge conflicts. */
+  conflict?: ConflictRescue;
 }
 
 export interface PreflightInput {
@@ -72,7 +75,7 @@ export function preflightChecks(input: PreflightInput): PreflightResult {
   // 1. Merge state (GitHub computes it lazily, so "unknown" is skipped)
   const ms = pull.mergeable_state;
   if (ms === 'dirty') {
-    add({ id: 'conflicts', status: 'fail', title: 'Merge conflicts', detail: `Your branch conflicts with ${pull.base.ref}. Rebase on the latest ${pull.base.ref} and resolve the conflicts.`, commands: rebaseCommands(pull, isFork, true) });
+    add({ id: 'conflicts', status: 'fail', title: 'Merge conflicts', detail: `Your branch conflicts with ${pull.base.ref}. Rebase on the latest ${pull.base.ref} and resolve the conflicts (step-by-step rescue below).`, commands: rebaseCommands(pull, isFork, true) });
   } else if (ms === 'behind') {
     add({ id: 'up-to-date', status: 'warn', title: `Behind ${pull.base.ref}`, detail: `New commits landed on ${pull.base.ref}. Rebase so CI tests your change against the latest code (or use "Update branch" on the PR page).`, commands: rebaseCommands(pull, isFork, false) });
   } else if (ms === 'clean' || ms === 'unstable' || ms === 'blocked' || ms === 'has_hooks') {
@@ -160,5 +163,10 @@ export async function runPreflight(github: GitHubClient, owner: string, repo: st
     firstText(github, owner, repo, pull.base.ref, CONTRIBUTING_PATHS),
     firstText(github, owner, repo, pull.base.ref, TEMPLATE_PATHS),
   ]);
-  return preflightChecks({ owner, repo, pull, files, commits, contributing, template });
+  const result = preflightChecks({ owner, repo, pull, files, commits, contributing, template });
+  if (pull.mergeable_state === 'dirty' && pull.state === 'open') {
+    const isFork = Boolean(pull.head.repo && pull.head.repo.full_name.toLowerCase() !== `${owner}/${repo}`.toLowerCase());
+    result.conflict = { likelyFiles: await likelyConflicts(github, owner, repo, pull), ...rescueSteps(pull, isFork, `${owner}/${repo}`) };
+  }
+  return result;
 }

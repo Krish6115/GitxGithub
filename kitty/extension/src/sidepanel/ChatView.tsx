@@ -10,6 +10,7 @@ import { pageLabel, READ_PAGE_KEY, type PageContext } from '../shared/page-conte
 import { CHAT_FOCUS_KEY, TOUR_STATE_KEY, tourContext, type ChatFocus, type TourState } from '../shared/tour';
 import { TourPanel } from './TourView';
 import { activePageContext, runOnPage, Thinking } from './chat-helpers';
+import { LearningPath, noteQuestion } from './LearningPath';
 
 type Assistant = Extract<ChatMessage, { role: 'assistant' }>;
 
@@ -100,6 +101,7 @@ export function ChatView() {
     const q = question.trim();
     if (!q || busy) return;
     const history = toHistory(messages);
+    void noteQuestion(q);
     setInput('');
     // while a tour runs, the question carries the step: the one the user picked, or the step on screen
     const tourCtx = tour ? tourContext(tour, focusIndex ?? tour.currentIndex) : null;
@@ -147,6 +149,7 @@ export function ChatView() {
             {[...(focusIndex !== null ? ['Explain this step in more detail', 'How does this file connect to the rest of the repo?'] : []), ...(page && readPage && focusIndex === null ? ['Explain this page', 'What should I look at first here?'] : []), 'How do I undo my last commit?', 'How do I sync my fork with upstream?', "What's the difference between merge and rebase?"].map((s) => (
               <button key={s} class="chip" onClick={() => void send(s)}>{s}</button>
             ))}
+            <LearningPath onAsk={(q) => void send(q)} />
           </div>
         )}
         {messages.map((m, i) =>

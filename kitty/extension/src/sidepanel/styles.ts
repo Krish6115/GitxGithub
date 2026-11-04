@@ -17,6 +17,14 @@ export const css = `
   button:disabled { opacity: 0.5; cursor: default; }
   .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
   .context-pack { margin: 10px 0 6px; padding: 8px; border: 1px dashed var(--line); border-radius: 8px; }
+  .learning-path { margin: 12px 0; padding: 8px; border: 1px solid var(--line); border-radius: 8px; color: var(--fg); }
+  .learning-path summary { cursor: pointer; font-weight: 600; }
+  .path-bar { height: 6px; background: var(--panel); border-radius: 3px; margin: 6px 0; overflow: hidden; }
+  .path-bar span { display: block; height: 100%; background: var(--accent); }
+  .quiz-q { margin: 8px 0; }
+  .choice { display: block; width: 100%; text-align: left; margin: 3px 0; padding: 5px 8px; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; }
+  .choice.right { border-color: var(--accent); background: rgb(35 134 54 / 0.15); }
+  .choice.wrong { border-color: var(--err); background: rgb(207 34 46 / 0.12); }
   .badge { background: #dafbe1; color: #1a7f37; border: 1px solid var(--accent); border-radius: 8px; padding: 4px 8px; font-size: 12px; }
   .stack { display: flex; flex-wrap: wrap; gap: 4px; } .stack span { border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; font-size: 12px; }
   .steps { padding-left: 20px; margin: 0; } .steps li { margin: 4px 0; }

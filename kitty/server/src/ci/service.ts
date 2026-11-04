@@ -54,11 +54,13 @@ export function ciMessages(input: { workflow: string; job: string; step?: string
 }
 
 /** When only GitHub's "exit code" note is readable (no token for the log). */
-export function noLogAnswer(job: string, step: string | undefined, jobUrl: string | null): string {
+export function noLogAnswer(job: string, step: string | undefined, jobUrl: string | null, refused = false): string {
   return [
     `**What failed:** the job **${job}**${step ? `, in the step **${step}**` : ''}. GitHub only reports that the step exited with an error code.`,
     '',
-    '**Why Kitty can\'t say more:** GitHub only shows the full CI log to signed-in callers. Add a GitHub token in Kitty settings (read-only access is enough) and ask again, and Kitty will read the log and explain the exact error.',
+    refused
+      ? '**Why Kitty can\'t say more:** GitHub refused to share the full CI log with this token. Log downloads need a classic token with the `public_repo` scope (a token with no scopes is refused). Add one in Kitty settings and ask again.'
+      : '**Why Kitty can\'t say more:** GitHub only shows the full CI log to signed-in callers. Add a classic GitHub token with the `public_repo` scope in Kitty settings and ask again, and Kitty will read the log and explain the exact error.',
     '',
     `**Meanwhile:** ${jobUrl ? `open the [job log](${jobUrl}), ` : 'open the job log, '}expand the failed step and look for the first red line: that is usually the real error. Select it and choose "Ask Kitty".`,
   ].join('\n');
@@ -94,7 +96,7 @@ export async function* streamCiExplain(deps: { github: GitHubClient; provider: P
     if (onlyExitCode(annotations)) {
       // GitHub only says "exit code 1": the model could only guess, so say what is known and spend no tokens
       yield { type: 'meta', kind: 'ci', risk: null, truncated: false, title, jobUrl: failed.job.html_url, from, headline, ...extra };
-      yield { type: 'delta', text: noLogAnswer(failed.job.name, failed.step, failed.job.html_url) };
+      yield { type: 'delta', text: noLogAnswer(failed.job.name, failed.step, failed.job.html_url, Boolean(logError)) };
       yield { type: 'done', usage: null, truncated: false, unverifiedFlags: [] };
       return;
     }

@@ -126,7 +126,7 @@ describe('CI without a log', () => {
     const evs = await collect(streamCiExplain({ github: fakeGitHub(fixtureRepo({ ci: { run, jobs, log: null, annotations: exitOnly } })), provider }, { owner: 'acme', repo: 'todo-api', run: 7 }));
     expect(provider.reqs).toHaveLength(0);
     expect(evs[0]).toMatchObject({ type: 'meta', title: 'Main › Run pnpm run check', from: 'annotations' });
-    expect((evs[1] as { text: string }).text).toContain('Add a GitHub token in Kitty settings');
+    expect((evs[1] as { text: string }).text).toContain('Add a classic GitHub token');
     expect(evs.at(-1)).toMatchObject({ type: 'done', usage: null });
   });
 });

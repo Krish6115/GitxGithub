@@ -74,7 +74,7 @@ flowchart LR
   T & Q & X & P --> BC
 ```
 
-- **GitHub token (optional, recommended):** set `GITHUB_TOKEN` on the server (a fine-grained, read-only token) or add your own in Kitty settings. It raises GitHub's rate limits and unlocks two things GitHub only serves to signed-in callers: code search for "where is X handled?" questions, and full CI logs for "Why did this fail?" (without it Kitty can only see GitHub's short summary).
+- **GitHub token (optional, recommended):** set `GITHUB_TOKEN` on the server (a classic token with only the `public_repo` scope) or add your own in Kitty settings. It raises GitHub's rate limits and unlocks two things GitHub only serves to signed-in callers: code search for "where is X handled?" questions, and full CI logs for "Why did this fail?" (without it Kitty can only see GitHub's short summary).
 - **Grounded answers:** the PDFs and `*/references/` are chunked into a prebuilt index (`server/data/index.json`). The tutor answers from the best-matching chunks and must cite them.
 - **Safe by design:** API keys never ship in the extension. Repository and page text is treated as untrusted, so a README that tries to instruct the model is ignored. Answers stream with timeouts and retry on transient failures.
 

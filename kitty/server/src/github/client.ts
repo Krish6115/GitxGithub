@@ -63,7 +63,14 @@ export const PullSchema = z.object({
 });
 export type Pull = z.infer<typeof PullSchema>;
 
-export const PullFileSchema = z.object({ filename: z.string(), status: z.string(), additions: z.number().default(0), deletions: z.number().default(0) });
+export const PullFileSchema = z.object({
+  filename: z.string(),
+  status: z.string(),
+  additions: z.number().default(0),
+  deletions: z.number().default(0),
+  /** Unified diff hunk text (missing for binary or very large files). */
+  patch: z.string().optional(),
+});
 export type PullFile = z.infer<typeof PullFileSchema>;
 export const PullCommitSchema = z.object({ sha: z.string(), commit: z.object({ message: z.string() }), parents: z.array(z.object({ sha: z.string() })).default([]) });
 export type PullCommit = z.infer<typeof PullCommitSchema>;

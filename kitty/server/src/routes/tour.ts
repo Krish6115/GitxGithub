@@ -5,8 +5,10 @@ import type { Env } from '../env.js';
 import { createGitHubClient } from '../github/client.js';
 import { LruCache } from '../lib/lru.js';
 import type { RateLimiter } from '../lib/rate-limit.js';
-import { TourRequestSchema, type TourResult } from '../tour/schema.js';
+import { TourRequestSchema, type TourResult, type TourStep } from '../tour/schema.js';
+import type { TourStage, TourStart } from '../tour/service.js';
 import { getTour } from '../tour/service.js';
+import { getPrTour } from '../tour/pr-service.js';
 import { guard, sendEvent, withPings, type RouteDeps } from './common.js';
 
 export type TourRouteDeps = RouteDeps;
@@ -25,18 +27,19 @@ export function tourRoute(env: Env, limiter: RateLimiter, deps: RouteDeps = {}):
 
     return streamSSE(c, (stream) =>
       withPings(stream, deps.keepAliveMs ?? 10_000, async () => {
-        const result = await getTour(
-          { github, provider: g.provider, cache, maxSteps: env.TOUR_MAX_STEPS },
-          {
-            owner: body.data.owner,
-            repo: body.data.repo,
-            issue: body.data.issue,
-            signal: c.req.raw.signal,
-            onProgress: (stage, message) => void sendEvent(stream, 'progress', { stage, message }),
-            onStart: (start) => void sendEvent(stream, 'start', start),
-            onStep: (step, index) => void sendEvent(stream, 'step', { index, step }),
-          },
-        );
+        const req = {
+          owner: body.data.owner,
+          repo: body.data.repo,
+          issue: body.data.issue,
+          signal: c.req.raw.signal,
+          onProgress: (stage: TourStage, message: string) => void sendEvent(stream, 'progress', { stage, message }),
+          onStart: (start: TourStart) => void sendEvent(stream, 'start', start),
+          onStep: (step: TourStep, index: number) => void sendEvent(stream, 'step', { index, step }),
+        };
+        const pr = body.data.pr;
+        const result = pr
+          ? await getPrTour({ github, provider: g.provider, cache }, { ...req, pr })
+          : await getTour({ github, provider: g.provider, cache, maxSteps: env.TOUR_MAX_STEPS }, req);
         await sendEvent(stream, 'result', result);
       }),
     );

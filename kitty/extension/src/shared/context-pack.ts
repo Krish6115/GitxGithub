@@ -19,13 +19,14 @@ export function contextPack(state: TourState): string {
     oneLine(tour.summary) || `The ${repo} repository.`,
   ];
   if (tour.stack.length) out.push('', '## Stack', tour.stack.map((s) => `- ${s}`).join('\n'));
+  if (meta.pr) out.push('', '## The change under review', `Pull request #${meta.pr.number}: ${oneLine(meta.pr.title)} (${meta.pr.url}). The files below are its changed files, at the PR's head commit.`);
   if (meta.issue) out.push('', '## The task', `Fix issue #${meta.issue.number}: ${oneLine(meta.issue.title)} (${meta.issue.url})`, ...(known(tour.how_to_contribute) ? ['', tour.how_to_contribute.trim()] : []));
-  out.push('', meta.issue ? '## Files involved (read in this order)' : '## Key files (read in this order)');
+  out.push('', meta.pr ? '## Changed files (read in this order)' : meta.issue ? '## Files involved (read in this order)' : '## Key files (read in this order)');
   state.steps.forEach((s, i) => {
     out.push(`${i + 1}. [\`${s.path}\`](${stepUrl(meta, meta.sha, s.path)}): ${oneLine(s.what)}${s.why_it_matters ? ` ${oneLine(s.why_it_matters)}` : ''}`);
   });
   if (known(tour.how_to_run)) out.push('', '## How to build, run and test', tour.how_to_run.trim());
-  if (!meta.issue && known(tour.how_to_contribute)) out.push('', '## Contribution rules', tour.how_to_contribute.trim());
+  if (!meta.issue && known(tour.how_to_contribute)) out.push('', meta.pr ? '## What to check' : '## Contribution rules', tour.how_to_contribute.trim());
   if (tour.good_first_issue_tips.length) out.push('', meta.issue ? '## Pitfalls' : '## Tips', tour.good_first_issue_tips.map((t) => `- ${oneLine(t)}`).join('\n'));
   out.push(
     '',

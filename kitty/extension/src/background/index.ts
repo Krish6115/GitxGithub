@@ -24,7 +24,7 @@ async function runTour(req: TourPortRequest, send: (e: TourPortEvent) => void, s
         ...(settings.kittyKey ? { 'X-Kitty-Key': settings.kittyKey } : {}),
         ...(settings.githubToken ? { 'X-Kitty-GitHub-Token': settings.githubToken } : {}),
       },
-      body: JSON.stringify({ owner: req.owner, repo: req.repo, ...(req.issue ? { issue: req.issue } : {}) }),
+      body: JSON.stringify({ owner: req.owner, repo: req.repo, ...(req.issue ? { issue: req.issue } : {}), ...(req.pr ? { pr: req.pr } : {}) }),
       signal,
     });
   } catch {

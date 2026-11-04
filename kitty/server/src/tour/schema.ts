@@ -39,6 +39,8 @@ export interface TourMeta {
   defaultBranch: string;
   /** Set for "Help me fix this issue" walkthroughs. */
   issue?: { number: number; title: string; url: string; labels: string[] };
+  /** Set for pull request tours. */
+  pr?: { number: number; title: string; url: string };
   /** Planned tours: how many steps the model explained (the rest keep Kitty's own notes). */
   described?: number;
   /** Planned tours: the model was too slow or failed, so the tour uses Kitty's own notes. */
@@ -55,7 +57,9 @@ export const TourRequestSchema = z.object({
   repo: z.string().regex(/^[A-Za-z0-9_.-]{1,100}$/),
   /** Build a walkthrough of the files relevant to this issue instead of a general tour. */
   issue: z.number().int().positive().max(100_000_000).optional(),
-});
+  /** Tour this pull request's changed files. */
+  pr: z.number().int().positive().max(100_000_000).optional(),
+}).refine((r) => !(r.issue && r.pr), { message: 'Pick an issue or a pull request, not both.' });
 
 export const MIN_VALID_STEPS = 5;
 export const MIN_REQUESTED_STEPS = 6;

@@ -7,7 +7,7 @@ import type { LruCache } from '../lib/lru.js';
 import { KittyError, type KittyErrorCode } from '../llm/errors.js';
 
 /** Model failures a planned tour survives (it falls back to Kitty's own step notes). */
-const SOFT_MODEL_ERRORS: KittyErrorCode[] = ['timeout', 'upstream_error', 'upstream_unavailable', 'invalid_model_output', 'reasoning_budget_exhausted'];
+export const SOFT_MODEL_ERRORS: KittyErrorCode[] = ['timeout', 'upstream_error', 'upstream_unavailable', 'invalid_model_output', 'reasoning_budget_exhausted'];
 import type { ChatMessage, ChatResult, Provider, ReasoningEffort } from '../llm/types.js';
 import { completedSteps, mergePlannedTour, validateTour } from './parse.js';
 import { repairMessages, tourMessages, type TourMode } from './prompt.js';
@@ -28,6 +28,8 @@ export interface TourRequest {
   repo: string;
   /** Walk through the files relevant to this issue instead of a general tour. */
   issue?: number | undefined;
+  /** Walk through this pull request's changed files instead. */
+  pr?: number | undefined;
   signal?: AbortSignal;
   onProgress?: OnProgress;
   /** Fired once GitHub data is in, before the model runs: enough for the client to open step 1 as soon as it streams. */
@@ -44,6 +46,7 @@ export interface TourStart {
   partial: boolean;
   expectedSteps: number;
   issue?: { number: number; title: string; url: string; labels: string[] };
+  pr?: { number: number; title: string; url: string };
   /** Planned tours: Kitty's own steps, shown at once and replaced as the model explains each file. */
   draft?: PlannedStep[];
 }
@@ -89,7 +92,7 @@ async function streamOnce(provider: Provider, messages: ChatMessage[], signal: A
 }
 
 /** One extra attempt when the provider drops the stream (seen live at ~60s); auth, quota and timeouts are not retried. */
-async function streamToResult(provider: Provider, messages: ChatMessage[], signal: AbortSignal | undefined, onFirst: () => void, onRetry: () => void, effort?: ReasoningEffort, onText?: (text: string) => void): Promise<ChatResult> {
+export async function streamToResult(provider: Provider, messages: ChatMessage[], signal: AbortSignal | undefined, onFirst: () => void, onRetry: () => void, effort?: ReasoningEffort, onText?: (text: string) => void): Promise<ChatResult> {
   try {
     return await streamOnce(provider, messages, signal, onFirst, effort, onText);
   } catch (e) {

@@ -49,7 +49,9 @@ export function TourPanel({ state, onAsk }: { state: TourState; onAsk: (index: n
   return (
     <details class="tour-panel" data-kitty="tour-panel" open={issue ? true : undefined}>
       <summary>
-        {issue ? (
+        {meta.pr ? (
+          <>🔍 Changes in <strong>PR #{meta.pr.number}</strong> · step {n + 1} of {state.steps.length}</>
+        ) : issue ? (
           <>🛠️ Fixing <strong>#{issue.number}</strong> in {meta.owner}/{meta.repo} · step {n + 1} of {state.steps.length}</>
         ) : (
           <>🗺️ Tour of <strong>{meta.owner}/{meta.repo}</strong> · step {n + 1} of {state.steps.length}</>
@@ -84,7 +86,7 @@ export function TourPanel({ state, onAsk }: { state: TourState; onAsk: (index: n
       </ol>
       <details>
         <summary>How to run</summary>
-        <p class="pre">{tour.how_to_run}</p>
+        {meta.pr ? <Markdown text={tour.how_to_run} sources={[]} /> : <p class="pre">{tour.how_to_run}</p>}
       </details>
       <details>
         <summary>{issue ? 'Tips for this issue' : 'How to contribute'}</summary>

@@ -31,6 +31,8 @@ export interface TourMeta {
   defaultBranch?: string;
   /** Set for "Help me fix this issue" walkthroughs. */
   issue?: { number: number; title: string; url: string; labels: string[] };
+  /** Set for pull request tours (steps open at the PR's head commit). */
+  pr?: { number: number; title: string; url: string };
 }
 
 export interface TourResult {
@@ -65,6 +67,7 @@ export interface TourStart {
   partial: boolean;
   expectedSteps: number;
   issue?: { number: number; title: string; url: string; labels: string[] };
+  pr?: { number: number; title: string; url: string };
   /** Repo tours: all steps, planned by Kitty, ready at once (their notes improve as the model writes). */
   draft?: TourStep[];
 }
@@ -77,6 +80,7 @@ export function streamingState(start: TourStart, steps: TourStep[], login?: stri
       owner: start.owner, repo: start.repo, sha: start.sha, partial: start.partial, cached: false, provider: '',
       repaired: false, droppedSteps: [], unreadableFiles: 0, defaultBranch: start.defaultBranch,
       ...(start.issue ? { issue: start.issue } : {}),
+      ...(start.pr ? { pr: start.pr } : {}),
     },
   };
   return { ...startState(result, login), streaming: true, expectedSteps: start.expectedSteps };
@@ -148,7 +152,7 @@ export function tourContext(s: TourState, index = s.currentIndex): TourContextPa
   if (!step) return null;
   return {
     repo: `${s.owner}/${s.repo}`,
-    summary: `${s.result.meta.issue ? `Walkthrough for fixing issue #${s.result.meta.issue.number}: ${s.result.meta.issue.title}. ` : ''}${s.result.tour.summary}`.slice(0, 2000),
+    summary: `${s.result.meta.issue ? `Walkthrough for fixing issue #${s.result.meta.issue.number}: ${s.result.meta.issue.title}. ` : ''}${s.result.meta.pr ? `Tour of the changes in pull request #${s.result.meta.pr.number}: ${s.result.meta.pr.title}. ` : ''}${s.result.tour.summary}`.slice(0, 2000),
     stepNumber: i + 1,
     totalSteps: s.steps.length,
     step: { path: step.path, title: step.title, what: step.what, why_it_matters: step.why_it_matters },

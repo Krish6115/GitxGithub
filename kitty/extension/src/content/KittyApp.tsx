@@ -45,11 +45,11 @@ export function KittyApp() {
   const prNo = pullNumberFromUrl(t.href);
   const ciRun = actionsRunFromUrl(t.href);
   useEffect(() => setPanel((p) => (p === 'preflight' ? 'none' : p)), [prNo]);
-  const startTour = (issue?: number): void => {
+  const startTour = (issue?: number, pr?: number): void => {
     setMenuOpen(false);
     setPanel('none');
     setLastIssue(issue);
-    t.start(issue);
+    t.start(issue, pr);
   };
   // actions from the side panel chat ("find me an issue... take me there") run here once this page loads
   usePendingAction(t.href, (a) => {
@@ -105,6 +105,7 @@ export function KittyApp() {
       <div class="bubble tour" data-kitty="step">
         <div class="meta">
           {t.tour.result.meta.issue && <span class="badge" title={t.tour.result.meta.issue.title}>Issue #{t.tour.result.meta.issue.number}</span>}
+          {t.tour.result.meta.pr && <span class="badge" title={t.tour.result.meta.pr.title}>PR #{t.tour.result.meta.pr.number}</span>}
           Step {n + 1} of {t.tour.streaming ? `~${Math.max(total, t.tour.expectedSteps ?? total)}` : total}
           {t.tour.partial && <span class="badge" title="GitHub returned only part of this repository's file list">Large repo · partial tour</span>}
         </div>
@@ -193,6 +194,7 @@ export function KittyApp() {
               Check my PR
             </button>
           )}
+          {t.repo && prNo && <button class="ghost" data-kitty="pr-tour" onClick={() => startTour(undefined, prNo)}>Tour the changes</button>}
           {t.repo && <button class={issueNo || prNo || ciRun ? 'ghost' : ''} data-kitty="start-tour" onClick={() => startTour()}>Tour this repo</button>}
           {t.repo && !issueNo && !prNo && !ciRun && (
             <button

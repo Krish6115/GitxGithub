@@ -68,13 +68,13 @@ export function useTour() {
     setPhase({ kind: 'idle' });
   }, []);
 
-  /** Start a general tour, or (with `issue`) a walkthrough of the files to change for that issue. */
-  const start = useCallback((issue?: number) => {
+  /** Start a general tour, a walkthrough of the files to change for `issue`, or a tour of `pr`'s changed files. */
+  const start = useCallback((issue?: number, pr?: number) => {
     if (!repo) return;
     portRef.current?.disconnect();
     const port = chrome.runtime.connect({ name: TOUR_PORT });
     portRef.current = port;
-    setPhase({ kind: 'loading', message: issue ? `Kitty is reading issue #${issue}…` : 'Kitty is getting ready…' });
+    setPhase({ kind: 'loading', message: issue ? `Kitty is reading issue #${issue}…` : pr ? `Kitty is reading pull request #${pr}…` : 'Kitty is getting ready…' });
     let opened = false;
     port.onMessage.addListener((e: TourPortEvent) => {
       if (e.type === 'progress' && e.stage !== 'ping') setPhase({ kind: 'loading', message: e.message });
@@ -92,7 +92,7 @@ export function useTour() {
       }
     });
     const login = signedInLogin();
-    port.postMessage({ type: 'start', owner: repo.owner, repo: repo.repo, ...(issue ? { issue } : {}), ...(login ? { login } : {}) });
+    port.postMessage({ type: 'start', owner: repo.owner, repo: repo.repo, ...(issue ? { issue } : {}), ...(pr ? { pr } : {}), ...(login ? { login } : {}) });
   }, [repo?.owner, repo?.repo]);
 
   return { href, repo, tour, phase, setPhase, onTourRepo, atCurrentStep, goTo, exit, start };

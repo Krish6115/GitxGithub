@@ -3,7 +3,7 @@
 export const TOUR_PORT = 'kitty-tour';
 
 /** `issue`: build a walkthrough for fixing that issue. `login`: the signed-in GitHub user (for fork commands). */
-export type TourPortRequest = { type: 'start'; owner: string; repo: string; issue?: number; login?: string };
+export type TourPortRequest = { type: 'start'; owner: string; repo: string; issue?: number; pr?: number; login?: string };
 
 /** One-shot JSON calls the content script asks the service worker to make (content scripts can't call the server). */
 export const API_PATHS = ['/issues', '/preflight'] as const;

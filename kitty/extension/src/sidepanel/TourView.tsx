@@ -1,5 +1,7 @@
 // The running repo tour, shown at the top of the chat: summary, stack, clickable steps (open or ask about each),
 // how to run / contribute, tips.
+import { useState } from 'preact/hooks';
+import { contextPack, contextPackFilename } from '../shared/context-pack';
 import { contributionPlan } from '../shared/contribute';
 import { stepUrl } from '../shared/github-page';
 import { Markdown } from '../shared/Markdown';
@@ -11,6 +13,32 @@ export async function openStep(state: TourState, i: number): Promise<void> {
   const step = next.steps[next.currentIndex];
   const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
   if (tab?.id !== undefined && step) await chrome.tabs.update(tab.id, { url: stepUrl(next, next.sha, step.path) });
+}
+
+/** Copy or download the tour as a brief for an AI assistant. */
+function ContextPack({ state }: { state: TourState }) {
+  const [copied, setCopied] = useState(false);
+  const md = (): string => contextPack(state);
+  const download = (): void => {
+    const url = URL.createObjectURL(new Blob([md()], { type: 'text/markdown' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = contextPackFilename(state);
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  return (
+    <section class="context-pack" data-kitty="context-pack">
+      <p class="small">Handing this repo to an AI? Give it Kitty's map first.</p>
+      <div class="row">
+        <button class="small" disabled={state.streaming} onClick={() => void navigator.clipboard.writeText(md()).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); })}>
+          {copied ? 'Copied' : 'Copy context for your AI'}
+        </button>
+        <button class="ghost small" disabled={state.streaming} onClick={download}>Download .md</button>
+      </div>
+      {state.streaming && <p class="muted small">Ready when Kitty finishes the tour.</p>}
+    </section>
+  );
 }
 
 export function TourPanel({ state, onAsk }: { state: TourState; onAsk: (index: number) => void }) {
@@ -63,6 +91,7 @@ export function TourPanel({ state, onAsk }: { state: TourState; onAsk: (index: n
         {!issue && <p class="pre">{tour.how_to_contribute}</p>}
         {tour.good_first_issue_tips.length > 0 && <ul>{tour.good_first_issue_tips.map((t) => <li key={t}>{t}</li>)}</ul>}
       </details>
+      <ContextPack state={state} />
       <p class="muted small">Commit {meta.sha.slice(0, 7)} · {meta.provider}{meta.cached ? ' · cached' : ''}</p>
     </details>
   );

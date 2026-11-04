@@ -25,6 +25,8 @@ export function SettingsView() {
           kittyKey: s.kittyKey?.trim() || '',
           githubToken: s.githubToken?.trim() || '',
           explainPill: s.explainPill !== false,
+          explainButtons: s.explainButtons !== false,
+          level: s.level ?? 'auto',
         }).then(() => setSaved(true));
       }}
     >
@@ -45,6 +47,23 @@ export function SettingsView() {
           onChange={(e) => { setSaved(false); setS({ ...s, explainPill: (e.target as HTMLInputElement).checked }); }}
         />
         Show an “Ask Kitty” button when I select text on GitHub
+      </label>
+      <label>
+        How Kitty explains things
+        <select value={s.level ?? 'auto'} onChange={(e) => { setSaved(false); setS({ ...s, level: (e.target as HTMLSelectElement).value as Settings['level'] }); }}>
+          <option value="auto">Automatic (follows your Git path)</option>
+          <option value="beginner">Beginner: step by step, terms explained</option>
+          <option value="intermediate">Intermediate: concise, tricky parts only</option>
+          <option value="advanced">Advanced: just the commands and edge cases</option>
+        </select>
+      </label>
+      <label class="check">
+        <input
+          type="checkbox"
+          checked={s.explainButtons !== false}
+          onChange={(e) => { setSaved(false); setS({ ...s, explainButtons: (e.target as HTMLInputElement).checked }); }}
+        />
+        Explain GitHub buttons (Sync fork, Squash and merge…) when I hover them
       </label>
       <p class="muted small">The right-click menu “Ask Kitty about this” always works. Keys stay in this browser and are only sent to the Kitty server above, never to web pages.</p>
       <div class="row">

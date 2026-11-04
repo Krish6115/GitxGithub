@@ -12,6 +12,8 @@ import { TourPanel } from './TourView';
 import { activePageContext, runOnPage, Thinking } from './chat-helpers';
 import { LearningPath, noteQuestion } from './LearningPath';
 import { scenarioFor } from '../shared/practice-scenarios';
+import { getSettings, tutorLevel } from '../shared/settings';
+import { explored, SKILLS_KEY, type Progress } from '../shared/skills';
 import { LEARN_FOCUS_KEY, type LearnFocus } from '../shared/learn';
 
 type Assistant = Extract<ChatMessage, { role: 'assistant' }>;
@@ -117,7 +119,8 @@ export function ChatView() {
     if (ctx) setPage(ctx);
     const pageBody = ctx ? { page: { url: ctx.url, title: ctx.title, pageType: ctx.pageType, selection: ctx.selection, text: ctx.text, truncated: ctx.truncated } } : {};
     try {
-      await postStream('/tutor', { question: q, history, ...pageBody, ...(tourCtx ? { tour: tourCtx } : {}) }, (event, data) => {
+      const level = tutorLevel((await getSettings()).level, explored((await chrome.storage.local.get(SKILLS_KEY))[SKILLS_KEY] as Progress | undefined ?? {}).length);
+      await postStream('/tutor', { question: q, history, level, ...pageBody, ...(tourCtx ? { tour: tourCtx } : {}) }, (event, data) => {
         const d = data as Record<string, unknown>;
         if (event === 'sources') updateLast((m) => ({ ...m, sources: d.sources as ChatSource[] }));
         else if (event === 'files') updateLast((m) => ({ ...m, files: { repo: String(d.repo), files: d.files as { path: string; url: string }[] } }));

@@ -83,6 +83,13 @@ export function formatRepoFiles(r: RepoFiles, nonce: string): string {
   return r.files.map((f) => untrusted(`file ${f.path} (${f.url})`, f.text, nonce)).join('\n\n');
 }
 
+export type Level = 'beginner' | 'intermediate' | 'advanced';
+export const LEVEL_NOTES: Record<Level, string> = {
+  beginner: 'LEARNER LEVEL: beginner. Explain terms the first time you use them (commit, branch, remote…), use one everyday analogy, go one step at a time, and warn before any command that can lose work or rewrite history.',
+  intermediate: 'LEARNER LEVEL: intermediate. Assume the basics (commit, branch, push, pull). Be concise; explain only the tricky parts and the safe alternative.',
+  advanced: 'LEARNER LEVEL: advanced. Be brief: the exact commands, flags and edge cases, no basic explanations. Keep the risk warnings.',
+};
+
 export function tutorMessages(
   question: string,
   history: TutorTurn[],
@@ -92,6 +99,7 @@ export function tutorMessages(
   nonce = randomBytes(6).toString('hex'),
   tour?: TourContext,
   repoFiles?: RepoFiles | null,
+  level?: Level,
 ): ChatMessage[] {
   const sources = chunks.length ? formatSources(chunks) : '(no sources found)';
   const pageBlock = page ? `\n\nPAGE:\n${formatPage(page, nonce)}` : '';
@@ -107,6 +115,6 @@ export function tutorMessages(
   return [
     { role: 'system', content: TUTOR_SYSTEM_PROMPT },
     ...history.map((t) => ({ role: t.role, content: t.content }) as ChatMessage),
-    { role: 'user', content: `SOURCES:\n\n${sources}${note}${tourBlock}${filesBlock}${pageBlock}\n\nQUESTION: ${question}` },
+    { role: 'user', content: `SOURCES:\n\n${sources}${note}${tourBlock}${filesBlock}${pageBlock}${level ? `\n\n${LEVEL_NOTES[level]}` : ''}\n\nQUESTION: ${question}` },
   ];
 }

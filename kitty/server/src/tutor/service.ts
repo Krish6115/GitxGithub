@@ -116,7 +116,7 @@ export async function* streamTutor(deps: TutorDeps, req: TutorRequest, signal?: 
   if (repoFiles) yield { type: 'files', repo: repoFiles.repo, files: repoFiles.files.map((f) => ({ path: f.path, url: f.url })) };
   const request = {
     kind: 'tutor' as const,
-    messages: tutorMessages(req.question, history, chunks, weak, req.page, undefined, req.tour, repoFiles),
+    messages: tutorMessages(req.question, history, chunks, weak, req.page, undefined, req.tour, repoFiles, req.level),
     ...(isShortQuestion(req.question) || aboutPage ? { reasoningEffort: 'none' as const } : {}),
     firstTokenMs: FIRST_TOKEN_MS,
     totalMs: TUTOR_DEADLINE_MS + 45_000,

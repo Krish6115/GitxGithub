@@ -28,3 +28,13 @@ describe('checkServer', () => {
     expect(providerLabel('bharatcode')).toMatch(/BharatCode/);
   });
 });
+
+describe('tutor level', () => {
+  it('follows the Git path on auto, or the chosen level', async () => {
+    const { tutorLevel } = await import('./settings');
+    expect(tutorLevel('auto', 0)).toBe('beginner');
+    expect(tutorLevel(undefined, 5)).toBe('intermediate');
+    expect(tutorLevel('auto', 12)).toBe('advanced');
+    expect(tutorLevel('beginner', 12)).toBe('beginner');
+  });
+});

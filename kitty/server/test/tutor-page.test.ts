@@ -56,3 +56,11 @@ describe('tutor tour context', () => {
     expect(msg).toContain('pkg/cmd/login.go');
   });
 });
+
+describe('learner level', () => {
+  it('adds a level note only when a level is given, and validates it', () => {
+    expect(tutorMessages('q', [], [], false, undefined, 'n', undefined, null, 'beginner').at(-1)!.content).toContain('LEARNER LEVEL: beginner');
+    expect(tutorMessages('q', [], [], false).at(-1)!.content).not.toContain('LEARNER LEVEL');
+    expect(TutorRequestSchema.safeParse({ question: 'q', level: 'expert' }).success).toBe(false);
+  });
+});

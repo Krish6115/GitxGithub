@@ -38,6 +38,8 @@ export const TutorRequestSchema = z.object({
   history: z.array(TutorTurnSchema).max(40).default([]),
   page: PageContextSchema.optional(),
   tour: TourContextSchema.optional(),
+  /** How much the learner already knows: changes the depth and tone of the answer, not the facts. */
+  level: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
 });
 export type TutorRequest = z.infer<typeof TutorRequestSchema>;
 

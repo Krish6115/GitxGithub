@@ -9,6 +9,16 @@ export interface Settings {
   githubToken?: string;
   /** Show the floating "Ask Kitty" button when text is selected on GitHub (default on). */
   explainPill?: boolean;
+  /** Tutor depth: "auto" follows the learning path (beginner until a few skills are explored). */
+  level?: 'auto' | 'beginner' | 'intermediate' | 'advanced';
+  /** Explain what GitHub's own buttons do in Git terms when you hover them (default on). */
+  explainButtons?: boolean;
+}
+
+/** The level sent to the tutor: the chosen one, or (auto) from how many skills the learner has explored. */
+export function tutorLevel(setting: Settings['level'], explored: number): 'beginner' | 'intermediate' | 'advanced' {
+  if (setting && setting !== 'auto') return setting;
+  return explored < 4 ? 'beginner' : explored < 10 ? 'intermediate' : 'advanced';
 }
 
 const KEY = 'kitty:settings';

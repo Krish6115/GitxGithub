@@ -1,6 +1,7 @@
 // PR pre-flight check: what maintainers commonly bounce a pull request for, checked with plain rules (no model).
 import type { GitHubClient, Pull, PullCommit, PullFile } from './client.js';
 import { likelyConflicts, rescueSteps, type ConflictRescue } from './conflicts.js';
+import { diffChecks } from './diff-checks.js';
 
 export type CheckStatus = 'pass' | 'warn' | 'fail' | 'info';
 
@@ -108,6 +109,9 @@ export function preflightChecks(input: PreflightInput): PreflightResult {
   const tests = files.filter((f) => TEST_FILE.test(f.filename));
   if (code.length > 0 && tests.length === 0) add({ id: 'tests', status: 'warn', title: 'No test changes', detail: `${code.length} code file${code.length > 1 ? 's' : ''} changed but no tests. Most maintainers ask for a test that covers the change.` });
   else if (tests.length > 0) add({ id: 'tests', status: 'pass', title: 'Includes tests', detail: `${tests.length} test file${tests.length > 1 ? 's' : ''} changed.` });
+
+  // 4b. What the diff itself adds (secrets, conflict markers, debug output)
+  checks.push(...diffChecks(files, pull.base.ref, remote));
 
   // 5. Commit hygiene
   const merges = commits.filter((c) => c.parents.length > 1);

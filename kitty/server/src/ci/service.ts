@@ -72,7 +72,10 @@ export async function* streamCiExplain(deps: { github: GitHubClient; provider: P
     const state = run.conclusion ?? run.status ?? 'unknown';
     throw new KittyError('bad_request', state === 'success' ? 'This run passed: nothing failed.' : `No failed job in this run yet (status: ${state}).`);
   }
-  const log = await github.getJobLog(req.owner, req.repo, failed.job.id, 400_000).catch(() => null);
+  const log = await github.getJobLog(req.owner, req.repo, failed.job.id, 400_000).catch((e: unknown) => {
+    console.warn(`[kitty] job log fetch failed: ${e instanceof Error ? e.message : String(e)}`);
+    return null;
+  });
   let excerpt: string;
   let headline = '';
   let from: 'log' | 'annotations' = 'log';

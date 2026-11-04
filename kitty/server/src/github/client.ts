@@ -194,7 +194,11 @@ export function createGitHubClient(opts: GitHubClientOptions = {}): GitHubClient
     async getJobLog(o, r, job, maxChars) {
       if (!opts.token) return null; // GitHub only serves logs to signed-in callers
       const res = await doFetch(`${api}/repos/${o}/${r}/actions/jobs/${job}/logs`, { headers });
-      if (!res.ok) return null;
+      if (!res.ok) {
+        // no secrets here: just why GitHub refused (shows in the host's logs)
+        console.warn(`[kitty] job log ${o}/${r}#${job}: HTTP ${res.status} ${(await res.text().catch(() => '')).slice(0, 160)}`);
+        return null;
+      }
       const text = await res.text();
       return text.length > maxChars ? text.slice(-maxChars) : text;
     },

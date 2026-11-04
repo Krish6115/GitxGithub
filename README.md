@@ -27,7 +27,7 @@ A Chrome extension that lives on github.com:
 - ✈️ **Check my PR:** a pre-flight check for what maintainers usually send back (including leaked secrets, conflict markers and debug code in the diff), with a fix for each problem, a merge-conflict rescue and a drafted description and commit message.
 - 🔎 **Tour the changes:** walk through a pull request's changed files, each diff explained.
 - 🚦 **Why did this fail?:** on a failed GitHub Actions run, Kitty finds the real error in the log and explains the fix.
-- 🤖 **Context for your AI:** copy any finished tour as a Markdown brief to paste into Copilot, Claude or Cursor.
+- 🤖 **Context for your AI:** copy any finished tour as a Markdown brief to paste into Copilot, ChatGPT or Cursor.
 - 🎓 **Your Git path:** see which Git skills you've explored, what to learn next, and take a quick quiz (stored only in your browser).
 
 **Install:** download `kitty-extension-v0.6.2.zip` from the [latest release](https://github.com/Krish6115/GitKitty/releases/latest), unzip it, open `chrome://extensions`, turn on **Developer mode**, then **Load unpacked**.

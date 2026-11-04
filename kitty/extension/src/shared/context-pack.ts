@@ -1,5 +1,5 @@
 // "Copy context for your AI": a short Markdown brief built from a finished tour (no model call), to paste into
-// Copilot, Claude, Cursor or any assistant before asking it to change the code.
+// Copilot, ChatGPT, Cursor or any assistant before asking it to change the code.
 import { stepUrl } from './github-page';
 import type { TourState } from './tour';
 

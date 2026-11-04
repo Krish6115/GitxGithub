@@ -21,6 +21,8 @@ export type ChatMessage =
       error?: string;
       /** A saved, reviewed answer to a common question (served instantly, no tokens). */
       instant?: boolean;
+      /** A pasted Git error Kitty recognised (rule id). */
+      diagnosis?: string;
       /** Something the answer asked Kitty to do (open a repo, explain an issue, find issues...). */
       action?: import('./actions').KittyAction;
       /** Repo files Kitty read to answer a question about the code. */

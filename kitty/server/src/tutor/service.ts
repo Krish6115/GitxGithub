@@ -10,6 +10,7 @@ import { parseAction, type KittyAction } from './actions.js';
 import type { FaqMatcher } from './faq.js';
 import { isRepoCodeQuestion, repoOf, type RepoFiles } from '../github/repo-files.js';
 import { worthRewriting } from '../rag/rewrite.js';
+import { diagnose } from './git-errors.js';
 
 /** Below this top BM25 score the sources are treated as not relevant (calibrated: off-topic <= ~31, eval questions >= ~124). */
 export const WEAK_SCORE = 20;
@@ -30,7 +31,7 @@ export type TutorEvent =
   /** Repo files Kitty read to answer a question about the code. */
   | { type: 'files'; repo: string; files: { path: string; url: string }[] }
   /** `instant`: a saved, reviewed answer to a common question (no model call). */
-  | { type: 'done'; usage: Usage | null; truncated: boolean; unverifiedFlags: string[]; instant?: boolean };
+  | { type: 'done'; usage: Usage | null; truncated: boolean; unverifiedFlags: string[]; instant?: boolean; diagnosis?: string };
 
 /** The whole answer must start within this long, retry included; the model's own limits are tighter per attempt. */
 export const TUTOR_DEADLINE_MS = 45_000;
@@ -77,6 +78,15 @@ export async function* streamTutor(deps: TutorDeps, req: TutorRequest, signal?: 
     yield { type: 'sources', weak: false, sources: [] };
     yield { type: 'delta', text: chat };
     yield { type: 'done', usage: null, truncated: false, unverifiedFlags: [], instant: true };
+    return;
+  }
+  // a pasted Git error: recognised by rules, answered at once with exact recovery commands (no model)
+  const diag = diagnose(req.question);
+  if (diag) {
+    const chunks = deps.retrieve(diag.rule.title, 2);
+    yield { type: 'sources', weak: false, sources: chunks.map((c, i) => ({ n: i + 1, title: c.title, headingPath: c.headingPath, sourceFile: c.sourceFile, sourceUrl: c.sourceUrl, license: c.license })) };
+    yield { type: 'delta', text: `### ${diag.rule.title}\n\n${diag.answer}${chunks.length ? '\n\nRead more in the sources below.' : ''}` };
+    yield { type: 'done', usage: null, truncated: false, unverifiedFlags: [], instant: true, diagnosis: diag.rule.id };
     return;
   }
   const saved = deps.faq?.match(req.question, history);

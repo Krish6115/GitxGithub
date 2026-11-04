@@ -25,6 +25,7 @@ export function ChatView() {
   const [page, setPage] = useState<PageContext | null>(null);
   const [tour, setTour] = useState<TourState | null>(null);
   const [focus, setFocus] = useState<ChatFocus | null>(null);
+  const [pasteMode, setPasteMode] = useState(false);
   const busy = messages.at(-1)?.role === 'assistant' && (messages.at(-1) as Assistant).status === 'streaming';
 
   useEffect(() => {
@@ -105,6 +106,7 @@ export function ChatView() {
     const history = toHistory(messages);
     void noteQuestion(q);
     setInput('');
+    setPasteMode(false);
     // while a tour runs, the question carries the step: the one the user picked, or the step on screen
     const tourCtx = tour ? tourContext(tour, focusIndex ?? tour.currentIndex) : null;
     const about = focusIndex !== null && tourCtx ? `Step ${tourCtx.stepNumber}: ${tourCtx.step.path}` : undefined;
@@ -131,7 +133,7 @@ export function ChatView() {
             void runOnPage(action);
           }
         }
-        else if (event === 'done') updateLast((m) => ({ ...m, status: 'done', unverifiedFlags: d.unverifiedFlags as string[], truncated: Boolean(d.truncated), ...(d.instant ? { instant: true } : {}) }));
+        else if (event === 'done') updateLast((m) => ({ ...m, status: 'done', unverifiedFlags: d.unverifiedFlags as string[], truncated: Boolean(d.truncated), ...(d.instant ? { instant: true } : {}), ...(d.diagnosis ? { diagnosis: String(d.diagnosis) } : {}) }));
         else if (event === 'error') updateLast((m) => ({ ...m, status: 'error', error: errorText(String(d.code), String(d.message)) }));
       }, abort.signal);
       updateLast((m) => (m.status === 'streaming' ? { ...m, status: 'error', error: 'The answer ended unexpectedly.' } : m));
@@ -151,6 +153,7 @@ export function ChatView() {
             {[...(focusIndex !== null ? ['Explain this step in more detail', 'How does this file connect to the rest of the repo?'] : []), ...(page && readPage && focusIndex === null ? ['Explain this page', 'What should I look at first here?'] : []), 'How do I undo my last commit?', 'How do I sync my fork with upstream?', "What's the difference between merge and rebase?"].map((s) => (
               <button key={s} class="chip" onClick={() => void send(s)}>{s}</button>
             ))}
+            <button class="chip" data-kitty="paste-error" onClick={() => { setPasteMode(true); document.querySelector<HTMLTextAreaElement>('.composer textarea')?.focus(); }}>🩹 Paste a Git error</button>
             <LearningPath onAsk={(q) => void send(q)} />
           </div>
         )}
@@ -200,7 +203,9 @@ export function ChatView() {
                 </div>
               )}
               {m.status === 'error' && <p class="error">{m.error}</p>}
-              {m.instant && <p class="muted small" data-kitty="instant" title="A common question with a saved, checked answer from Kitty's sources">⚡ Saved answer, instant</p>}
+              {m.instant && (m.diagnosis
+                ? <p class="muted small" data-kitty="diagnosis" title="Recognised by Kitty's rules for common Git errors">🩹 Recognised Git error, instant</p>
+                : <p class="muted small" data-kitty="instant" title="A common question with a saved, checked answer from Kitty's sources">⚡ Saved answer, instant</p>)}
               {m.status === 'stopped' && <p class="muted small">Stopped.</p>}
               {m.truncated && <p class="muted small">The answer hit its length limit and may be incomplete.</p>}
               {m.unverifiedFlags && m.unverifiedFlags.length > 0 && (
@@ -236,7 +241,7 @@ export function ChatView() {
           value={input}
           maxLength={2000}
           rows={2}
-          placeholder={focusIndex !== null ? `Ask about step ${focusIndex + 1}…` : page && readPage ? "Ask about this page or any Git question…" : "Ask a Git question…"}
+          placeholder={pasteMode ? 'Paste the full Git error or terminal output here…' : focusIndex !== null ? `Ask about step ${focusIndex + 1}…` : page && readPage ? "Ask about this page or any Git question…" : "Ask a Git question…"}
           aria-label="Your question"
           onInput={(e) => setInput((e.target as HTMLTextAreaElement).value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(input); } }}

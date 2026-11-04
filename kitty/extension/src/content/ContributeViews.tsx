@@ -3,6 +3,7 @@ import { useState } from 'preact/hooks';
 import type { BeginnerIssues, CheckStatus, ConflictRescue, PreflightCheck, PreflightResult, RescueStep } from '../shared/contribute';
 import { CHAT_DRAFT_KEY } from '../shared/messages';
 import type { ApiState } from './useApi';
+import { DraftPr } from './DraftPr';
 
 const ICON: Record<CheckStatus, string> = { fail: '❌', warn: '⚠️', info: 'ℹ️', pass: '✅' };
 
@@ -119,7 +120,7 @@ function ConflictView({ rescue }: { rescue: ConflictRescue }) {
   );
 }
 
-export function PreflightView({ state, onClose, onHint }: { state: ApiState<PreflightResult>; onClose: () => void; onHint: () => void }) {
+export function PreflightView({ state, onClose, onHint, target }: { state: ApiState<PreflightResult>; onClose: () => void; onHint: () => void; target?: { owner: string; repo: string } }) {
   if (state.kind !== 'done') {
     return <div class="bubble panel" data-kitty="preflight"><Status state={state} loading="Kitty is checking this pull request…" onClose={onClose} /></div>;
   }
@@ -145,6 +146,7 @@ export function PreflightView({ state, onClose, onHint }: { state: ApiState<Pref
         </details>
       )}
       <p class="hint">Rule-based check: no AI tokens used.</p>
+      {target && <DraftPr owner={target.owner} repo={target.repo} pr={r.number} />}
       <div class="row"><button class="ghost" onClick={onClose}>Close</button></div>
     </div>
   );

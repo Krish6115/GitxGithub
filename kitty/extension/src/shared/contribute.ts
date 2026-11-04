@@ -111,6 +111,14 @@ export interface RescueStep {
   commands: string[];
   note?: string;
 }
+/** Mirror of the server's POST /draft-pr reply. */
+export interface DraftResult {
+  title: string;
+  description: string;
+  commit_message: string;
+  conventional: boolean;
+  usedTemplate: boolean;
+}
 /** Mirror of the server's merge-conflict rescue. */
 export interface ConflictRescue {
   likelyFiles: string[];

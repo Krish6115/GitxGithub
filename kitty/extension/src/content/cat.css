@@ -154,3 +154,8 @@ button.ghost:hover:not(:disabled) { background: rgb(175 184 193 / 0.2); }
 button.small { padding: 1px 8px; font-size: 12px; }
 .bubble details summary { cursor: pointer; font-size: 12px; color: #57606a; margin: 4px 0; }
 :host([data-theme="dark"]) .bubble details summary { color: #9da7b3; }
+.draft { margin: 8px 0; padding: 6px 8px; border: 1px solid rgb(127 127 127 / 0.3); border-radius: 8px; }
+.draft summary { cursor: pointer; margin-bottom: 4px; }
+.draft-field { margin: 6px 0; }
+.draft-field .check-title { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.draft-text { margin: 4px 0; white-space: pre-wrap; font-size: 12px; max-height: 180px; overflow: auto; background: rgb(127 127 127 / 0.08); padding: 6px; border-radius: 6px; }

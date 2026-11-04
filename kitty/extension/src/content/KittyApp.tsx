@@ -146,7 +146,7 @@ export function KittyApp() {
   } else if (panel === 'issues' && t.repo) {
     bubble = <IssuesView state={issuesApi.state} repo={`${t.repo.owner}/${t.repo.repo}`} onFix={(n) => startTour(n)} onClose={() => setPanel('none')} />;
   } else if (panel === 'preflight') {
-    bubble = <PreflightView state={preflightApi.state} onClose={() => setPanel('none')} onHint={() => setChatHint(true)} />;
+    bubble = <PreflightView state={preflightApi.state} onClose={() => setPanel('none')} onHint={() => setChatHint(true)} {...(t.repo ? { target: t.repo } : {})} />;
   } else if (menuOpen) {
     const askKitty = (
       <button

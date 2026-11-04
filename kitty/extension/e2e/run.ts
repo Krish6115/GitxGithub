@@ -8,6 +8,7 @@ import { chatActionE2E } from './chat-action.e2e.js';
 import { chatE2E } from './chat.e2e.js';
 import { explainE2E } from './explain.e2e.js';
 import { featuresE2E } from './features.e2e.js';
+import { learnE2E } from './learn.e2e.js';
 import { onboardingE2E } from './onboarding.e2e.js';
 import { tourE2E } from './tour.e2e.js';
 
@@ -29,6 +30,7 @@ const suites: Record<string, () => Promise<void>> = {
   chat: () => chatE2E(opt('question')),
   explain: () => explainE2E(),
   features: () => featuresE2E(opt('run'), opt('pr')),
+  learn: () => learnE2E(opt('repo')),
 };
 
 const health = await fetch('http://localhost:8787/health').then((r) => r.json() as Promise<{ provider?: string }>).catch(() => null);

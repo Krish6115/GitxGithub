@@ -19,7 +19,7 @@ export const BUTTON_HINTS: ButtonHint[] = [
     what: 'Brings your fork\'s branch up to date with the original repository (upstream), on GitHub.',
     git: ['git fetch upstream', 'git switch main', 'git merge upstream/main', 'git push origin main'], risk: 'safe',
     note: 'Your local clone is not updated: run git pull afterwards.' },
-  { id: 'discard-commits', match: /^discard \d* ?commits?$/i, title: 'Discard commits',
+  { id: 'discard-commits', match: /^discard commits?$/i, title: 'Discard commits',
     what: 'Makes your fork\'s branch identical to upstream, throwing away the commits only your fork has.',
     git: ['git fetch upstream', 'git reset --hard upstream/main', 'git push --force origin main'], risk: 'can_lose_work',
     note: 'Those commits disappear from your fork. Move them to another branch first if you need them.' },
@@ -58,7 +58,7 @@ export const BUTTON_HINTS: ButtonHint[] = [
   { id: 'compare-pr', match: /^compare & pull request$|^create pull request$/i, title: 'Pull request',
     what: 'Asks the maintainers to merge your branch. No Git command runs: it compares two branches on GitHub.',
     git: ['git push -u origin <branch>     # the branch must be on GitHub first', 'gh pr create                    # the same from the GitHub CLI'], risk: 'safe' },
-  { id: 'fork', match: /^fork( [\d.,]+k?)?$/i, title: 'Fork',
+  { id: 'fork', match: /^fork$/i, title: 'Fork',
     what: 'Makes your own copy of this repository on GitHub, so you can push branches and open pull requests.',
     git: ['git clone https://github.com/YOU/repo.git', 'git remote add upstream https://github.com/OWNER/repo.git'], risk: 'safe' },
   { id: 'commit-changes', match: /^commit changes\.*$/i, title: 'Commit changes',
@@ -66,7 +66,8 @@ export const BUTTON_HINTS: ButtonHint[] = [
     git: ['git add <file>', 'git commit -m "Update <file>"', 'git push'], risk: 'safe' },
 ];
 
-const norm = (s: string): string => s.replace(/\s+/g, ' ').trim();
+/** Visible text without counters: "Fork1.5k (1.5k)" -> "Fork", "Discard 3 commits" -> "Discard commits". */
+export const norm = (s: string): string => s.replace(/\(?\d[\d.,]*[km]?\)?/gi, ' ').replace(/\s+/g, ' ').trim();
 /** The hint for a button's text, if Kitty knows it. "Update branch" means Sync fork outside pull request pages. */
 export const hintFor = (text: string, href = ''): ButtonHint | undefined => {
   const t = norm(text);

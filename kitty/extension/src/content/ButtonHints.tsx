@@ -13,7 +13,7 @@ const DELAY_MS = 600;
 
 /** The button-like element under the pointer and its visible text. */
 function buttonAt(target: EventTarget | null): { el: Element; text: string } | null {
-  const el = target instanceof Element ? target.closest('button, summary, a[role="button"], a.btn, input[type="submit"]') : null;
+  const el = target instanceof Element ? target.closest('button, summary, a[role="button"], a[class*="btn"], a[class*="Button"], input[type="submit"]') : null;
   if (!el || el.closest('#kitty-root')) return null;
   const text = el instanceof HTMLInputElement ? el.value : (el.textContent ?? '');
   return { el, text };

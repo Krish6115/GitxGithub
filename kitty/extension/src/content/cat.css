@@ -159,6 +159,7 @@ button.small { padding: 1px 8px; font-size: 12px; }
 .draft-field { margin: 6px 0; }
 .draft-field .check-title { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
 .draft-text { margin: 4px 0; white-space: pre-wrap; font-size: 12px; max-height: 180px; overflow: auto; background: rgb(127 127 127 / 0.08); padding: 6px; border-radius: 6px; }
-.button-hint { position: fixed; width: 340px; z-index: 2147483646; pointer-events: none; font-size: 13px; }
+.button-hint { position: fixed; width: 340px; z-index: 2147483646; pointer-events: none; font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+.button-hint pre, .button-hint code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
 .button-hint .meta { display: flex; justify-content: space-between; gap: 6px; align-items: center; }
 .button-hint pre { margin: 4px 0; padding: 6px; border-radius: 6px; background: rgb(127 127 127 / 0.12); font-size: 11.5px; white-space: pre-wrap; }

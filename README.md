@@ -28,7 +28,12 @@ A Chrome extension that lives on github.com:
 - 🔎 **Tour the changes:** walk through a pull request's changed files, each diff explained.
 - 🚦 **Why did this fail?:** on a failed GitHub Actions run, Kitty finds the real error in the log and explains the fix.
 - 🤖 **Context for your AI:** copy any finished tour as a Markdown brief to paste into Copilot, ChatGPT or Cursor.
-- 🎓 **Your Git path:** see which Git skills you've explored, what to learn next, and take a quick quiz (stored only in your browser).
+- 🎓 **Learn tab:** 16 guided lessons, quizzes with spaced review and a Git health score (stored only in your browser).
+- 🧪 **Practice mode:** a safe, simulated repo with a live commit graph: try reset, rebase, revert, force push and recover with reflog without risking real work.
+- 🩹 **Explain my mistake:** paste a Git error and get what happened, the exact recovery commands and a risk label, instantly.
+- 🚀 **First PR guide:** one checklist from picking an issue to a merged pull request.
+- 🐾 **Why this button?:** hover GitHub's Sync fork, Squash and merge, Update branch and more to see what they do in Git terms.
+- 🎚️ **Answers at your level:** beginner, intermediate or advanced, automatically or by choice.
 
 **Install:** download `kitty-extension-v0.6.2.zip` from the [latest release](https://github.com/Krish6115/GitKitty/releases/latest), unzip it, open `chrome://extensions`, turn on **Developer mode**, then **Load unpacked**.
 

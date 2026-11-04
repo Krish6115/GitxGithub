@@ -138,3 +138,12 @@ describe('GitHub button hints', () => {
     expect(new Set(BUTTON_HINTS.map((h) => h.id)).size).toBe(BUTTON_HINTS.length);
   });
 });
+
+describe('button text cleanup', () => {
+  it('ignores counters GitHub glues onto button text', async () => {
+    const { hintFor, norm } = await import('./github-buttons');
+    expect(norm('Fork1.5k (1.5k)')).toBe('Fork');
+    expect(hintFor('Fork1.5k (1.5k)')?.id).toBe('fork');
+    expect(hintFor('Discard 3 commits')?.id).toBe('discard-commits');
+  });
+});

@@ -19,7 +19,7 @@ export const CiRequestSchema = z.object({
 export type CiRequest = z.infer<typeof CiRequestSchema>;
 
 export type CiEvent =
-  | { type: 'meta'; kind: 'ci'; risk: null; truncated: false; title: string; jobUrl: string | null; from: 'log' | 'annotations'; headline: string }
+  | { type: 'meta'; kind: 'ci'; risk: null; truncated: false; title: string; jobUrl: string | null; from: 'log' | 'annotations'; headline: string; logError?: string }
   | { type: 'delta'; text: string }
   | { type: 'done'; usage: Usage | null; truncated: boolean; unverifiedFlags: string[] };
 
@@ -72,10 +72,12 @@ export async function* streamCiExplain(deps: { github: GitHubClient; provider: P
     const state = run.conclusion ?? run.status ?? 'unknown';
     throw new KittyError('bad_request', state === 'success' ? 'This run passed: nothing failed.' : `No failed job in this run yet (status: ${state}).`);
   }
+  let logError: string | undefined;
   const log = await github.getJobLog(req.owner, req.repo, failed.job.id, 400_000).catch((e: unknown) => {
-    console.warn(`[kitty] job log fetch failed: ${e instanceof Error ? e.message : String(e)}`);
+    logError = e instanceof Error ? e.message : String(e);
     return null;
   });
+  const extra = logError ? { logError } : {};
   let excerpt: string;
   let headline = '';
   let from: 'log' | 'annotations' = 'log';
@@ -91,14 +93,14 @@ export async function* streamCiExplain(deps: { github: GitHubClient; provider: P
     const title = `${failed.job.name}${failed.step ? ` › ${failed.step}` : ''}`;
     if (onlyExitCode(annotations)) {
       // GitHub only says "exit code 1": the model could only guess, so say what is known and spend no tokens
-      yield { type: 'meta', kind: 'ci', risk: null, truncated: false, title, jobUrl: failed.job.html_url, from, headline };
+      yield { type: 'meta', kind: 'ci', risk: null, truncated: false, title, jobUrl: failed.job.html_url, from, headline, ...extra };
       yield { type: 'delta', text: noLogAnswer(failed.job.name, failed.step, failed.job.html_url) };
       yield { type: 'done', usage: null, truncated: false, unverifiedFlags: [] };
       return;
     }
   }
   const workflow = run.name ?? run.path;
-  yield { type: 'meta', kind: 'ci', risk: null, truncated: false, title: `${failed.job.name}${failed.step ? ` › ${failed.step}` : ''}`, jobUrl: failed.job.html_url, from, headline };
+  yield { type: 'meta', kind: 'ci', risk: null, truncated: false, title: `${failed.job.name}${failed.step ? ` › ${failed.step}` : ''}`, jobUrl: failed.job.html_url, from, headline, ...extra };
   const messages = ciMessages({ workflow, job: failed.job.name, ...(failed.step ? { step: failed.step } : {}), branch: run.head_branch, event: run.event, excerpt, from, nonce: randomBytes(6).toString('hex') });
   for await (const ev of streamWithEarlyRetry(deps.provider, { kind: 'explain', messages, reasoningEffort: 'none', maxTokens: 1500, ...(signal ? { signal } : {}) })) {
     if (ev.type === 'delta') yield ev;

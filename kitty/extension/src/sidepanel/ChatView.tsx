@@ -4,13 +4,15 @@ import { ApiError, postJson, postStream } from '../shared/api';
 import { actionLabel, stripAction, type KittyAction, type PageAction } from '../shared/actions';
 import type { BeginnerIssues } from '../shared/contribute';
 import { CHAT_KEY, sourceLabel, toHistory, trimChat, type ChatMessage, type ChatSource } from '../shared/chat';
-import { CHAT_DRAFT_KEY, errorText } from '../shared/messages';
+import { CHAT_DRAFT_KEY, errorText, SIDEPANEL_TAB_KEY } from '../shared/messages';
 import { Markdown } from '../shared/Markdown';
 import { pageLabel, READ_PAGE_KEY, type PageContext } from '../shared/page-context';
 import { CHAT_FOCUS_KEY, TOUR_STATE_KEY, tourContext, type ChatFocus, type TourState } from '../shared/tour';
 import { TourPanel } from './TourView';
 import { activePageContext, runOnPage, Thinking } from './chat-helpers';
 import { LearningPath, noteQuestion } from './LearningPath';
+import { scenarioFor } from '../shared/practice-scenarios';
+import { LEARN_FOCUS_KEY, type LearnFocus } from '../shared/learn';
 
 type Assistant = Extract<ChatMessage, { role: 'assistant' }>;
 
@@ -166,6 +168,15 @@ export function ChatView() {
                 </p>
               )}
               {m.content ? <Markdown text={stripAction(m.content)} sources={m.sources} /> : m.status === 'streaming' && <Thinking />}
+              {m.status === 'done' && (() => {
+                const q = messages[i - 1];
+                const sc = scenarioFor(`${q?.role === 'user' ? q.content : ''} ${m.content.slice(0, 400)}`);
+                return sc ? (
+                  <button class="ghost small" data-kitty="try-practice" onClick={() => void chrome.storage.session.set({ [LEARN_FOCUS_KEY]: { view: 'practice', scenario: sc.id } satisfies LearnFocus, [SIDEPANEL_TAB_KEY]: 'learn' })}>
+                    🧪 Try it safely: {sc.title}
+                  </button>
+                ) : null;
+              })()}
               {m.action && (
                 <div class="action-card" data-kitty="action">
                   <p>🐾 {actionLabel(m.action)}{m.action.type !== 'find_issues' && ': Kitty is taking you there.'}</p>

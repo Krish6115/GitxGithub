@@ -77,5 +77,32 @@ export const css = `
   .settings { display: flex; flex-direction: column; gap: 10px; } .settings label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; }
   .settings label span { font-weight: 400; }
   .settings label.check { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; } .settings label.check input { width: auto; }
+  .learn .subtabs { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .chip.active { border-color: var(--accent); background: rgb(35 134 54 / 0.15); font-weight: 600; }
+  .story { margin: 6px 0 2px; } .goal { margin: 2px 0 8px; }
+  .git-graph { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 4px; }
+  .git-graph .edge { stroke: var(--muted); stroke-width: 2; } .git-graph .edge.lost { stroke-dasharray: 3 3; opacity: 0.4; }
+  .git-graph .node circle { fill: var(--accent); stroke: var(--bg); stroke-width: 2; }
+  .git-graph .node.lost circle { fill: var(--muted); opacity: 0.45; }
+  .git-graph .cid { font: 10px ui-monospace, monospace; fill: var(--muted); text-anchor: middle; }
+  .git-graph .ref { font: 600 10px system-ui, sans-serif; fill: var(--fg); } .git-graph .ref.head { fill: var(--accent); } .git-graph .ref.remote { fill: var(--warn); }
+  .graph-empty { padding: 12px; text-align: center; }
+  .term { background: #0d1117; color: #e6edf3; border-radius: 8px; padding: 8px; max-height: 220px; overflow: auto; font: 12px ui-monospace, monospace; margin-top: 8px; }
+  .term pre { margin: 2px 0 8px; white-space: pre-wrap; color: #9da7b3; } .term pre.err { color: #f85149; }
+  .term .prompt { color: #3fb950; margin-right: 4px; } .term .muted { color: #9da7b3; }
+  .term .risk { font: 600 10px system-ui, sans-serif; padding: 1px 6px; border-radius: 8px; margin-left: 6px; }
+  .risk-safe { background: #dafbe1; color: #1a7f37; } .risk-rewrite { background: #fff8c5; color: #9a6700; } .risk-danger { background: #ffebe9; color: #cf222e; }
+  .term-input { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+  .term-input input { flex: 1; font: 12px ui-monospace, monospace; padding: 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); }
+  .solved { background: rgb(35 134 54 / 0.15); border: 1px solid var(--accent); border-radius: 8px; padding: 6px 8px; }
+  .lesson-steps { display: flex; gap: 4px; list-style: none; padding: 0; margin: 6px 0 10px; font-size: 12px; }
+  .lesson-steps li { flex: 1; text-align: center; padding: 3px; border-bottom: 3px solid var(--line); color: var(--muted); }
+  .lesson-steps li.current { border-color: var(--accent); color: var(--fg); font-weight: 600; } .lesson-steps li.done { border-color: rgb(35 134 54 / 0.5); }
+  .lesson-list, .checklist { list-style: none; padding: 0; margin: 6px 0; }
+  .lesson-list li { margin: 2px 0; } .lesson-list button.step { width: 100%; text-align: left; }
+  .checklist li { padding: 6px 0; border-bottom: 1px solid var(--line); } .checklist li.done strong { text-decoration: line-through; color: var(--muted); }
+  .checklist li.current { border-left: 3px solid var(--accent); padding-left: 6px; }
+  .checklist .check { display: flex; gap: 8px; align-items: center; } .checklist .check input { width: auto; }
+  .step-how { margin: 4px 0 0 24px; font-size: 13px; }
   @media (prefers-reduced-motion: reduce) { .thinking::after { animation: none; } }
 `;

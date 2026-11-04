@@ -3,14 +3,17 @@ import { useEffect, useState } from 'preact/hooks';
 import { SIDEPANEL_TAB_KEY } from '../shared/messages';
 import { ONBOARDED_KEY } from '../shared/onboarding';
 import { ChatView } from './ChatView';
+import { LearnView } from './LearnView';
 import { SettingsView } from './SettingsView';
 import { css } from './styles';
 import { WelcomeView } from './WelcomeView';
 
-type Tab = 'chat' | 'settings';
+type Tab = 'chat' | 'learn' | 'settings';
+const isTab = (t: unknown): t is Tab => t === 'chat' || t === 'learn' || t === 'settings';
 const TAB_KEY = SIDEPANEL_TAB_KEY;
 const TABS: { id: Tab; label: string }[] = [
   { id: 'chat', label: 'Ask Kitty' },
+  { id: 'learn', label: 'Learn' },
   { id: 'settings', label: 'Settings' },
 ];
 
@@ -24,9 +27,9 @@ function SidePanel() {
   }, []);
   useEffect(() => {
     // the cat's "Ask Kitty" menu item and a tour step's "Ask" button ask for the chat tab
-    void chrome.storage.session.get(TAB_KEY).then((r) => r[TAB_KEY] === 'settings' && setTab('settings'));
+    void chrome.storage.session.get(TAB_KEY).then((r) => isTab(r[TAB_KEY]) && setTab(r[TAB_KEY]));
     const onChange = (c: Record<string, chrome.storage.StorageChange>, area: string): void => {
-      if (area === 'session' && c[TAB_KEY]?.newValue) setTab(c[TAB_KEY].newValue === 'settings' ? 'settings' : 'chat');
+      if (area === 'session' && isTab(c[TAB_KEY]?.newValue)) setTab(c[TAB_KEY].newValue);
     };
     chrome.storage.onChanged.addListener(onChange);
     return () => chrome.storage.onChanged.removeListener(onChange);
@@ -53,6 +56,7 @@ function SidePanel() {
         ))}
       </nav>
       {tab === 'chat' && <ChatView />}
+      {tab === 'learn' && <LearnView />}
       {tab === 'settings' && <SettingsView />}
     </main>
   );

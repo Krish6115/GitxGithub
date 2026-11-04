@@ -125,3 +125,16 @@ describe('actionsRunFromUrl', () => {
     expect(actionsRunFromUrl('https://github.com/acme/app/pull/1')).toBeNull();
   });
 });
+
+describe('GitHub button hints', () => {
+  it('explains known buttons by their text, with context for "Update branch"', async () => {
+    const { hintFor, BUTTON_HINTS } = await import('./github-buttons');
+    expect(hintFor('  Squash and merge ')?.id).toBe('squash-merge');
+    expect(hintFor('Confirm squash and merge')?.id).toBe('squash-merge');
+    expect(hintFor('Discard 3 commits')?.risk).toBe('can_lose_work');
+    expect(hintFor('Update branch', 'https://github.com/a/b/pull/7')?.id).toBe('update-branch');
+    expect(hintFor('Update branch', 'https://github.com/me/b')?.id).toBe('sync-fork');
+    expect(hintFor('Code')).toBeUndefined();
+    expect(new Set(BUTTON_HINTS.map((h) => h.id)).size).toBe(BUTTON_HINTS.length);
+  });
+});

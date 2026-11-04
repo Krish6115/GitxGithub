@@ -1,4 +1,5 @@
 import { render } from 'preact';
+import { ButtonHints } from './ButtonHints';
 import { ExplainUI } from './ExplainUI';
 import { KittyApp } from './KittyApp';
 import { syncTheme } from './theme';
@@ -23,6 +24,7 @@ function mount(): void {
     <>
       <KittyApp />
       <ExplainUI hostId={HOST_ID} />
+      <ButtonHints />
     </>,
     container,
   );

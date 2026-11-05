@@ -5,7 +5,7 @@ They are not part of `npm test`: they need a browser, network access and the Kit
 
 ```bash
 cd kitty
-npm run build -w extension
+npm run build:e2e -w extension   # talks to the server on localhost
 npm run dev -w server            # in another terminal (mock model by default; LLM_PROVIDER=bharatcode for the real one)
 npm run e2e -w extension -- all  # or: cat | tour | chat | explain
 ```

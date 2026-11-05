@@ -13,7 +13,7 @@ Kitty is a pixel cat that lives on **github.com** (Chrome extension) and turns G
 
 ## Install
 
-1. Download `kitty-extension-v0.7.0.zip` from the [latest release](https://github.com/Krish6115/GitKitty/releases/latest) and unzip it.
+1. Download `kitty-extension-v0.7.1.zip` from the [latest release](https://github.com/Krish6115/GitKitty/releases/latest) and unzip it.
 2. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and pick the folder.
 3. The welcome screen checks the server connection. Open any repo and click the cat.
 
@@ -26,7 +26,7 @@ cd kitty
 npm ci
 cp server/.env.example server/.env   # add BHARATCODE_API_KEY, set LLM_PROVIDER=bharatcode
 npm run dev -w server                # http://localhost:8787 (mock model until LLM_PROVIDER=bharatcode)
-npm run build -w extension           # load kitty/extension/dist as an unpacked extension
+npm run build:e2e -w extension       # a build that talks to localhost; load kitty/extension/dist unpacked (plain build uses the hosted server)
 ```
 
 | Command | What it does |

@@ -25,7 +25,7 @@ const suites: Record<string, () => Promise<void>> = {
   'tour-ask': () => tourAskE2E(opt('repo')),
   contrib: () => contribE2E(opt('repo'), opt('pr')),
   'chat-action': () => chatActionE2E(opt('question')),
-  onboarding: () => onboardingE2E(opt('server')),
+  onboarding: () => onboardingE2E(),
   tour: () => tourE2E(opt('repo')),
   chat: () => chatE2E(opt('question')),
   explain: () => explainE2E(),

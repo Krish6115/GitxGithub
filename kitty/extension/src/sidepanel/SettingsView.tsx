@@ -30,7 +30,6 @@ export function SettingsView() {
         }).then(() => setSaved(true));
       }}
     >
-      <label>Kitty server URL<input type="url" required {...field('serverUrl')} /></label>
       <ServerCheckButton url={s.serverUrl} />
       <label>
         BharatCode API key <span class="muted small">(optional: use your own key)</span>
@@ -66,6 +65,11 @@ export function SettingsView() {
         Explain GitHub buttons (Sync fork, Squash and merge…) when I hover them
       </label>
       <p class="muted small">The right-click menu “Ask Kitty about this” always works. Keys stay in this browser and are only sent to the Kitty server above, never to web pages.</p>
+      <details class="advanced">
+        <summary class="muted small">Advanced: use a different Kitty server (for developers)</summary>
+        <label>Kitty server URL<input type="url" required {...field('serverUrl')} /></label>
+        <button type="button" class="ghost small" onClick={() => { setSaved(false); setS({ ...s, serverUrl: DEFAULT_SERVER_URL }); }}>Use the default server</button>
+      </details>
       <div class="row">
         <button type="submit">Save</button>
         {saved && <span class="muted small" role="status">Saved.</span>}

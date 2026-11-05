@@ -2,7 +2,7 @@
 import { join } from 'node:path';
 import { launch, log, OUT_DIR } from './launch.js';
 
-export async function onboardingE2E(serverUrl = 'http://localhost:8787'): Promise<void> {
+export async function onboardingE2E(): Promise<void> {
   const { ctx } = await launch({ width: 520, height: 900 }, false);
   const deadline = Date.now() + 10_000;
   let welcome = ctx.pages().find((p) => p.url().includes('?welcome'));
@@ -12,7 +12,7 @@ export async function onboardingE2E(serverUrl = 'http://localhost:8787'): Promis
   }
   if (!welcome) throw new Error('welcome tab did not open on install');
   log('welcome tab opened on install');
-  await welcome.getByLabel('Server URL').fill(serverUrl);
+  if (await welcome.getByLabel('Server URL').count()) throw new Error('the welcome screen should not ask for a server URL');
   await welcome.getByRole('button', { name: 'Test connection' }).click();
   const status = welcome.locator('[role="status"]');
   await status.waitFor({ timeout: 10_000 });

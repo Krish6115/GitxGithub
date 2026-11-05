@@ -1,5 +1,5 @@
 // User settings in chrome.storage.local. Keys are only ever sent to the Kitty server, never to GitHub pages.
-import { DEFAULT_SERVER_URL } from './config';
+import { DEFAULT_SERVER_URL, isLocalUrl } from './config';
 
 export interface Settings {
   serverUrl: string;
@@ -25,7 +25,10 @@ const KEY = 'kitty:settings';
 
 export async function getSettings(): Promise<Settings> {
   const stored = (await chrome.storage.local.get(KEY))[KEY] as Partial<Settings> | undefined;
-  return { serverUrl: DEFAULT_SERVER_URL, ...stored };
+  const s = { serverUrl: DEFAULT_SERVER_URL, ...stored };
+  // a localhost URL saved by an earlier development build: use the hosted server instead
+  if (isLocalUrl(s.serverUrl) && !isLocalUrl(DEFAULT_SERVER_URL)) s.serverUrl = DEFAULT_SERVER_URL;
+  return s;
 }
 
 export async function saveSettings(s: Partial<Settings>): Promise<void> {

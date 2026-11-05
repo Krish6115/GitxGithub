@@ -38,3 +38,13 @@ describe('tutor level', () => {
     expect(tutorLevel('beginner', 12)).toBe('beginner');
   });
 });
+
+describe('server URL', () => {
+  it('uses the hosted server by default and recognises local URLs', async () => {
+    const { HOSTED_SERVER_URL, isLocalUrl } = await import('./config');
+    expect(HOSTED_SERVER_URL).toBe('https://kitty-server.vercel.app');
+    expect(isLocalUrl('http://localhost:8787')).toBe(true);
+    expect(isLocalUrl('http://127.0.0.1:8787/')).toBe(true);
+    expect(isLocalUrl('https://kitty-server.vercel.app')).toBe(false);
+  });
+});

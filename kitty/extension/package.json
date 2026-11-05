@@ -1,11 +1,12 @@
 {
   "name": "@kitty/extension",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite build --watch --mode development",
     "build": "vite build",
+    "build:e2e": "vite build --mode e2e",
     "typecheck": "tsc -p tsconfig.json && tsc -p e2e/tsconfig.json",
     "e2e": "tsx e2e/run.ts",
     "icons": "tsx scripts/icons.ts",

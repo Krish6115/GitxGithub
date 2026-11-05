@@ -59,5 +59,36 @@ export async function learnE2E(repo = 'honojs/hono'): Promise<void> {
   await page.locator('#kitty-root [data-kitty="button-hint"]').waitFor({ timeout: 5000 });
   log('button hint:', (await page.locator('#kitty-root [data-kitty="button-hint"] .meta').innerText()).replace(/\s+/g, ' '));
   await page.screenshot({ path: join(OUT_DIR, 'learn-button-hint.png') });
+
+  // 6. "Show me how": the cat walks through GitHub's own page
+  await page.mouse.move(5, 500);
+  const kitty = (sel: string) => page.locator(`#kitty-root ${sel}`);
+  await kitty('button.cat').click();
+  await kitty('[data-kitty="show-me-how"]').click();
+  await kitty('[data-guide="explore-repo"]').click();
+  await kitty('[data-kitty="guide-step"]').waitFor({ timeout: 5000 });
+  await kitty('[data-kitty="highlight"]').waitFor({ timeout: 8000 });
+  const first = await kitty('[data-kitty="guide-step"] h3').innerText();
+  await kitty('[data-kitty="guide-next"]').click();
+  await page.waitForTimeout(1500);
+  const second = await kitty('[data-kitty="guide-step"] h3').innerText();
+  log(`guide: "${first}" -> "${second}", highlight shown`);
+  await page.screenshot({ path: join(OUT_DIR, 'learn-guide.png') });
+  await page.locator('#kitty-root [data-kitty="guide-step"] button', { hasText: 'Exit' }).click();
+
+  // 7. Copilot hand-off: a request to write code becomes a prepared Copilot prompt
+  await panel.bringToFront();
+  await panel.locator('.composer textarea').fill('Write a unit test for the router');
+  await panel.locator('.composer button[type="submit"]').click();
+  await panel.locator('[data-kitty="copilot-card"]').waitFor({ timeout: 30_000 });
+  const opened = ctx.waitForEvent('page');
+  await panel.locator('[data-kitty="ask-copilot"]').click();
+  const copilot = await opened;
+  await copilot.waitForLoadState('domcontentloaded');
+  log('copilot tab:', copilot.url());
+  // signed out in the test browser: GitHub redirects to its Copilot page and Kitty offers to copy the question
+  await copilot.locator('#kitty-root [data-kitty="copilot-note"]').waitFor({ timeout: 15_000 });
+  log('copilot note:', (await copilot.locator('#kitty-root [data-kitty="copilot-note"] p').innerText()).slice(0, 90));
+  await copilot.screenshot({ path: join(OUT_DIR, 'learn-copilot.png') });
   await ctx.close();
 }

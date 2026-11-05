@@ -7,7 +7,8 @@ import { answer, gitHealth, REVIEW_KEY, type Review } from '../shared/review';
 import { nextSkill, SKILLS, type Skill } from '../shared/skills';
 import { Markdown } from '../shared/Markdown';
 import { QuizCard, useLocal } from './QuizCard';
-import { useSkills } from './LearningPath';
+import { Quiz, useSkills } from './LearningPath';
+import { dueSkills } from '../shared/review';
 import { Icon } from '../shared/Icon';
 
 /** Ask the cited tutor about this skill in the chat tab. */
@@ -78,6 +79,7 @@ export function LessonsView({ skill, onPractice }: { skill?: string | undefined;
   const [review] = useLocal<Review>(REVIEW_KEY, {});
   const { progress: asked } = useSkills();
   const [open, setOpen] = useState<string | null>(skill ?? null);
+  const [quiz, setQuiz] = useState(false);
   useEffect(() => { if (skill) setOpen(skill); }, [skill]);
   const current = SKILLS.find((s) => s.id === open);
   if (current) {
@@ -89,6 +91,15 @@ export function LessonsView({ skill, onPractice }: { skill?: string | undefined;
     <div class="lessons" data-kitty="lessons">
       <p><strong>Git health: {gitHealth(asked, review)}/100</strong> · {done} of {SKILLS.length} lessons done</p>
       {next && <p>Up next: <button class="chip" data-kitty="lesson-next-skill" onClick={() => setOpen(next.id)}>{next.title}</button></p>}
+      {quiz ? (
+        <Quiz progress={asked} onDone={() => setQuiz(false)} />
+      ) : (
+        <div class="row">
+          <button class="ghost small" data-kitty="quiz-me" onClick={() => setQuiz(true)}>
+            <Icon name="history" size={12} /> {dueSkills(review).length ? `Review quiz (${dueSkills(review).length} due)` : 'Quiz me (3 questions)'}
+          </button>
+        </div>
+      )}
       <ol class="lesson-list">
         {SKILLS.map((s) => {
           const p = progress[s.id] ?? 0;

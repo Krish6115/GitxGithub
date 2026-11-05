@@ -1,6 +1,6 @@
 // The on-page Kitty: cat, menu, tour speech bubble and file highlight (rendered inside Kitty's shadow root).
 import { useEffect, useState } from 'preact/hooks';
-import { besideBox, CAT_SIZE, viewport } from './cat-motion';
+import { besideBox, CAT_SIZE, guideSpot, viewport } from './cat-motion';
 import { boxOf, findFileHeader, type Box } from './highlight';
 import { PixelCat } from './PixelCat';
 import { useCatMotion } from './useCatMotion';
@@ -13,6 +13,7 @@ import { actionsRunFromUrl, issueNumberFromUrl, pullNumberFromUrl } from '../sha
 import type { BeginnerIssues, PreflightResult } from '../shared/contribute';
 import { CHAT_FOCUS_KEY, type ChatFocus } from '../shared/tour';
 import { GuideBubble, GuidesMenu } from './GuideBubble';
+import { CatMenu } from './CatMenu';
 import { useGuide } from './useGuide';
 
 /** Re-find the file header after navigation (GitHub renders file views asynchronously) and track scroll/resize. */
@@ -78,9 +79,10 @@ export function KittyApp() {
   // During a tour the cat walks to the highlighted file header; otherwise it rests bottom-right.
   // anything Kitty is showing counts as "in use": a moved cat only walks home after a minute of nothing
   const busy = menuOpen || panel !== 'none' || t.phase.kind !== 'idle' || Boolean(t.tour && t.onTourRepo) || Boolean(g.state);
-  const cat = useCatMotion(box ? besideBox(box, vp) : null, loading, busy);
+  const spot = box && g.state ? guideSpot(box, vp) : null;
+  const cat = useCatMotion(box ? (spot ? spot.point : besideBox(box, vp)) : null, loading, busy);
   // Near the top the bubble goes under the cat, so the container is anchored by its top edge instead of its bottom.
-  const below = cat.pos.y < 280;
+  const below = spot ? spot.bubbleBelow : cat.pos.y < 280; // walkthroughs: the bubble opens on the side away from the target
   const anchor = below
     ? { top: `${Math.round(cat.pos.y)}px`, transition: `right ${cat.moveMs}ms linear, top ${cat.moveMs}ms linear` }
     : { bottom: `${Math.round(vp.height - cat.pos.y - CAT_SIZE)}px`, transition: `right ${cat.moveMs}ms linear, bottom ${cat.moveMs}ms linear` };
@@ -161,74 +163,25 @@ export function KittyApp() {
   } else if (panel === 'preflight') {
     bubble = <PreflightView state={preflightApi.state} onClose={() => setPanel('none')} onHint={() => setChatHint(true)} {...(t.repo ? { target: t.repo } : {})} />;
   } else if (menuOpen) {
-    const askKitty = (
-      <button
-        class={t.repo ? 'ghost' : ''}
-        data-kitty="ask"
-        onClick={() => {
-          void chrome.runtime.sendMessage({ type: 'open-chat' }).then((r: { ok?: boolean } | undefined) => {
-            if (r?.ok) setMenuOpen(false);
-            else setChatHint(true);
-          });
-        }}
-      >
-        Ask Kitty a Git question
-      </button>
-    );
+    const close = (): void => setMenuOpen(false);
     bubble = (
-      <div class="bubble menu">
-        {t.repo && ciRun ? (
-          <p>Hi! Want me to explain why this <strong>CI run</strong> failed and how to fix it?</p>
-        ) : t.repo && issueNo ? (
-          <p>Hi! Want help fixing <strong>issue #{issueNo}</strong>? I'll walk you through the files to change and give you the exact git commands.</p>
-        ) : t.repo && prNo ? (
-          <p>Hi! Want me to check <strong>PR #{prNo}</strong> for what maintainers usually send back?</p>
-        ) : t.repo ? (
-          <p>Hi! Want a guided walkthrough of <strong>{t.repo.owner}/{t.repo.repo}</strong>?</p>
-        ) : (
-          <p>Hi! Open a repository page for a tour, or ask me anything about Git.</p>
-        )}
-        <div class="row">
-          {t.repo && ciRun && (
-            <button data-kitty="ci-explain" onClick={() => { setMenuOpen(false); if (t.repo) requestCiExplain({ owner: t.repo.owner, repo: t.repo.repo, ...ciRun }); }}>
-              Why did this fail?
-            </button>
-          )}
-          {t.repo && issueNo && <button data-kitty="fix-this-issue" onClick={() => startTour(issueNo)}>Help me fix this issue</button>}
-          {t.repo && prNo && (
-            <button
-              data-kitty="preflight"
-              onClick={() => {
-                setMenuOpen(false);
-                setPanel('preflight');
-                if (t.repo) preflightApi.run({ owner: t.repo.owner, repo: t.repo.repo, pr: prNo });
-              }}
-            >
-              Check my PR
-            </button>
-          )}
-          {t.repo && prNo && <button class="ghost" data-kitty="pr-tour" onClick={() => startTour(undefined, prNo)}>Tour the changes</button>}
-          {t.repo && <button class={issueNo || prNo || ciRun ? 'ghost' : ''} data-kitty="start-tour" onClick={() => startTour()}>Tour this repo</button>}
-          {t.repo && !issueNo && !prNo && !ciRun && (
-            <button
-              class="ghost"
-              data-kitty="find-issues"
-              onClick={() => {
-                setMenuOpen(false);
-                setPanel('issues');
-                if (t.repo) issuesApi.run({ owner: t.repo.owner, repo: t.repo.repo });
-              }}
-            >
-              Find a good first issue
-            </button>
-          )}
-          {t.repo && (
-            <button class="ghost" data-kitty="show-me-how" onClick={() => { setMenuOpen(false); setPanel('guides'); }}>Show me how…</button>
-          )}
-          {askKitty}
-        </div>
-        {chatHint && <p class="hint">Click the Kitty icon in the toolbar to open the chat.</p>}
-      </div>
+      <CatMenu
+        repo={t.repo}
+        issueNo={issueNo}
+        prNo={prNo}
+        ciRun={Boolean(ciRun)}
+        chatHint={chatHint}
+        act={{
+          onCi: () => { close(); if (t.repo && ciRun) requestCiExplain({ owner: t.repo.owner, repo: t.repo.repo, ...ciRun }); },
+          onFixIssue: () => issueNo && startTour(issueNo),
+          onPreflight: () => { close(); setPanel('preflight'); if (t.repo && prNo) preflightApi.run({ owner: t.repo.owner, repo: t.repo.repo, pr: prNo }); },
+          onPrTour: () => prNo && startTour(undefined, prNo),
+          onTour: () => startTour(),
+          onFindIssues: () => { close(); setPanel('issues'); if (t.repo) issuesApi.run({ owner: t.repo.owner, repo: t.repo.repo }); },
+          onGuides: () => { close(); setPanel('guides'); },
+          onAsk: () => void chrome.runtime.sendMessage({ type: 'open-chat' }).then((r: { ok?: boolean } | undefined) => (r?.ok ? close() : setChatHint(true))),
+        }}
+      />
     );
   }
 

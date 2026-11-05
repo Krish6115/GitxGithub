@@ -57,3 +57,9 @@ describe('lessons and notes', () => {
     expect(scenarioFor('what is a fork?')).toBeUndefined();
   });
 });
+
+describe('practice suggestion for pasted errors', () => {
+  it('suggests the rejected-push scenario for a rejected push, not the revert one', () => {
+    expect(scenarioFor('! [rejected] main -> main (fetch first) Someone pushed new commits')?.id).toBe('rejected-push');
+  });
+});

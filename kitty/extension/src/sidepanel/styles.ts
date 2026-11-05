@@ -109,5 +109,8 @@ export const css = `
   .lesson-state { display: inline-block; width: 18px; color: var(--accent, #1a7f37); }
   .answer-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
   .copilot-card pre { max-height: 160px; overflow: auto; }
+  .path-summary { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 12px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; color: var(--fg); }
+  .chip.mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11.5px; }
+  .cmd-chips { margin-top: 6px; }
   @media (prefers-reduced-motion: reduce) { .thinking::after { animation: none; } }
 `;

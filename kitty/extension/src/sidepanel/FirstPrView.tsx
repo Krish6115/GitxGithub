@@ -6,6 +6,7 @@ import { LEARN_FOCUS_KEY, type LearnFocus } from '../shared/learn';
 import { Markdown } from '../shared/Markdown';
 import { TOUR_STATE_KEY, type TourState } from '../shared/tour';
 import { useLocal } from './QuizCard';
+import { stepsDoneBy } from '../shared/first-pr';
 import { SKILLS } from '../shared/skills';
 import { Icon } from '../shared/Icon';
 
@@ -50,6 +51,21 @@ export function FirstPrView() {
       done: { ...state.done, pick: true },
     });
   }, [tourIssue?.url]);
+  // tick steps the page you're on proves are done (your fork, a compare page, your pull request)
+  useEffect(() => {
+    const check = (): void => void chrome.tabs.query({ active: true, lastFocusedWindow: true }).then(([tab]) => {
+      const done = tab?.url ? stepsDoneBy(tab.url, state.issue, state.login) : [];
+      if (done.some((id) => !state.done[id])) setState({ ...state, done: { ...state.done, ...Object.fromEntries(done.map((id) => [id, true])) } });
+    });
+    check();
+    const onUpdated = (_id: number, info: { status?: string }): void => { if (info.status === 'complete') check(); };
+    chrome.tabs.onActivated.addListener(check);
+    chrome.tabs.onUpdated.addListener(onUpdated);
+    return () => {
+      chrome.tabs.onActivated.removeListener(check);
+      chrome.tabs.onUpdated.removeListener(onUpdated);
+    };
+  }, [state.issue?.repo, state.issue?.number, state.login, JSON.stringify(state.done)]);
   const issue = state.issue;
   const [owner = '', repo = ''] = issue?.repo.split('/') ?? [];
   const plan = issue ? contributionPlan({ owner, repo, defaultBranch: issue.defaultBranch, issue, login: state.login }) : null;

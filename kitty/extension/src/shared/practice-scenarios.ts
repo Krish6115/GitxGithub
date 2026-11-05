@@ -157,10 +157,10 @@ export const lostCommits = (s: SimState): string[] => {
 
 const TOPICS: [RegExp, string][] = [
   [/\breflog\b|\b(lost|recover|get back)\b.*\bcommits?\b|reset --hard/i, 'recover-reset'],
-  [/\brevert\b|\bpushed\b/i, 'revert-pushed'],
+  [/\b(rejected|non-fast-forward|force[- ]?push|--force)\b|\bpull --rebase\b/i, 'rejected-push'],
+  [/\brevert\b|\bundo\b.*\bpushed\b|\bpushed\b.*\bundo\b/i, 'revert-pushed'],
   [/\bundo\b.*\b(last )?commit\b|reset --soft|uncommit/i, 'undo-commit'],
   [/\brebas(e|ing)\b/i, 'rebase-feature'],
-  [/\b(rejected|non-fast-forward|force[- ]?push|--force)\b|\bpull --rebase\b/i, 'rejected-push'],
   [/\bcherry[- ]?pick/i, 'cherry-pick'],
   [/\bdetached\b/i, 'detached-head'],
 ];

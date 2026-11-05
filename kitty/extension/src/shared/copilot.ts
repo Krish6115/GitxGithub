@@ -10,6 +10,16 @@ export interface CopilotPending {
   at: number;
 }
 
+/** Where GitHub sends signed-out visitors (or accounts without Copilot) instead of the chat. */
+export const isCopilotDetour = (href: string): boolean => {
+  try {
+    const u = new URL(href);
+    return u.hostname === 'github.com' && (/^\/features\/copilot/.test(u.pathname) || (u.pathname === '/login' && /copilot/.test(u.search)));
+  } catch {
+    return false;
+  }
+};
+
 export const isCopilotPage = (href: string): boolean => {
   try {
     const u = new URL(href);

@@ -17,7 +17,7 @@ npm run e2e -w extension -- all  # or: cat | tour | chat | explain
 | `tour` | Start a tour from the cat menu; Next/Next/Back across file pages; browser back button; leave and resume. Option: `--repo owner/name`. |
 | `chat` | Cat menu "Ask Kitty" opens the side panel chat tab; a question streams an answer with citations. Option: `--question "..."`. |
 | `features` | "Why did this fail?" on a failed CI run (`--run owner/repo/actions/runs/N`); a PR tour at the head commit; the context pack; the PR draft; the learning-path quiz. |
-| `learn` | Practice mode solves a scenario and labels reset --hard; a lesson through its check; the first-PR guide; a pasted Git error answered instantly; the hover hint on GitHub's Fork button. |
+| `learn` | Practice mode solves a scenario and labels reset --hard; a lesson through its check; the first-PR guide; a pasted Git error answered instantly; the hover hint on GitHub's Fork button; a show-me-how walkthrough; the Copilot hand-off. |
 | `explain` | Selecting a git command shows the pill; the explanation streams; "Ask a follow-up"; the right-click path (simulated: Chrome's native menu can't be automated); Esc closes. |
 
 **Browser:** branded Chrome no longer loads unpacked extensions from the command line, so a Playwright Chromium is used.

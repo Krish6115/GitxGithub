@@ -48,3 +48,25 @@ describe('Copilot hand-off', () => {
     expect(p).toBe('Repository: Krish6115/GitKitty\nFile: kitty/server/src/lib/rate-limit.ts\n\nWrite a test for the rate limiter');
   });
 });
+
+describe('first PR guide auto-ticks', () => {
+  it('marks steps from the page you are on', async () => {
+    const { stepsDoneBy } = await import('./first-pr');
+    const issue = { repo: 'honojs/hono', number: 42 };
+    expect(stepsDoneBy('https://github.com/honojs/hono/issues/42', issue, 'me')).toEqual(['pick']);
+    expect(stepsDoneBy('https://github.com/me/hono', issue, 'me')).toEqual(['pick', 'fork']);
+    expect(stepsDoneBy('https://github.com/honojs/hono/compare/main...me:fix/42', issue, 'me')).toContain('commit');
+    expect(stepsDoneBy('https://github.com/honojs/hono/pull/99', issue, 'me')).toContain('push');
+    expect(stepsDoneBy('https://github.com/other/thing', issue, 'me')).toEqual([]);
+    expect(stepsDoneBy('https://github.com/honojs/hono/pull/1', undefined, 'me')).toEqual([]);
+  });
+});
+
+describe('Copilot sign-in detour', () => {
+  it('recognises where GitHub sends signed-out visitors', async () => {
+    const { isCopilotDetour } = await import('./copilot');
+    expect(isCopilotDetour('https://github.com/features/copilot')).toBe(true);
+    expect(isCopilotDetour('https://github.com/login?return_to=%2Fcopilot')).toBe(true);
+    expect(isCopilotDetour('https://github.com/copilot')).toBe(false);
+  });
+});

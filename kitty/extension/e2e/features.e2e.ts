@@ -61,8 +61,9 @@ export async function featuresE2E(ciRun = 'honojs/hono/actions/runs/41812305883'
   // 5. learning path: quiz
   await panel.bringToFront();
   await panel.reload();
-  await panel.locator('[data-kitty="learning-path"]').waitFor({ timeout: 10_000 });
-  log('path:', (await panel.locator('[data-kitty="learning-path"] > summary').innerText()).trim());
+  await panel.locator('[data-kitty="path-summary"]').waitFor({ timeout: 10_000 });
+  log('path:', (await panel.locator('[data-kitty="path-summary"]').innerText()).replace(/\s+/g, ' ').trim());
+  await panel.locator('[data-kitty="open-learn"]').click();
   await panel.locator('[data-kitty="quiz-me"]').click();
   const qs = panel.locator('[data-kitty="quiz"] .quiz-q');
   const n = await qs.count();

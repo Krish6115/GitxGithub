@@ -28,6 +28,7 @@ export function PracticeView({ scenarioId, onDone }: { scenarioId?: string; onDo
   const [input, setInput] = useState('');
   const [solved, setSolved] = useState(false);
   const [showHint, setShowHint] = useState(false);
+  const [past, setPast] = useState<SimState[]>([]);
   const logRef = useRef<HTMLDivElement | null>(null);
 
   const start = (next: Scenario): void => {
@@ -36,6 +37,7 @@ export function PracticeView({ scenarioId, onDone }: { scenarioId?: string; onDo
     setLines([]);
     setSolved(false);
     setShowHint(false);
+    setPast([]);
   };
   useEffect(() => {
     const next = scenarioById(scenarioId ?? '');
@@ -50,6 +52,7 @@ export function PracticeView({ scenarioId, onDone }: { scenarioId?: string; onDo
     if (c === 'help') return setLines((l) => [...l, { cmd: c, out: PRACTICE_HELP }]);
     if (c === 'clear') return setLines([]);
     const r = run(state, c);
+    if (!r.error) setPast((p) => [...p, state]);
     setState(r.state);
     setLines((l) => [...l, { cmd: c, out: r.output, ...(r.error ? { error: true } : {}), ...(r.risk ? { risk: r.risk } : {}) }]);
     if (!solved && sc.done(r.state)) {
@@ -85,6 +88,11 @@ export function PracticeView({ scenarioId, onDone }: { scenarioId?: string; onDo
         ))}
       </div>
       {solved && <p class="solved" data-kitty="practice-solved"><Icon name="check-circle" /> Goal reached. Try another scenario, or keep exploring.</p>}
+      <div class="row cmd-chips">
+        {['git status', 'git log', 'git reflog', 'git branch'].map((c) => (
+          <button key={c} type="button" class="chip mono" onClick={() => submit(c)}>{c}</button>
+        ))}
+      </div>
       <form class="term-input" onSubmit={(e) => { e.preventDefault(); submit(input); }}>
         <span class="prompt">$</span>
         <input value={input} onInput={(e) => setInput((e.target as HTMLInputElement).value)} placeholder="git status" aria-label="Command" autocomplete="off" spellcheck={false} />
@@ -92,6 +100,13 @@ export function PracticeView({ scenarioId, onDone }: { scenarioId?: string; onDo
       </form>
       <div class="row">
         <button class="ghost small" onClick={() => setShowHint(true)}>Hint</button>
+        <button class="ghost small" data-kitty="practice-undo" disabled={past.length === 0} onClick={() => {
+          const prev = past.at(-1);
+          if (!prev) return;
+          setPast((p) => p.slice(0, -1));
+          setState(prev);
+          setLines((l) => [...l, { cmd: '(undo)', out: 'Back to the state before your last command. (Real Git has no undo button: that is what the reflog is for.)' }]);
+        }}><Icon name="undo" size={12} /> Undo last command</button>
         <button class="ghost small" onClick={() => start(sc)}>Start over</button>
       </div>
       {showHint && <p class="hint small" data-kitty="practice-hint"><Icon name="light-bulb" size={12} /> {sc.hint}</p>}

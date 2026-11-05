@@ -88,6 +88,19 @@ export function besideBox(box: Box, vp: Viewport): Point {
   return { x: Math.max(8, x), y };
 }
 
+/**
+ * For walkthroughs: stand next to the element on the side with more room (below it, or above it), and open the
+ * speech bubble on that same side, so it never covers what the cat is pointing at.
+ */
+export function guideSpot(box: Box, vp: Viewport): { point: Point; bubbleBelow: boolean } {
+  // the bubble hangs left of the cat: keep the cat far enough right that the bubble is not squeezed
+  const x = Math.min(Math.max(250, box.left + Math.min(box.width, 240) / 2 - CAT_SIZE / 2), vp.width - CAT_SIZE - 8);
+  const roomBelow = vp.height - (box.top + box.height);
+  const roomAbove = box.top;
+  if (roomBelow >= roomAbove) return { point: { x, y: Math.min(box.top + box.height + 6, vp.height - CAT_SIZE - 8) }, bubbleBelow: true };
+  return { point: { x, y: Math.max(8, box.top - CAT_SIZE - 6) }, bubbleBelow: false };
+}
+
 /** Walking time for a move: a brisk ~320 px/s, between 0.3 s and 1.8 s. */
 export function walkDuration(from: Point, to: Point): number {
   const d = Math.hypot(to.x - from.x, to.y - from.y);

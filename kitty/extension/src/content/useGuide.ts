@@ -55,7 +55,7 @@ export function useGuide(href: string) {
       if (!el || !el.isConnected) el = findGuideTarget(step);
       if (el && !scrolled) {
         scrolled = true;
-        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
       const waiting = !el && Date.now() - started < 6000;
       setView({ kind: 'here', box: el ? boxOf(el) : null, missing: !el && !waiting });

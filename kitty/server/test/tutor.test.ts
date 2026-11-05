@@ -154,3 +154,12 @@ describe('streamTutor retries', () => {
     await expect(collect(streamTutor({ provider: failingThen(2), retrieve: () => SOURCES }, { question: 'How do I revert?', history: [] }))).rejects.toMatchObject({ code: 'timeout' });
   });
 });
+
+describe('guide and copilot actions', () => {
+  it('accepts known guides and Copilot hand-offs, rejects unknown guides', async () => {
+    const { parseAction } = await import('../src/tutor/actions.js');
+    expect(parseAction('Sure.\nACTION: {"type":"guide","repo":"a/b","guide":"open-pr"}')).toMatchObject({ type: 'guide', guide: 'open-pr' });
+    expect(parseAction('ACTION: {"type":"guide","repo":"a/b","guide":"hack-the-planet"}')).toBeNull();
+    expect(parseAction('Copilot is better for this.\nACTION: {"type":"copilot","prompt":"Write tests for src/db.js"}')).toMatchObject({ type: 'copilot' });
+  });
+});

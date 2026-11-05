@@ -12,6 +12,8 @@ import { issueText, usePendingAction } from './usePendingAction';
 import { actionsRunFromUrl, issueNumberFromUrl, pullNumberFromUrl } from '../shared/github-page';
 import type { BeginnerIssues, PreflightResult } from '../shared/contribute';
 import { CHAT_FOCUS_KEY, type ChatFocus } from '../shared/tour';
+import { GuideBubble, GuidesMenu } from './GuideBubble';
+import { useGuide } from './useGuide';
 
 /** Re-find the file header after navigation (GitHub renders file views asynchronously) and track scroll/resize. */
 function useHighlight(active: boolean, href: string): Box | null {
@@ -37,7 +39,8 @@ export function KittyApp() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [chatHint, setChatHint] = useState(false);
   // contributor helpers: good first issues (repo pages) and PR pre-flight (PR pages)
-  const [panel, setPanel] = useState<'none' | 'issues' | 'preflight'>('none');
+  const [panel, setPanel] = useState<'none' | 'issues' | 'preflight' | 'guides'>('none');
+  const g = useGuide(t.href);
   const [lastIssue, setLastIssue] = useState<number | undefined>(undefined);
   const issuesApi = useApi<BeginnerIssues>('/issues');
   const preflightApi = useApi<PreflightResult>('/preflight');
@@ -54,7 +57,11 @@ export function KittyApp() {
   // actions from the side panel chat ("find me an issue... take me there") run here once this page loads
   usePendingAction(t.href, (a) => {
     const [owner, repo] = a.repo.split('/');
-    if (a.type === 'tour') startTour();
+    if (a.type === 'guide') {
+      setMenuOpen(false);
+      setPanel('none');
+      g.start(a.guide, a.repo, a.number);
+    } else if (a.type === 'tour') startTour();
     else if (a.type === 'fix_issue') startTour(a.number);
     else if (a.type === 'check_pr') {
       setMenuOpen(false);
@@ -64,12 +71,13 @@ export function KittyApp() {
   });
   const step = t.tour && t.onTourRepo ? t.tour.steps[t.tour.currentIndex] : undefined;
   const showStep = Boolean(step && t.atCurrentStep);
-  const box = useHighlight(showStep, t.href);
+  const tourBox = useHighlight(showStep && !g.state, t.href);
+  const box = g.state ? (g.view?.kind === 'here' ? g.view.box : null) : tourBox;
   const loading = t.phase.kind === 'loading';
   const vp = viewport();
   // During a tour the cat walks to the highlighted file header; otherwise it rests bottom-right.
   // anything Kitty is showing counts as "in use": a moved cat only walks home after a minute of nothing
-  const busy = menuOpen || panel !== 'none' || t.phase.kind !== 'idle' || Boolean(t.tour && t.onTourRepo);
+  const busy = menuOpen || panel !== 'none' || t.phase.kind !== 'idle' || Boolean(t.tour && t.onTourRepo) || Boolean(g.state);
   const cat = useCatMotion(box ? besideBox(box, vp) : null, loading, busy);
   // Near the top the bubble goes under the cat, so the container is anchored by its top edge instead of its bottom.
   const below = cat.pos.y < 280;
@@ -86,7 +94,12 @@ export function KittyApp() {
   };
 
   let bubble = null;
-  if (t.phase.kind === 'loading') {
+  if (g.state) {
+    bubble = <GuideBubble g={g} />;
+  } else if (panel === 'guides' && t.repo) {
+    const repo = `${t.repo.owner}/${t.repo.repo}`;
+    bubble = <GuidesMenu isPr={Boolean(prNo)} onClose={() => setPanel('none')} onPick={(guide) => { setPanel('none'); g.start(guide.id, repo, prNo ?? undefined); }} />;
+  } else if (t.phase.kind === 'loading') {
     bubble = <div class="bubble" role="status"><p class="thinking">{t.phase.message}</p></div>;
   } else if (t.phase.kind === 'error') {
     bubble = (
@@ -208,6 +221,9 @@ export function KittyApp() {
             >
               Find a good first issue
             </button>
+          )}
+          {t.repo && (
+            <button class="ghost" data-kitty="show-me-how" onClick={() => { setMenuOpen(false); setPanel('guides'); }}>Show me how…</button>
           )}
           {askKitty}
         </div>

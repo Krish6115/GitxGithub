@@ -107,5 +107,7 @@ export const css = `
   .octicon { display: inline-block; vertical-align: text-bottom; flex-shrink: 0; }
   .status-icon.s-fail { color: #cf222e; } .status-icon.s-warn { color: #9a6700; } .status-icon.s-info { color: #0969da; } .status-icon.s-pass { color: #1a7f37; }
   .lesson-state { display: inline-block; width: 18px; color: var(--accent, #1a7f37); }
+  .answer-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .copilot-card pre { max-height: 160px; overflow: auto; }
   @media (prefers-reduced-motion: reduce) { .thinking::after { animation: none; } }
 `;

@@ -6,9 +6,13 @@ export type KittyAction =
   | { type: 'tour'; repo: string }
   | { type: 'explain_issue'; repo: string; number: number }
   | { type: 'fix_issue'; repo: string; number: number }
-  | { type: 'check_pr'; repo: string; number: number };
+  | { type: 'check_pr'; repo: string; number: number }
+  /** Walk through GitHub's own pages ("show me how to open a pull request"). */
+  | { type: 'guide'; repo: string; guide: string; number?: number }
+  /** Hand over to GitHub Copilot: Kitty types the prompt into Copilot's chat; the user sends it. */
+  | { type: 'copilot'; prompt: string };
 
-export type PageAction = Exclude<KittyAction, { type: 'find_issues' }>;
+export type PageAction = Exclude<KittyAction, { type: 'find_issues' } | { type: 'copilot' }>;
 
 /** chrome.storage.session key: the action the page should run after the side panel navigated it. */
 export const PENDING_ACTION_KEY = 'kitty:pending-action';
@@ -24,6 +28,7 @@ export function actionUrl(a: PageAction): string {
   const base = `https://github.com/${a.repo}`;
   if (a.type === 'tour') return base;
   if (a.type === 'check_pr') return `${base}/pull/${a.number}`;
+  if (a.type === 'guide') return a.number ? `${base}/pull/${a.number}` : base;
   return `${base}/issues/${a.number}`;
 }
 
@@ -51,8 +56,16 @@ export function actionLabel(a: KittyAction): string {
       return `Walking through ${a.repo}#${a.number}`;
     case 'check_pr':
       return `Checking PR ${a.repo}#${a.number}`;
+    case 'guide':
+      return `Showing you around ${a.repo}`;
+    case 'copilot':
+      return 'This is a job for GitHub Copilot';
   }
 }
 
 /** Remove the machine-readable ACTION line from an answer before showing it. */
 export const stripAction = (text: string): string => text.replace(/^\s*ACTION:\s*\{.*\}\s*$/gm, '').trim();
+
+/** "…and take me there", "open it", "go to it": the user wants Kitty to open the best match, not just list it. */
+export const wantsToGo = (question: string): boolean =>
+  /\b(take me|bring me|go to|open (it|one|the|that)|show me (it|one|the|that)|directly|straight to|navigate)\b/i.test(question);

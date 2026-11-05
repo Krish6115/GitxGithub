@@ -30,7 +30,17 @@ function mockTutor(prompt: string): string {
   // "find me an issue about X": answer with a find_issues action, like the real model does
   const ask = /QUESTION: (.*)$/s.exec(prompt)?.[1] ?? '';
   const find = /\bfind\b.*\bissues?\b.*\b(?:about|with|using|uses|for|on)\s+([\w .+#-]{2,40})/i.exec(ask);
-  if (find?.[1]) return `Looking for beginner-friendly ${find[1].trim()} issues (mock answer).\nACTION: ${JSON.stringify({ type: 'find_issues', query: find[1].trim() })}`;
+  if (find?.[1]) {
+    const query = find[1].replace(/\s+(and|then)\b.*$/i, '').trim();
+    return `Looking for beginner-friendly ${query} issues (mock answer).\nACTION: ${JSON.stringify({ type: 'find_issues', query })}`;
+  }
+  // "show me how to open a pull request" on a repo page: a show-me-how walkthrough
+  const repo = /URL: https:\/\/github\.com\/([\w.-]+\/[\w.-]+)/.exec(prompt)?.[1];
+  if (repo && /\bshow me how\b.*\bpull request\b/i.test(ask)) return `I'll walk you through it on GitHub (mock answer).\nACTION: ${JSON.stringify({ type: 'guide', repo, guide: 'open-pr' })}`;
+  // "write / implement / refactor …": that is GitHub Copilot's job
+  if (/^\s*(please )?(write|implement|refactor|generate|build)\b/i.test(ask)) {
+    return `Writing code is GitHub Copilot's job; I've prepared the question for it (mock answer).\nACTION: ${JSON.stringify({ type: 'copilot', prompt: `${repo ? `Repository: ${repo}\n\n` : ''}${ask.trim()}` })}`;
+  }
   const titles = [...prompt.matchAll(/^\[(\d+)\] (.+)$/gm)].slice(0, 2).map((m) => ({ n: m[1] ?? '1', title: m[2] ?? '' }));
   if (titles.length === 0 || prompt.includes('NOTE: no closely relevant sources')) {
     return "I'm not sure, and my sources don't cover this. See the official docs: https://git-scm.com/docs (mock answer).";

@@ -166,3 +166,6 @@ button.small { padding: 1px 8px; font-size: 12px; }
 .octicon { display: inline-block; vertical-align: text-bottom; flex-shrink: 0; }
 .status-icon.s-fail { color: #cf222e; } .status-icon.s-warn { color: #9a6700; } .status-icon.s-info { color: #0969da; } .status-icon.s-pass { color: #1a7f37; }
 .lesson-state { display: inline-block; width: 18px; color: var(--accent, #1a7f37); }
+.copilot-note { position: fixed; right: 16px; bottom: 140px; width: 320px; z-index: 2147483646; font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+.guide-list { list-style: none; padding: 0; margin: 6px 0; }
+.guide-list li { margin: 3px 0; } .guide-list button { width: 100%; text-align: left; }

@@ -1,6 +1,7 @@
 // The running repo tour, shown at the top of the chat: summary, stack, clickable steps (open or ask about each),
 // how to run / contribute, tips.
 import { useState } from 'preact/hooks';
+import { openCopilot } from './chat-helpers';
 import { contextPack, contextPackFilename } from '../shared/context-pack';
 import { contributionPlan } from '../shared/contribute';
 import { stepUrl } from '../shared/github-page';
@@ -36,6 +37,7 @@ function ContextPack({ state }: { state: TourState }) {
           {copied ? 'Copied' : 'Copy context for your AI'}
         </button>
         <button class="ghost small" disabled={state.streaming} onClick={download}>Download .md</button>
+        <button class="ghost small" disabled={state.streaming} data-kitty="context-copilot" onClick={() => void openCopilot(`${md()}\n\nUsing the context above, help me with: `)}><Icon name="copilot" size={12} /> Ask Copilot with this context</button>
       </div>
       {state.streaming && <p class="muted small">Ready when Kitty finishes the tour.</p>}
     </section>

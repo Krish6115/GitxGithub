@@ -1,7 +1,7 @@
 // "Ask Kitty" tutor chat: streamed answers with numbered sources, unverified-flag notes, stop and new chat.
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ApiError, postJson, postStream } from '../shared/api';
-import { actionLabel, stripAction, type KittyAction, type PageAction } from '../shared/actions';
+import { actionLabel, stripAction, wantsToGo, type KittyAction, type PageAction } from '../shared/actions';
 import type { BeginnerIssues } from '../shared/contribute';
 import { CHAT_KEY, sourceLabel, toHistory, trimChat, type ChatMessage, type ChatSource } from '../shared/chat';
 import { CHAT_DRAFT_KEY, errorText, SIDEPANEL_TAB_KEY } from '../shared/messages';
@@ -9,7 +9,9 @@ import { Markdown } from '../shared/Markdown';
 import { pageLabel, READ_PAGE_KEY, type PageContext } from '../shared/page-context';
 import { CHAT_FOCUS_KEY, TOUR_STATE_KEY, tourContext, type ChatFocus, type TourState } from '../shared/tour';
 import { TourPanel } from './TourView';
-import { activePageContext, runOnPage, Thinking } from './chat-helpers';
+import { activePageContext, openCopilot, runOnPage, Thinking } from './chat-helpers';
+import { copilotPrompt } from '../shared/copilot';
+import { repoFromUrl } from '../shared/github-page';
 import { LearningPath, noteQuestion } from './LearningPath';
 import { scenarioFor } from '../shared/practice-scenarios';
 import { getSettings, tutorLevel } from '../shared/settings';
@@ -131,9 +133,14 @@ export function ChatView() {
           updateLast((m) => ({ ...m, action, ...(action.type === 'find_issues' ? { found: { status: 'loading' } } : {}) }));
           if (action.type === 'find_issues') {
             postJson<BeginnerIssues>('/search-issues', { query: action.query, ...(action.repo ? { repo: action.repo } : {}) })
-              .then((r) => updateLast((m) => ({ ...m, found: { status: 'done', issues: r.issues, labeled: r.labeled } })))
+              .then((r) => {
+                updateLast((m) => ({ ...m, found: { status: 'done', issues: r.issues, labeled: r.labeled } }));
+                // "find me an issue … and take me there": open the best match and have the cat explain it
+                const top = r.issues[0];
+                if (top && wantsToGo(q)) void runOnPage({ type: 'explain_issue', repo: top.repo, number: top.number });
+              })
               .catch((e: unknown) => updateLast((m) => ({ ...m, found: { status: 'error', error: e instanceof ApiError ? errorText(e.code, e.message) : 'Search failed.' } })));
-          } else {
+          } else if (action.type !== 'copilot') {
             void runOnPage(action);
           }
         }
@@ -178,13 +185,35 @@ export function ChatView() {
               {m.status === 'done' && (() => {
                 const q = messages[i - 1];
                 const sc = scenarioFor(`${q?.role === 'user' ? q.content : ''} ${m.content.slice(0, 400)}`);
-                return sc ? (
-                  <button class="ghost small" data-kitty="try-practice" onClick={() => void chrome.storage.session.set({ [LEARN_FOCUS_KEY]: { view: 'practice', scenario: sc.id } satisfies LearnFocus, [SIDEPANEL_TAB_KEY]: 'learn' })}>
-                    <Icon name="beaker" size={12} /> Try it safely: {sc.title}
-                  </button>
-                ) : null;
+                const question = q?.role === 'user' ? q.content : '';
+                const repo = page ? repoFromUrl(page.url) : null;
+                return (
+                  <div class="answer-tools">
+                    {sc && (
+                      <button class="ghost small" data-kitty="try-practice" onClick={() => void chrome.storage.session.set({ [LEARN_FOCUS_KEY]: { view: 'practice', scenario: sc.id } satisfies LearnFocus, [SIDEPANEL_TAB_KEY]: 'learn' })}>
+                        <Icon name="beaker" size={12} /> Try it safely: {sc.title}
+                      </button>
+                    )}
+                    {question && m.action?.type !== 'copilot' && (
+                      <button class="ghost small" data-kitty="answer-copilot" title="Hand this question to GitHub Copilot (for writing or changing code)" onClick={() => void openCopilot(copilotPrompt(question, { repo: repo ? `${repo.owner}/${repo.repo}` : undefined, page: page?.url }))}>
+                        <Icon name="copilot" size={12} /> Ask Copilot
+                      </button>
+                    )}
+                  </div>
+                );
               })()}
-              {m.action && (
+              {m.action?.type === 'copilot' && (
+                <div class="action-card copilot-card" data-kitty="copilot-card">
+                  <p><Icon name="copilot" size={14} /> Writing and changing code is GitHub Copilot's job. Kitty prepared the question:</p>
+                  <pre class="draft-text">{m.action.prompt}</pre>
+                  <div class="row">
+                    <button class="small" data-kitty="ask-copilot" onClick={() => void openCopilot((m.action as { prompt: string }).prompt)}>Ask GitHub Copilot</button>
+                    <button class="ghost small" onClick={() => void navigator.clipboard.writeText((m.action as { prompt: string }).prompt)}>Copy</button>
+                  </div>
+                  <p class="muted small">Opens Copilot on github.com and types it in; you review and press Enter.</p>
+                </div>
+              )}
+              {m.action && m.action.type !== 'copilot' && (
                 <div class="action-card" data-kitty="action">
                   <p><Icon name="arrow-right" size={12} /> {actionLabel(m.action)}{m.action.type !== 'find_issues' && ': Kitty is taking you there.'}</p>
                   {m.action.type !== 'find_issues' && <button class="ghost small" onClick={() => void runOnPage(m.action as PageAction)}>Go again</button>}

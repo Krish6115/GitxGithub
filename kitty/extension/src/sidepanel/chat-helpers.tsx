@@ -2,6 +2,14 @@
 import { useEffect, useState } from 'preact/hooks';
 import { actionUrl, PENDING_ACTION_KEY, type PageAction, type PendingAction } from '../shared/actions';
 import type { PageContext, PageContextRequest } from '../shared/page-context';
+import { COPILOT_PENDING_KEY, COPILOT_URL, type CopilotPending } from '../shared/copilot';
+
+/** Open GitHub Copilot in a new tab; Kitty's content script there types `prompt` into its chat box. */
+export async function openCopilot(prompt: string): Promise<void> {
+  const pending: CopilotPending = { prompt, at: Date.now() };
+  await chrome.storage.session.set({ [COPILOT_PENDING_KEY]: pending });
+  await chrome.tabs.create({ url: COPILOT_URL });
+}
 
 /** Ask the content script in the active tab what's on screen (null when it isn't a GitHub page). */
 export async function activePageContext(): Promise<PageContext | null> {

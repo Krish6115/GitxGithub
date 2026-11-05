@@ -35,7 +35,7 @@ A Chrome extension that lives on github.com:
 - 🐾 **Why this button?:** hover GitHub's Sync fork, Squash and merge, Update branch and more to see what they do in Git terms.
 - 🎚️ **Answers at your level:** beginner, intermediate or advanced, automatically or by choice.
 
-**Install:** download `kitty-extension-v0.6.2.zip` from the [latest release](https://github.com/Krish6115/GitKitty/releases/latest), unzip it, open `chrome://extensions`, turn on **Developer mode**, then **Load unpacked**.
+**Install:** download `kitty-extension-v0.7.0.zip` from the [latest release](https://github.com/Krish6115/GitKitty/releases/latest), unzip it, open `chrome://extensions`, turn on **Developer mode**, then **Load unpacked**.
 
 ➡️ How it works, running your own server, and costs: **[kitty/README.md](kitty/README.md)**
 

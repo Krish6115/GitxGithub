@@ -51,28 +51,53 @@ Then set the URL in Kitty's **Settings**.
 
 ```mermaid
 flowchart LR
-  subgraph Browser["Chrome on github.com"]
-    CS["Content script<br/>cat, tour runner, explain pill"]
-    SW["Service worker<br/>the only part that calls the server"]
-    SP["Side panel<br/>tour overview, chat, settings"]
+  subgraph EXT["Chrome extension on github.com"]
+    direction TB
+    CS["<b>On the page</b> (content script)<br/>Kitty the cat · repo / issue / PR tours<br/>Show me how · Explain this · button hints<br/>PR check · Copilot hand-off"]
+    SP["<b>Side panel</b><br/>Ask Kitty chat · Learn: lessons, quizzes<br/>Practice (Git simulator) · First PR guide"]
+    LOCAL[("Browser storage<br/>settings · progress · tour state<br/>(never leaves the browser)")]
+    SW["<b>Service worker</b><br/>the only part that talks to the server"]
+    CS --> SW
+    SP --> SW
+    CS -.-> LOCAL
+    SP -.-> LOCAL
   end
-  subgraph Server["Kitty server (Hono)"]
-    T["/tour<br/>(repo, issue or PR)"]
-    Q["/tutor"]
-    X["/explain, /ci-explain"]
-    P["/preflight, /draft-pr"]
-    R["Retriever<br/>MiniSearch BM25 over<br/>PDFs + references"]
+
+  subgraph SRV["Kitty server · Hono on Vercel"]
+    direction TB
+    AI["<b>AI routes</b><br/>/tour · /tutor · /explain<br/>/ci-explain · /draft-pr"]
+    RULES["<b>Rule-based routes</b> (no tokens)<br/>/issues · /search-issues · /preflight"]
+    RAG[("Knowledge<br/>BM25 index over PDFs + Pro Git<br/>+ Git/GitHub docs · saved answers<br/>· 30 Git-error rules")]
+    GUARD["Every request: rate limit · zod validation<br/>untrusted-text fencing · timeouts + retry"]
+    AI --> RAG
   end
-  GH["GitHub REST API"]
-  BC["BharatCode<br/>qwen-3.8-27b"]
-  CS --> SW --> T & X & P
-  SP --> Q
-  T & P & X --> GH
-  Q --> GH
-  Q --> R
-  X --> R
-  T & Q & X & P --> BC
+
+  subgraph OUT["External services"]
+    direction TB
+    BC["BharatCode<br/>qwen-3.8-27b"]
+    GH["GitHub REST API<br/>repos · issues · PRs · CI logs · code search"]
+    CP["GitHub Copilot<br/>(github.com/copilot)"]
+  end
+
+  SW -- "HTTPS, streamed (SSE)" --> AI
+  SW --> RULES
+  AI --> GH
+  RULES --> GH
+  AI -- "prompt + retrieved sources" --> BC
+  CS -. "types the prepared prompt;<br/>you press Enter" .-> CP
+
+  classDef ext fill:#dafbe1,stroke:#1a7f37,color:#1f2328
+  classDef srv fill:#ddf4ff,stroke:#0969da,color:#1f2328
+  classDef outside fill:#f6f8fa,stroke:#57606a,color:#1f2328
+  class CS,SP,SW,LOCAL ext
+  class AI,RULES,RAG,GUARD srv
+  class GH,BC,CP outside
+  style OUT fill:#ffffff,stroke:#d0d7de
+  style EXT fill:#ffffff,stroke:#1a7f37
+  style SRV fill:#ffffff,stroke:#0969da
 ```
+
+**How a request flows:** the cat or the side panel asks the service worker, which calls the Kitty server. The server pulls real context from GitHub (files, issues, diffs, CI logs), retrieves the best-matching learning material, and asks BharatCode to explain it, streaming the answer back. Issue ranking and the PR check are plain rules, and Practice mode and lessons run entirely in the browser, so they cost no tokens. For writing code, Kitty hands the request to GitHub Copilot.
 
 - **GitHub token (optional, recommended):** set `GITHUB_TOKEN` on the server (a classic token with only the `public_repo` scope) or add your own in Kitty settings. It raises GitHub's rate limits and unlocks two things GitHub only serves to signed-in callers: code search for "where is X handled?" questions, and full CI logs for "Why did this fail?" (without it Kitty can only see GitHub's short summary).
 - **Grounded answers:** the PDFs and `*/references/` are chunked into a prebuilt index (`server/data/index.json`). The tutor answers from the best-matching chunks and must cite them.

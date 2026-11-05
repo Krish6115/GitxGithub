@@ -43,7 +43,7 @@ A Chrome extension that lives on github.com and teaches Git and GitHub on the pa
 **Works with GitHub Copilot**
 - Kitty teaches; Copilot writes code. When you ask for code to be written or changed, Kitty prepares the request, opens Copilot on github.com and types it in for you to review and send. Any tour can also be copied as context for Copilot or another assistant.
 
-**Install:** download `kitty-extension-v0.7.1.zip` from the [latest release](https://github.com/Krish6115/GitKitty/releases/latest), unzip it, open `chrome://extensions`, turn on **Developer mode**, then **Load unpacked**.
+**Install:** download `kitty-extension-v0.8.0.zip` from the [latest release](https://github.com/Krish6115/GitKitty/releases/latest), unzip it, open `chrome://extensions`, turn on **Developer mode**, then **Load unpacked**.
 
 How it works, running your own server, and costs: **[kitty/README.md](kitty/README.md)**
 

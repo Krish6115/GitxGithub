@@ -38,8 +38,8 @@ export const TUTOR_DEADLINE_MS = 45_000;
 const FIRST_TOKEN_MS = 25_000;
 
 const SMALL_TALK: [RegExp, string][] = [
-  [/^(hi+|hey+|hello+|hola|yo|namaste|good (morning|afternoon|evening))[\s!.,]*(kitty)?[\s!.]*$/i, "Hi! 🐾 I'm Kitty. Ask me anything about Git or GitHub (\"how do I undo my last commit?\"), ask about the page you're on, or say \"find me a good first issue about Docker\"."],
-  [/^(thanks|thank you|thx|ty|cool|great|nice|ok(ay)?|got it)[\s!.,]*(kitty)?[\s!.]*$/i, "You're welcome! 🐾 Ask me whenever you're stuck with Git."],
+  [/^(hi+|hey+|hello+|hola|yo|namaste|good (morning|afternoon|evening))[\s!.,]*(kitty)?[\s!.]*$/i, "Hi! I'm Kitty. Ask me anything about Git or GitHub (\"how do I undo my last commit?\"), ask about the page you're on, or say \"find me a good first issue about Docker\"."],
+  [/^(thanks|thank you|thx|ty|cool|great|nice|ok(ay)?|got it)[\s!.,]*(kitty)?[\s!.]*$/i, "You're welcome. Ask me whenever you're stuck with Git."],
   [/^(who|what) are you\??$|^what can you do\??$/i, "I'm Kitty, a Git & GitHub companion. I can tour a repo, explain Git step by step with sources, explain anything you select on GitHub, find good first issues, walk you through fixing one, and check your PR before maintainers do."],
 ];
 /** A canned reply for greetings and thanks (no model call). */

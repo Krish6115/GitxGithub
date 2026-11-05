@@ -8,6 +8,7 @@ import { nextSkill, SKILLS, type Skill } from '../shared/skills';
 import { Markdown } from '../shared/Markdown';
 import { QuizCard, useLocal } from './QuizCard';
 import { useSkills } from './LearningPath';
+import { Icon } from '../shared/Icon';
 
 /** Ask the cited tutor about this skill in the chat tab. */
 const readMore = (question: string): void => {
@@ -44,7 +45,7 @@ function Lesson({ skill, saved, onProgress, onPractice, onBack }: { skill: Skill
         lesson.practice ? (
           <>
             <p>Try it in a safe, simulated repo: nothing you type touches a real project.</p>
-            <button data-kitty="lesson-practice" onClick={() => onPractice(lesson.practice as string)}>🧪 Open in Practice</button>
+            <button data-kitty="lesson-practice" onClick={() => onPractice(lesson.practice as string)}><Icon name="beaker" size={14} /> Open in Practice</button>
           </>
         ) : (
           <>
@@ -67,7 +68,7 @@ function Lesson({ skill, saved, onProgress, onPractice, onBack }: { skill: Skill
         {at < STEPS.length - 1 && <button class="small" data-kitty="lesson-next" onClick={() => setStep(at + 1)}>Next</button>}
         <button class="ghost small" onClick={() => readMore(skill.starter)}>Read more (with sources)</button>
       </div>
-      {finished && <p class="solved" data-kitty="lesson-done">✅ Lesson complete. It will come back in a review quiz in a few days.</p>}
+      {finished && <p class="solved" data-kitty="lesson-done"><Icon name="check-circle" /> Lesson complete. It will come back in a review quiz in a few days.</p>}
     </div>
   );
 }
@@ -95,13 +96,13 @@ export function LessonsView({ skill, onPractice }: { skill?: string | undefined;
           return (
             <li key={s.id}>
               <button class="ghost step" onClick={() => setOpen(s.id)}>
-                {p >= STEPS.length ? '✅' : p > 0 ? '▶️' : locked ? '🔒' : '○'} {s.title}
+                <span class="lesson-state">{p >= STEPS.length ? <Icon name="check-circle" /> : p > 0 ? <Icon name="play" /> : locked ? <Icon name="lock" /> : null}</span> {s.title}
               </button>
             </li>
           );
         })}
       </ol>
-      <p class="muted small">🔒 lessons build on earlier ones, but you can open any of them.</p>
+      <p class="muted small"><Icon name="lock" size={12} /> Lessons build on earlier ones, but you can open any of them.</p>
     </div>
   );
 }

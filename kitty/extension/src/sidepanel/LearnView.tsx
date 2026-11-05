@@ -4,12 +4,13 @@ import { LEARN_FOCUS_KEY, type LearnFocus } from '../shared/learn';
 import { FirstPrView } from './FirstPrView';
 import { LessonsView } from './LessonsView';
 import { PracticeView } from './PracticeView';
+import { Icon, type IconName } from '../shared/Icon';
 
 type View = LearnFocus['view'];
-const VIEWS: { id: View; label: string }[] = [
-  { id: 'lessons', label: '🎓 Lessons' },
-  { id: 'practice', label: '🧪 Practice' },
-  { id: 'first-pr', label: '🚀 First PR' },
+const VIEWS: { id: View; label: string; icon: IconName }[] = [
+  { id: 'lessons', label: 'Lessons', icon: 'mortar-board' },
+  { id: 'practice', label: 'Practice', icon: 'beaker' },
+  { id: 'first-pr', label: 'First PR', icon: 'git-pull-request' },
 ];
 
 export function LearnView() {
@@ -33,7 +34,7 @@ export function LearnView() {
     <section class="learn" data-kitty="learn">
       <nav class="subtabs">
         {VIEWS.map((v) => (
-          <button key={v.id} class={focus.view === v.id ? 'chip active' : 'chip'} data-kitty={`learn-${v.id}`} onClick={() => go({ view: v.id } as LearnFocus)}>{v.label}</button>
+          <button key={v.id} class={focus.view === v.id ? 'chip active' : 'chip'} data-kitty={`learn-${v.id}`} onClick={() => go({ view: v.id } as LearnFocus)}><Icon name={v.icon} size={14} /> {v.label}</button>
         ))}
       </nav>
       {focus.view === 'lessons' && <LessonsView skill={focus.skill} onPractice={(scenario) => go({ view: 'practice', scenario })} />}

@@ -4,6 +4,7 @@ import { Markdown } from '../shared/Markdown';
 import { CHAT_DRAFT_KEY } from '../shared/messages';
 import { bubblePosition, pillPosition } from './selection';
 import { useExplain } from './useExplain';
+import { Icon } from '../shared/Icon';
 
 const RISK: Record<string, { label: string; cls: string }> = {
   safe: { label: 'Safe', cls: 'risk-safe' },
@@ -38,7 +39,7 @@ export function ExplainUI({ hostId }: { hostId: string }) {
           onMouseDown={(e) => e.preventDefault()} // keep the page selection
           onClick={() => explain(offer.text, offer.rect)}
         >
-          🐾 Ask Kitty
+          <Icon name="comment" size={14} /> Ask Kitty
         </button>
       )}
       {current && (
@@ -53,7 +54,7 @@ export function ExplainUI({ hostId }: { hostId: string }) {
             {current.answer ? <Markdown text={current.answer} sources={current.sources} /> : current.status === 'streaming' && <p class="thinking">{current.kind === 'ci' ? 'Kitty is reading the CI log' : 'Kitty is reading'}</p>}
             {current.status === 'error' && <p class="error">{current.error}</p>}
             {current.unverifiedFlags.length > 0 && (
-              <p class="warn">⚠ Not verified in Kitty's sources: {current.unverifiedFlags.map((f) => <code key={f}>{f}</code>)}</p>
+              <p class="warn"><Icon name="alert" size={12} /> Not verified in Kitty's sources: {current.unverifiedFlags.map((f) => <code key={f}>{f}</code>)}</p>
             )}
             {current.sources.length > 0 && current.status === 'done' && (
               <p class="srcs">Sources: {current.sources.map((s) => <a key={s.n} href={s.sourceUrl} target="_blank" rel="noopener noreferrer" title={s.title}>[{s.n}] {s.title}</a>)}</p>

@@ -6,6 +6,7 @@ import { contributionPlan } from '../shared/contribute';
 import { stepUrl } from '../shared/github-page';
 import { Markdown } from '../shared/Markdown';
 import { TOUR_STATE_KEY, withIndex, type TourState } from '../shared/tour';
+import { Icon } from '../shared/Icon';
 
 export async function openStep(state: TourState, i: number): Promise<void> {
   const next = withIndex(state, i);
@@ -50,11 +51,11 @@ export function TourPanel({ state, onAsk }: { state: TourState; onAsk: (index: n
     <details class="tour-panel" data-kitty="tour-panel" open={issue ? true : undefined}>
       <summary>
         {meta.pr ? (
-          <>🔍 Changes in <strong>PR #{meta.pr.number}</strong> · step {n + 1} of {state.steps.length}</>
+          <><Icon name="git-pull-request" /> Changes in <strong>PR #{meta.pr.number}</strong> · step {n + 1} of {state.steps.length}</>
         ) : issue ? (
-          <>🛠️ Fixing <strong>#{issue.number}</strong> in {meta.owner}/{meta.repo} · step {n + 1} of {state.steps.length}</>
+          <><Icon name="tools" /> Fixing <strong>#{issue.number}</strong> in {meta.owner}/{meta.repo} · step {n + 1} of {state.steps.length}</>
         ) : (
-          <>🗺️ Tour of <strong>{meta.owner}/{meta.repo}</strong> · step {n + 1} of {state.steps.length}</>
+          <><Icon name="location" /> Tour of <strong>{meta.owner}/{meta.repo}</strong> · step {n + 1} of {state.steps.length}</>
         )}
       </summary>
       {issue && plan && (

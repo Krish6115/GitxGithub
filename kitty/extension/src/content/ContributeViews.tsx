@@ -4,8 +4,9 @@ import type { BeginnerIssues, CheckStatus, ConflictRescue, PreflightCheck, Prefl
 import { CHAT_DRAFT_KEY } from '../shared/messages';
 import type { ApiState } from './useApi';
 import { DraftPr } from './DraftPr';
+import { Icon, type IconName } from '../shared/Icon';
 
-const ICON: Record<CheckStatus, string> = { fail: '❌', warn: '⚠️', info: 'ℹ️', pass: '✅' };
+const ICON: Record<CheckStatus, IconName> = { fail: 'x-circle', warn: 'alert', info: 'info', pass: 'check-circle' };
 
 function CopyButton({ text }: { text: string }) {
   const [done, setDone] = useState(false);
@@ -57,7 +58,7 @@ export function IssuesView({ state, repo, onFix, onClose }: { state: ApiState<Be
                 <a href={i.url}>#{i.number} {i.title}</a>
                 <div class="meta">
                   {i.labels.slice(0, 3).map((l) => <span key={l} class="badge">{l}</span>)}
-                  <span>💬 {i.comments}</span>
+                  <span><Icon name="comment" size={12} /> {i.comments}</span>
                 </div>
                 {i.reasons.length > 0 && <p class="why">{i.reasons.join(' · ')}</p>}
                 <button data-kitty="fix-issue" onClick={() => onFix(i.number)}>Help me fix this</button>
@@ -75,7 +76,7 @@ function CheckItem({ check, onHint }: { check: PreflightCheck; onHint: () => voi
   const commands = check.commands?.join('\n');
   return (
     <li class={`check check-${check.status}`} data-check={check.id}>
-      <div class="check-title"><span aria-hidden="true">{ICON[check.status]}</span> <strong>{check.title}</strong></div>
+      <div class="check-title"><span class={`status-icon s-${check.status}`}><Icon name={ICON[check.status]} /></span> <strong>{check.title}</strong></div>
       <p>{check.detail}</p>
       {commands && (
         <div class="code">
@@ -110,7 +111,7 @@ function Step({ step, n }: { step: RescueStep; n?: number }) {
 function ConflictView({ rescue }: { rescue: ConflictRescue }) {
   return (
     <details class="conflict" data-kitty="conflict-rescue" open>
-      <summary><strong>🧩 Merge-conflict rescue</strong></summary>
+      <summary><Icon name="git-merge" /> <strong>Merge-conflict rescue</strong></summary>
       {rescue.likelyFiles.length > 0 && (
         <p>Likely conflicts (changed on both sides): {rescue.likelyFiles.map((f) => <code key={f}>{f} </code>)}</p>
       )}
@@ -136,7 +137,7 @@ export function PreflightView({ state, onClose, onHint, target }: { state: ApiSt
     <div class="bubble panel" data-kitty="preflight">
       <h3>Pre-flight check · #{r.number}</h3>
       <p class="meta">{summary || 'Nothing to report.'}</p>
-      {r.counts.fail === 0 && r.counts.warn === 0 && <p>Looks ready for review. 🎉</p>}
+      {r.counts.fail === 0 && r.counts.warn === 0 && <p>Looks ready for review.</p>}
       <ul class="checks">{todo.map((c) => <CheckItem key={c.id} check={c} onHint={onHint} />)}</ul>
       {r.conflict && <ConflictView rescue={r.conflict} />}
       {passed.length > 0 && (

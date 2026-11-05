@@ -2,6 +2,7 @@
 import { useState } from 'preact/hooks';
 import type { DraftResult } from '../shared/contribute';
 import { useApi } from './useApi';
+import { Icon } from '../shared/Icon';
 
 function Copyable({ label, text, multiline }: { label: string; text: string; multiline?: boolean }) {
   const [done, setDone] = useState(false);
@@ -24,7 +25,7 @@ export function DraftPr({ owner, repo, pr }: { owner: string; repo: string; pr: 
   if (s.kind === 'idle') {
     return (
       <div class="row">
-        <button class="ghost small" data-kitty="draft-pr" onClick={() => api.run({ owner, repo, pr })}>✍️ Draft description & commit message</button>
+        <button class="ghost small" data-kitty="draft-pr" onClick={() => api.run({ owner, repo, pr })}><Icon name="pencil" /> Draft description & commit message</button>
       </div>
     );
   }
@@ -40,7 +41,7 @@ export function DraftPr({ owner, repo, pr }: { owner: string; repo: string; pr: 
   const d = s.data;
   return (
     <details class="draft" data-kitty="draft" open>
-      <summary><strong>✍️ Suggested description</strong></summary>
+      <summary><Icon name="pencil" /> <strong>Suggested description</strong></summary>
       <p class="hint">Written from your diff{d.usedTemplate ? ', following the repo\'s PR template' : ''}{d.conventional ? ', in Conventional Commits style' : ''}. Check it, then paste it on GitHub (Edit on the PR).</p>
       <Copyable label="Title" text={d.title} />
       <Copyable label="Description" text={d.description} multiline />

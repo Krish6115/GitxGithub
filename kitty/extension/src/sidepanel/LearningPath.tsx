@@ -4,6 +4,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { explored, nextSkill, recordTopics, SKILLS, SKILLS_KEY, type Progress } from '../shared/skills';
 import { answer, dueSkills, gitHealth, nextQuiz, REVIEW_KEY, type Review } from '../shared/review';
 import { QuizCard, useLocal } from './QuizCard';
+import { Icon } from '../shared/Icon';
 
 export function useSkills(): { progress: Progress; reset: () => void } {
   const [progress, setProgress] = useState<Progress>({});
@@ -27,7 +28,7 @@ function Quiz({ progress, onDone }: { progress: Progress; onDone: () => void }) 
   let latest = review;
   return (
     <div class="quiz" data-kitty="quiz">
-      {items.some((x) => x.review) && <p class="small muted">🔁 Includes questions due for review.</p>}
+      {items.some((x) => x.review) && <p class="small muted"><Icon name="history" size={12} /> Includes questions due for review.</p>}
       {items.map((x, i) => (
         <QuizCard
           key={x.skill.id}
@@ -41,7 +42,7 @@ function Quiz({ progress, onDone }: { progress: Progress; onDone: () => void }) 
           }}
         />
       ))}
-      {finished && <p><strong>{right} of {items.length} right.</strong> {right === items.length ? 'Nice! 🐾' : 'Missed ones come back tomorrow.'} Git health: {gitHealth(progress, latest)}/100</p>}
+      {finished && <p><strong>{right} of {items.length} right.</strong> {right === items.length ? 'All correct.' : 'Missed ones come back tomorrow.'} Git health: {gitHealth(progress, latest)}/100</p>}
       <div class="row"><button class="ghost small" onClick={onDone}>{finished ? 'Done' : 'Close quiz'}</button></div>
     </div>
   );
@@ -56,7 +57,7 @@ export function LearningPath({ onAsk }: { onAsk: (question: string) => void }) {
   const next = nextSkill(progress);
   return (
     <details class="learning-path" data-kitty="learning-path" open={done.length > 0 ? undefined : true}>
-      <summary>🎓 Your Git path · {done.length} of {SKILLS.length} skills explored · health {gitHealth(progress, review)}/100</summary>
+      <summary><Icon name="mortar-board" /> Your Git path · {done.length} of {SKILLS.length} skills explored · health {gitHealth(progress, review)}/100</summary>
       <div class="path-bar" aria-hidden="true"><span style={{ width: `${Math.round((done.length / SKILLS.length) * 100)}%` }} /></div>
       {next ? (
         <p>
@@ -64,7 +65,7 @@ export function LearningPath({ onAsk }: { onAsk: (question: string) => void }) {
           <button class="chip" data-kitty="next-skill" onClick={() => onAsk(next.starter)}>{next.starter}</button>
         </p>
       ) : (
-        <p>You've explored every skill on the path. 🎉</p>
+        <p>You've explored every skill on the path.</p>
       )}
       {done.length > 0 && <p class="small muted">Explored: {done.map((s) => s.title).join(' · ')}</p>}
       {quiz ? (

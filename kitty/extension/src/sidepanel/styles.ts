@@ -104,5 +104,8 @@ export const css = `
   .checklist li.current { border-left: 3px solid var(--accent); padding-left: 6px; }
   .checklist .check { display: flex; gap: 8px; align-items: center; } .checklist .check input { width: auto; }
   .step-how { margin: 4px 0 0 24px; font-size: 13px; }
+  .octicon { display: inline-block; vertical-align: text-bottom; flex-shrink: 0; }
+  .status-icon.s-fail { color: #cf222e; } .status-icon.s-warn { color: #9a6700; } .status-icon.s-info { color: #0969da; } .status-icon.s-pass { color: #1a7f37; }
+  .lesson-state { display: inline-block; width: 18px; color: var(--accent, #1a7f37); }
   @media (prefers-reduced-motion: reduce) { .thinking::after { animation: none; } }
 `;

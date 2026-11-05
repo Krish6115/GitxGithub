@@ -7,6 +7,7 @@ import { Markdown } from '../shared/Markdown';
 import { TOUR_STATE_KEY, type TourState } from '../shared/tour';
 import { useLocal } from './QuizCard';
 import { SKILLS } from '../shared/skills';
+import { Icon } from '../shared/Icon';
 
 export const FIRST_PR_KEY = 'kitty:first-pr';
 interface FirstPr {
@@ -31,7 +32,7 @@ export const FIRST_PR_STEPS: Step[] = [
   { id: 'push', title: 'Push and open the pull request', how: 'Push your branch, then use the link below to open the PR form. Fill in the template.', lesson: 'remotes' },
   { id: 'check', title: 'Run Kitty\'s PR check', how: 'On your PR page, click the cat → **Check my PR**. Fix what it flags; **Draft description** can write the description for you.' },
   { id: 'review', title: 'Answer the review', how: 'Push fixes to the same branch: the PR updates itself. If main moved on, rebase (the PR check gives exact commands, including a conflict rescue).', lesson: 'rebase' },
-  { id: 'merged', title: 'Merged! 🎉', how: 'Delete your branch, sync your fork, and pick the next issue.' },
+  { id: 'merged', title: 'Merged', how: 'Delete your branch, sync your fork, and pick the next issue.' },
 ];
 
 export function FirstPrView() {
@@ -81,7 +82,7 @@ export function FirstPrView() {
                 <Markdown text={s.how} sources={[]} />
                 {extra[s.id]?.length ? <Markdown text={['```bash', ...(extra[s.id] ?? []), '```'].join('\n')} sources={[]} /> : null}
                 {s.id === 'push' && plan && <p><a href={plan.prUrl} target="_blank" rel="noopener noreferrer">Open the pull request form →</a></p>}
-                {s.lesson && <button class="ghost small" onClick={() => lesson(s.lesson as string)}>📘 Lesson: {SKILLS.find((k) => k.id === s.lesson)?.title}</button>}
+                {s.lesson && <button class="ghost small" onClick={() => lesson(s.lesson as string)}><Icon name="book" size={12} /> Lesson: {SKILLS.find((k) => k.id === s.lesson)?.title}</button>}
               </div>
             )}
           </li>

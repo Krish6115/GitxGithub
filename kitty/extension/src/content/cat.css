@@ -163,3 +163,6 @@ button.small { padding: 1px 8px; font-size: 12px; }
 .button-hint pre, .button-hint code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
 .button-hint .meta { display: flex; justify-content: space-between; gap: 6px; align-items: center; }
 .button-hint pre { margin: 4px 0; padding: 6px; border-radius: 6px; background: rgb(127 127 127 / 0.12); font-size: 11.5px; white-space: pre-wrap; }
+.octicon { display: inline-block; vertical-align: text-bottom; flex-shrink: 0; }
+.status-icon.s-fail { color: #cf222e; } .status-icon.s-warn { color: #9a6700; } .status-icon.s-info { color: #0969da; } .status-icon.s-pass { color: #1a7f37; }
+.lesson-state { display: inline-block; width: 18px; color: var(--accent, #1a7f37); }

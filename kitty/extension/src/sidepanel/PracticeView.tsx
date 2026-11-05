@@ -5,6 +5,7 @@ import type { SimState } from '../shared/git-sim';
 import { PRACTICE_HELP, run, type Risk } from '../shared/git-sim-commands';
 import { SCENARIOS, scenarioById, type Scenario } from '../shared/practice-scenarios';
 import { GitGraph } from './GitGraph';
+import { Icon } from '../shared/Icon';
 
 const RISK: Record<Risk, { label: string; cls: string }> = {
   safe: { label: 'Safe', cls: 'risk-safe' },
@@ -83,7 +84,7 @@ export function PracticeView({ scenarioId, onDone }: { scenarioId?: string; onDo
           </div>
         ))}
       </div>
-      {solved && <p class="solved" data-kitty="practice-solved">🎉 Goal reached! Try another scenario, or keep exploring.</p>}
+      {solved && <p class="solved" data-kitty="practice-solved"><Icon name="check-circle" /> Goal reached. Try another scenario, or keep exploring.</p>}
       <form class="term-input" onSubmit={(e) => { e.preventDefault(); submit(input); }}>
         <span class="prompt">$</span>
         <input value={input} onInput={(e) => setInput((e.target as HTMLInputElement).value)} placeholder="git status" aria-label="Command" autocomplete="off" spellcheck={false} />
@@ -93,7 +94,7 @@ export function PracticeView({ scenarioId, onDone }: { scenarioId?: string; onDo
         <button class="ghost small" onClick={() => setShowHint(true)}>Hint</button>
         <button class="ghost small" onClick={() => start(sc)}>Start over</button>
       </div>
-      {showHint && <p class="hint small" data-kitty="practice-hint">💡 {sc.hint}</p>}
+      {showHint && <p class="hint small" data-kitty="practice-hint"><Icon name="light-bulb" size={12} /> {sc.hint}</p>}
     </section>
   );
 }

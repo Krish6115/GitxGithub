@@ -15,6 +15,7 @@ import { scenarioFor } from '../shared/practice-scenarios';
 import { getSettings, tutorLevel } from '../shared/settings';
 import { explored, SKILLS_KEY, type Progress } from '../shared/skills';
 import { LEARN_FOCUS_KEY, type LearnFocus } from '../shared/learn';
+import { Icon } from '../shared/Icon';
 
 type Assistant = Extract<ChatMessage, { role: 'assistant' }>;
 
@@ -156,18 +157,18 @@ export function ChatView() {
             {[...(focusIndex !== null ? ['Explain this step in more detail', 'How does this file connect to the rest of the repo?'] : []), ...(page && readPage && focusIndex === null ? ['Explain this page', 'What should I look at first here?'] : []), 'How do I undo my last commit?', 'How do I sync my fork with upstream?', "What's the difference between merge and rebase?"].map((s) => (
               <button key={s} class="chip" onClick={() => void send(s)}>{s}</button>
             ))}
-            <button class="chip" data-kitty="paste-error" onClick={() => { setPasteMode(true); document.querySelector<HTMLTextAreaElement>('.composer textarea')?.focus(); }}>🩹 Paste a Git error</button>
+            <button class="chip" data-kitty="paste-error" onClick={() => { setPasteMode(true); document.querySelector<HTMLTextAreaElement>('.composer textarea')?.focus(); }}><Icon name="paste" size={12} /> Paste a Git error</button>
             <LearningPath onAsk={(q) => void send(q)} />
           </div>
         )}
         {messages.map((m, i) =>
           m.role === 'user' ? (
-            <div key={i} class="msg user">{m.about && <span class="about">📍 {m.about}</span>}{m.content}</div>
+            <div key={i} class="msg user">{m.about && <span class="about"><Icon name="pin" size={12} /> {m.about}</span>}{m.content}</div>
           ) : (
             <div key={i} class="msg kitty" data-status={m.status}>
               {m.files && (
                 <p class="small muted" data-kitty="repo-files">
-                  📂 Read from {m.files.repo}:{' '}
+                  <Icon name="file-directory" size={12} /> Read from {m.files.repo}:{' '}
                   {m.files.files.map((f, j) => (
                     <span key={f.path}>{j > 0 && ', '}<a href={f.url} target="_blank" rel="noopener noreferrer"><code>{f.path}</code></a></span>
                   ))}
@@ -179,13 +180,13 @@ export function ChatView() {
                 const sc = scenarioFor(`${q?.role === 'user' ? q.content : ''} ${m.content.slice(0, 400)}`);
                 return sc ? (
                   <button class="ghost small" data-kitty="try-practice" onClick={() => void chrome.storage.session.set({ [LEARN_FOCUS_KEY]: { view: 'practice', scenario: sc.id } satisfies LearnFocus, [SIDEPANEL_TAB_KEY]: 'learn' })}>
-                    🧪 Try it safely: {sc.title}
+                    <Icon name="beaker" size={12} /> Try it safely: {sc.title}
                   </button>
                 ) : null;
               })()}
               {m.action && (
                 <div class="action-card" data-kitty="action">
-                  <p>🐾 {actionLabel(m.action)}{m.action.type !== 'find_issues' && ': Kitty is taking you there.'}</p>
+                  <p><Icon name="arrow-right" size={12} /> {actionLabel(m.action)}{m.action.type !== 'find_issues' && ': Kitty is taking you there.'}</p>
                   {m.action.type !== 'find_issues' && <button class="ghost small" onClick={() => void runOnPage(m.action as PageAction)}>Go again</button>}
                   {m.found?.status === 'loading' && <p class="thinking small">Searching GitHub</p>}
                   {m.found?.status === 'error' && <p class="error small">{m.found.error}</p>}
@@ -207,12 +208,12 @@ export function ChatView() {
               )}
               {m.status === 'error' && <p class="error">{m.error}</p>}
               {m.instant && (m.diagnosis
-                ? <p class="muted small" data-kitty="diagnosis" title="Recognised by Kitty's rules for common Git errors">🩹 Recognised Git error, instant</p>
-                : <p class="muted small" data-kitty="instant" title="A common question with a saved, checked answer from Kitty's sources">⚡ Saved answer, instant</p>)}
+                ? <p class="muted small" data-kitty="diagnosis" title="Recognised by Kitty's rules for common Git errors"><Icon name="tools" size={12} /> Recognised Git error, instant</p>
+                : <p class="muted small" data-kitty="instant" title="A common question with a saved, checked answer from Kitty's sources"><Icon name="zap" size={12} /> Saved answer, instant</p>)}
               {m.status === 'stopped' && <p class="muted small">Stopped.</p>}
               {m.truncated && <p class="muted small">The answer hit its length limit and may be incomplete.</p>}
               {m.unverifiedFlags && m.unverifiedFlags.length > 0 && (
-                <p class="warn">⚠ Not verified in Kitty's sources: {m.unverifiedFlags.map((f) => <code key={f}>{f}</code>)}. Check the <a href="https://git-scm.com/docs" target="_blank" rel="noopener noreferrer">git docs</a>.</p>
+                <p class="warn"><Icon name="alert" size={12} /> Not verified in Kitty's sources: {m.unverifiedFlags.map((f) => <code key={f}>{f}</code>)}. Check the <a href="https://git-scm.com/docs" target="_blank" rel="noopener noreferrer">git docs</a>.</p>
               )}
               {m.sources.length > 0 && m.status !== 'streaming' && (
                 <details class="sources">
@@ -229,15 +230,15 @@ export function ChatView() {
         <input type="checkbox" checked={readPage} onChange={(e) => toggleReadPage((e.target as HTMLInputElement).checked)} />
         {readPage
           ? page
-            ? <span>👀 Kitty can see <strong>{pageLabel(page)}</strong></span>
-            : <span class="muted">👀 Open a GitHub page and Kitty can see it</span>
+            ? <span><Icon name="mark-github" size={12} /> Kitty can see <strong>{pageLabel(page)}</strong></span>
+            : <span class="muted"><Icon name="mark-github" size={12} /> Open a GitHub page and Kitty can see it</span>
           : <span class="muted">Kitty can't see this page</span>}
       </label>
       <form class="composer" onSubmit={(e) => { e.preventDefault(); void send(input); }}>
         {focusStep && focusIndex !== null && (
           <div class="focus-chip" data-kitty="focus-chip">
-            <span>📍 Asking about step {focusIndex + 1}: <strong>{focusStep.title}</strong> ({focusStep.path.split('/').pop()})</span>
-            <button type="button" title="Stop asking about this step" aria-label="Clear step" onClick={clearFocus}>✕</button>
+            <span><Icon name="pin" size={12} /> Asking about step {focusIndex + 1}: <strong>{focusStep.title}</strong> ({focusStep.path.split('/').pop()})</span>
+            <button type="button" title="Stop asking about this step" aria-label="Clear step" onClick={clearFocus}><Icon name="x" size={12} /></button>
           </div>
         )}
         <textarea

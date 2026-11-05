@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { hintFor, type ButtonHint } from '../shared/github-buttons';
 import { getSettings } from '../shared/settings';
+import { Icon } from '../shared/Icon';
 
 const RISK: Record<ButtonHint['risk'], { label: string; cls: string }> = {
   safe: { label: 'Safe', cls: 'risk-safe' },
@@ -75,7 +76,7 @@ export function ButtonHints() {
   return (
     <div class="bubble button-hint" data-kitty="button-hint" role="tooltip" style={{ top: `${Math.round(shown.top)}px`, left: `${Math.round(shown.left)}px` }}>
       <div class="meta">
-        <span>🐾 What "{hint.title}" does</span>
+        <span class="hint-title"><Icon name="info" /> What “{hint.title}” does</span>
         <span class={`risk ${RISK[hint.risk].cls}`}>{RISK[hint.risk].label}</span>
       </div>
       <p>{hint.what}</p>

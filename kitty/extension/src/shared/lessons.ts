@@ -56,7 +56,7 @@ export const LESSONS: Lesson[] = [
   { skill: 'ignore', scenario: 'node_modules and .env keep showing up in git status.',
     commands: ['echo "node_modules/" >> .gitignore', 'echo ".env" >> .gitignore', 'git rm --cached .env            # stop tracking it if it was already committed', 'git commit -m "Ignore build output and secrets"'],
     why: '.gitignore only affects files Git is not tracking yet. Already-committed files must be removed from the index; if a secret was pushed, rotate it, because it stays in history.' },
-  { skill: 'actions', scenario: 'Your pull request shows a red ✗ from CI.',
+  { skill: 'actions', scenario: 'Your pull request shows a failed CI check (a red X).',
     commands: ['# open the failed check, expand the red step, find the first error line', '# reproduce it locally with the same command (e.g. npm test)', 'git commit -am "Fix failing test"', 'git push                       # CI runs again on its own'],
     why: 'Workflows in .github/workflows run on every push and pull request. Fix the cause locally and push again; on an Actions run page Kitty can explain the failure for you.' },
 ];

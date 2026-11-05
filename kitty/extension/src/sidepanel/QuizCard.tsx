@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { wrongNote } from '../shared/quiz-notes';
 import type { Skill } from '../shared/skills';
+import { Icon } from '../shared/Icon';
 
 export function useLocal<T>(key: string, initial: T): [T, (v: T) => void] {
   const [value, setValue] = useState<T>(initial);
@@ -46,7 +47,7 @@ export function QuizCard({ skill, choices: given, label, onAnswer }: { skill: Sk
       })}
       {picked !== null && (
         <p class="small muted">
-          {picked === right ? '✅ ' : `❌ ${note ? `${note} ` : ''}`}{skill.quiz.why}
+          <Icon name={picked === right ? 'check-circle' : 'x-circle'} size={12} /> {picked === right ? '' : note ? `${note} ` : ''}{skill.quiz.why}
         </p>
       )}
     </div>

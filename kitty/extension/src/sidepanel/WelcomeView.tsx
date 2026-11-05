@@ -19,7 +19,7 @@ export function WelcomeView({ onDone }: { onDone: () => void }) {
 
   return (
     <section class="welcome">
-      <h2>Hi, I'm Kitty 🐾</h2>
+      <h2>Hi, I'm Kitty</h2>
       <p>I walk around GitHub with you: I give guided tours of repositories, answer Git questions, and explain commands, diffs and pull requests.</p>
 
       <h3>1. You're all set</h3>

@@ -92,9 +92,9 @@ flowchart LR
   class CS,SP,SW,LOCAL ext
   class AI,RULES,RAG,GUARD srv
   class GH,BC,CP outside
-  style OUT fill:#ffffff,stroke:#d0d7de
-  style EXT fill:#ffffff,stroke:#1a7f37
-  style SRV fill:#ffffff,stroke:#0969da
+  style OUT fill:#f6f8fa,stroke:#57606a,color:#1f2328
+  style EXT fill:#f0fff4,stroke:#1a7f37,color:#1a7f37
+  style SRV fill:#f0f7ff,stroke:#0969da,color:#0969da
 ```
 
 **How a request flows:** the cat or the side panel asks the service worker, which calls the Kitty server. The server pulls real context from GitHub (files, issues, diffs, CI logs), retrieves the best-matching learning material, and asks BharatCode to explain it, streaming the answer back. Issue ranking and the PR check are plain rules, and Practice mode and lessons run entirely in the browser, so they cost no tokens. For writing code, Kitty hands the request to GitHub Copilot.
